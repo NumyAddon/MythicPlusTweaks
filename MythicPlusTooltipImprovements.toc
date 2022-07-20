@@ -1,0 +1,8 @@
+## Interface: @toc-version-retail@
+## Title: Mythic+ Tooltip Improvements
+## Author: Numy
+## Notes: Various improvements to existing mythic+ tooltips
+## Version: @project-version@
+## X-Curse-Project-ID: 646999
+
+core.lua
