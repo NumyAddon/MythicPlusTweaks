@@ -1,8 +1,14 @@
 ## Interface: @toc-version-retail@
-## Title: Mythic+ Tooltip Improvements
+## Title: Mythic+ Tweaks
 ## Author: Numy
 ## Notes: Various improvements to existing mythic+ tooltips
 ## Version: @project-version@
 ## X-Curse-Project-ID: 646999
+## SavedVariables: MythicPlusTweaksDB
+
+libs\embeds.xml
 
 core.lua
+
+modules\dungeonScoreTooltipFix.lua
+modules\dungeonIconTooltip.lua
