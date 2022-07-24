@@ -3,6 +3,12 @@ local Main = MPT.Main;
 
 local Module = Main:NewModule('DungeonIconText', 'AceHook-3.0', 'AceEvent-3.0');
 
+function Module:OnInitialize()
+    self.font = CreateFont('');
+    self.font:CopyFontObject(SystemFont_Huge1_Outline);
+    self.minFontSize = 10;
+end
+
 function Module:OnEnable()
     if IsAddOnLoaded('Blizzard_ChallengesUI') then
         self:SetupHook();
@@ -39,6 +45,7 @@ function Module:GetOptions(defaultOptionsTable)
         func = function()
             PVEFrame_ToggleFrame('ChallengesFrame');
         end,
+        order = 10,
     };
 
     return defaultOptionsTable;
@@ -98,6 +105,8 @@ function Module:AddScoresToIcon(icon, mapInfo)
         icon.HighestLevel:SetText(bestLevelColor:WrapTextInColorCode(bestLevel) .. ' - ' .. overAllScoreColor:WrapTextInColorCode(overAllScore));
         icon.HighestLevel:SetTextColor(1, 1, 1);
         icon.HighestLevel:Show();
+        icon.HighestLevel:SetWidth(icon:GetWidth() - 1);
+        self:AutoFitText(icon.HighestLevel);
     end
 
     local currentMapInfo = mapInfo[mapId];
@@ -111,6 +120,8 @@ function Module:AddScoresToIcon(icon, mapInfo)
     end
     icon.CurrentLevel:SetText(currentAffixLevelColor:WrapTextInColorCode(currentMapInfo.level) .. ' - ' .. currentAffixScoreColor:WrapTextInColorCode(currentMapInfo.score));
     icon.CurrentLevel:Show();
+    icon.CurrentLevel:SetWidth(icon:GetWidth() - 1);
+    self:AutoFitText(icon.CurrentLevel);
 end
 
 function Module:InitCurrentLevelText(icon)
@@ -119,4 +130,20 @@ function Module:InitCurrentLevelText(icon)
     icon.CurrentLevel:SetTextColor(1, 1, 1);
     icon.CurrentLevel:SetShadowOffset(1, -1);
     icon.CurrentLevel:SetShadowColor(0, 0, 0);
+end
+
+function Module:AutoFitText(text)
+    text:SetFontObject(self.font);
+
+    while (true) do
+        local difference = text:GetUnboundedStringWidth() - text:GetWidth();
+        if (math.abs(difference) < 5) then break; end
+
+        local fontFile, fontSize, fontFlags = self.font:GetFont();
+        if (difference < 0 or fontSize == self.minFontSize) then break; end
+
+        if (difference > 0) then
+            self.font:SetFont(fontFile, fontSize - 1, fontFlags);
+        end
+    end
 end
