@@ -1,7 +1,7 @@
 ## Interface: @toc-version-retail@
 ## Title: Mythic+ Tweaks
 ## Author: Numy
-## Notes: Various improvements to existing mythic+ tooltips
+## Notes: Various improvements for m+
 ## Version: @project-version@
 ## X-Curse-Project-ID: 646999
 ## SavedVariables: MythicPlusTweaksDB
