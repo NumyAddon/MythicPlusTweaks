@@ -137,7 +137,6 @@ function Module:AutoFitText(text)
 
     while (true) do
         local difference = text:GetUnboundedStringWidth() - text:GetWidth();
-        if (math.abs(difference) < 5) then break; end
 
         local fontFile, fontSize, fontFlags = self.font:GetFont();
         if (difference < 0 or fontSize == self.minFontSize) then break; end
