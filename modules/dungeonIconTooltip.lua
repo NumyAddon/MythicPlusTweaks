@@ -1,5 +1,8 @@
 local _, MPT = ...;
+--- @type Main
 local Main = MPT.Main;
+--- @type Util
+local Util = MPT.Util;
 
 local Module = Main:NewModule('DungeonIconTooltip', 'AceHook-3.0');
 

@@ -1,7 +1,10 @@
 local _, MPT = ...;
+--- @type Main
 local Main = MPT.Main;
+--- @type Util
+local Util = MPT.Util;
 
-local Module = Main:NewModule('ShowOwnRatingOnLFGTooltip', 'AceHook-3.0', 'AceEvent-3.0');
+local Module = Main:NewModule('ShowOwnRatingOnLFGTooltip', 'AceHook-3.0');
 
 -- there is currently no in-game way to get the ChallengeModeMapId from the ActivityID, so we have to resort to a hardcoded map
 Module.ChallengeModeMapId_to_activityId_map = {
@@ -24,7 +27,7 @@ Module.ChallengeModeMapId_to_activityId_map = {
 };
 
 function Module:OnEnable()
-    self:SecureHook(GameTooltip, 'Show', function(tooltip) Module:OnTooltipShow(tooltip); end);
+    self:SecureHook('LFGListUtil_SetSearchEntryTooltip', function(tooltip, resultId) Module:OnTooltipShow(tooltip, resultId); end);
 end
 
 function Module:OnDisable()
@@ -39,15 +42,8 @@ function Module:GetName()
     return 'Show Own Rating On LFG Tooltip';
 end
 
-function Module:OnTooltipShow(tooltip)
-    if self.skipOnTooltipShow then return; end
-    local owner = tooltip.GetOwner and tooltip:GetOwner() or nil;
-    if not owner then return; end
-
-    local parent = owner.GetParent and owner:GetParent() or nil;
-    if parent ~= LFGListSearchPanelScrollFrameScrollChild or not owner.resultID then return; end
-
-    local searchResultInfo = C_LFGList.GetSearchResultInfo(owner.resultID);
+function Module:OnTooltipShow(tooltip, resultId)
+    local searchResultInfo = C_LFGList.GetSearchResultInfo(resultId);
     local activityInfo = C_LFGList.GetActivityInfoTable(searchResultInfo.activityID, nil, searchResultInfo.isWarMode);
     if not activityInfo.isMythicPlusActivity then return; end
 
@@ -56,10 +52,10 @@ function Module:OnTooltipShow(tooltip)
         Main:Print('LFG Module: no mapId found for activityID', searchResultInfo.activityID, 'please report this on curse or github');
         return;
     end
-    local overallInfo = self:GetOverallInfoByMapId(mapId);
-    local affixInfo = self:GetAffixScoreInfoByMapId(mapId);
+    local overallInfo = Util:GetOverallInfoByMapId(mapId);
+    local affixInfo = Util:GetAffixInfoByMapId(mapId);
 
-    local linesLeft, linesRight = self:ExtractTooltipLines(tooltip);
+    local linesLeft, linesRight = Util:ExtractTooltipLines(tooltip);
 
     local createdAtLine = string.sub(LFG_LIST_TOOLTIP_AGE, 1, string.find(LFG_LIST_TOOLTIP_AGE, ':'));
     for i, line in ipairs(linesLeft) do
@@ -95,66 +91,5 @@ function Module:OnTooltipShow(tooltip)
         tooltip:AddDoubleLine(left.text, right.text, left.r, left.g, left.b, right.r, right.g, right.b);
     end
 
-    self.skipOnTooltipShow = true;
     tooltip:Show();
-    self.skipOnTooltipShow = nil;
-end
-
-function Module:GetOverallInfoByMapId(mapId)
-    local inTimeInfo, overtimeInfo = C_MythicPlus.GetSeasonBestForMap(mapId);
-
-    local bestLevel = 0;
-    local bestLevelInTime = false
-    if (inTimeInfo and overtimeInfo) then
-        bestLevelInTime = inTimeInfo.dungeonScore >= overtimeInfo.dungeonScore;
-        bestLevel = bestLevelInTime and inTimeInfo.level or overtimeInfo.level;
-    elseif (inTimeInfo or overtimeInfo) then
-        bestLevelInTime = inTimeInfo ~= nil
-        bestLevel = inTimeInfo and inTimeInfo.level or overtimeInfo.level;
-    end
-    local _, overAllScore = C_MythicPlus.GetSeasonBestAffixScoreInfoForMap(mapId);
-    overAllScore = overAllScore or 0
-
-    local bestLevelColor = bestLevelInTime and HIGHLIGHT_FONT_COLOR or GRAY_FONT_COLOR;
-    local overAllScoreColor = C_ChallengeMode.GetSpecificDungeonOverallScoreRarityColor(overAllScore) or HIGHLIGHT_FONT_COLOR;
-
-    return {
-        level = bestLevel,
-        levelColor = bestLevelColor,
-        score = overAllScore,
-        scoreColor = overAllScoreColor,
-    };
-end
-
-function Module:GetAffixScoreInfoByMapId(mapId)
-    for _, scoreInfo in pairs(C_ChallengeMode.GetMapScoreInfo()) do
-        if scoreInfo.mapChallengeModeID == mapId then
-            return {
-                level = scoreInfo.level,
-                levelColor = scoreInfo.completedInTime and HIGHLIGHT_FONT_COLOR or GRAY_FONT_COLOR,
-                score = scoreInfo.dungeonScore,
-                scoreColor = C_ChallengeMode.GetSpecificDungeonScoreRarityColor(scoreInfo.dungeonScore or 0) or HIGHLIGHT_FONT_COLOR,
-            };
-        end
-    end
-    return nil;
-end
-
-function Module:ExtractTooltipLines(tooltip)
-    local linesLeft, linesRight = {}, {};
-    for i = 1, 15 do
-        local lineLeft = _G[tooltip:GetName() .. 'TextLeft' .. i];
-        local lineRight = _G[tooltip:GetName() .. 'TextRight' .. i];
-
-        local left, right;
-        if lineLeft then left = lineLeft:GetText(); end
-        if lineRight then right = lineRight:GetText(); end
-
-        if not left and not right then break; end
-        local leftR, leftG, leftB, _ = lineLeft:GetTextColor();
-        local rightR, rightG, rightB, _ = lineRight:GetTextColor();
-        table.insert(linesLeft, {text=left, r=leftR, g=leftG, b=leftB});
-        table.insert(linesRight, {text=right, r=rightR, g=rightG, b=rightB});
-    end
-    return linesLeft, linesRight;
 end

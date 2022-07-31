@@ -8,6 +8,7 @@
 
 libs\embeds.xml
 
+SharedUtil.lua
 core.lua
 
 modules\dungeonScoreTooltipFix.lua

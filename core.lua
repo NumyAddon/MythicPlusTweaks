@@ -5,7 +5,7 @@ _G.MythicPlusTweaks = MPT;
 if not _G.MPT then _G.MPT = MPT; end
 --@end-debug@
 
-
+--- @class Main
 local Main = LibStub('AceAddon-3.0'):NewAddon(name, 'AceConsole-3.0', 'AceHook-3.0', 'AceEvent-3.0');
 if not Main then return; end
 MPT.Main = Main;
@@ -29,6 +29,7 @@ end
 function Main:InitDefaults()
     local defaults = {
         modules = {},
+        moduleDb = {},
     };
 
     for key, value in pairs(defaults) do
@@ -103,7 +104,8 @@ function Main:InitConfig()
     };
     for moduleName, module in self:IterateModules() do
         local copy = CopyTable(defaultModuleOptions);
-        local moduleOptions = module.GetOptions and module:GetOptions(copy) or copy;
+        self.db.moduleDb[moduleName] = self.db.moduleDb[moduleName] or {};
+        local moduleOptions = module.GetOptions and module:GetOptions(copy, self.db.moduleDb[moduleName]) or copy;
         moduleOptions.name = module.GetName and module:GetName() or moduleName;
         moduleOptions.order = increment();
         self.options.args.modules.args[moduleName] = moduleOptions;
@@ -117,10 +119,6 @@ end
 function Main:OpenConfig()
     InterfaceOptionsFrame_OpenToCategory(self.configCategory);
     InterfaceOptionsFrame_OpenToCategory(self.configCategory);
-end
-
-function Main:RegisterModuleOptions(moduleName, options)
-    self.options.args.modules.args[moduleName] = options;
 end
 
 function Main:SetModuleState(moduleName, enabled)

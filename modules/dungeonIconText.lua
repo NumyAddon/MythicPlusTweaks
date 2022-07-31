@@ -1,5 +1,8 @@
 local _, MPT = ...;
+--- @type Main
 local Main = MPT.Main;
+--- @type Util
+local Util = MPT.Util;
 
 local Module = Main:NewModule('DungeonIconText', 'AceHook-3.0', 'AceEvent-3.0');
 
@@ -7,6 +10,7 @@ function Module:OnInitialize()
     self.font = CreateFont('');
     self.font:CopyFontObject(SystemFont_Huge1_Outline);
     self.minFontSize = 10;
+    self.db = self.db or {};
 end
 
 function Module:OnEnable()
@@ -25,7 +29,9 @@ function Module:OnDisable()
             if ChallengesFrame.DungeonIcons[i].CurrentLevel then
                 ChallengesFrame.DungeonIcons[i].CurrentLevel:Hide();
             end
+            ChallengesFrame.DungeonIcons[i].HighestLevel:SetFontObject(SystemFont_Huge1_Outline);
         end
+        self.font:CopyFontObject(SystemFont_Huge1_Outline);
     end
 end
 
@@ -37,7 +43,11 @@ function Module:GetDescription()
     return 'Changes the text on the dungeon icons, to show "{level} - {score}" on top (level is grey if out of time). And {affix level} - {affix score} on bottom for the current week\'s affix.';
 end
 
-function Module:GetOptions(defaultOptionsTable)
+function Module:GetOptions(defaultOptionsTable, db)
+    self.db = db;
+    if db.dash == nil then
+        db.dash = true;
+    end
     defaultOptionsTable.args.showExample = {
         type = 'execute',
         name = 'Open Mythic+ UI',
@@ -46,6 +56,22 @@ function Module:GetOptions(defaultOptionsTable)
             PVEFrame_ToggleFrame('ChallengesFrame');
         end,
         order = 10,
+    };
+    defaultOptionsTable.args.toggleDash = {
+        type = 'toggle',
+        name = 'Show separator',
+        desc = 'Separate Level and Score with a dash (-). Disabling this might result in a larger font size.',
+        get = function()
+            return db.dash;
+        end,
+        set = function(info, value)
+            db.dash = value;
+            self.font:CopyFontObject(SystemFont_Huge1_Outline);
+            if ChallengesFrame and ChallengesFrame.IsShown and ChallengesFrame:IsShown() then
+                ChallengesFrame_Update(ChallengesFrame);
+            end
+        end,
+        order = 11,
     };
 
     return defaultOptionsTable;
@@ -68,57 +94,32 @@ function Module:SetupHook()
 end
 
 function Module:AddScoresToAllIcons(challengesFrame)
-    local mapInfo = {}
-    for _, scoreInfo in pairs(C_ChallengeMode.GetMapScoreInfo()) do
-        mapInfo[scoreInfo.mapChallengeModeID] = {
-            level = scoreInfo.level,
-            score = scoreInfo.dungeonScore,
-            completedInTime = scoreInfo.completedInTime,
-        };
-    end
-
     for i = 1, #challengesFrame.DungeonIcons do
-        Module:AddScoresToIcon(challengesFrame.DungeonIcons[i], mapInfo);
+        Module:AddScoresToIcon(challengesFrame.DungeonIcons[i]);
     end
 end
 
-function Module:AddScoresToIcon(icon, mapInfo)
+function Module:AddScoresToIcon(icon)
     local mapId = icon.mapID;
 
-    local inTimeInfo, overtimeInfo = C_MythicPlus.GetSeasonBestForMap(mapId);
+    local overallInfo = Util:GetOverallInfoByMapId(mapId);
 
-    local bestLevel = 0;
-    local bestLevelInTime = false
-    if (inTimeInfo and overtimeInfo) then
-        bestLevelInTime = inTimeInfo.dungeonScore >= overtimeInfo.dungeonScore;
-        bestLevel = bestLevelInTime and inTimeInfo.level or overtimeInfo.level;
-    elseif (inTimeInfo or overtimeInfo) then
-        bestLevelInTime = inTimeInfo ~= nil
-        bestLevel = inTimeInfo and inTimeInfo.level or overtimeInfo.level;
-    end
-    local _, overAllScore = C_MythicPlus.GetSeasonBestAffixScoreInfoForMap(mapId);
-
-    local bestLevelColor = bestLevelInTime and HIGHLIGHT_FONT_COLOR or GRAY_FONT_COLOR;
-    local overAllScoreColor = C_ChallengeMode.GetSpecificDungeonOverallScoreRarityColor(overAllScore or 0) or HIGHLIGHT_FONT_COLOR;
-
-    if bestLevel and overAllScore then
-        icon.HighestLevel:SetText(bestLevelColor:WrapTextInColorCode(bestLevel) .. ' - ' .. overAllScoreColor:WrapTextInColorCode(overAllScore));
+    local separator = self.db.dash and ' - ' or ' ';
+    if overallInfo and overallInfo.score > 0 then
+        icon.HighestLevel:SetText(overallInfo.levelColor:WrapTextInColorCode(overallInfo.level) .. separator .. overallInfo.scoreColor:WrapTextInColorCode(overallInfo.score));
         icon.HighestLevel:SetTextColor(1, 1, 1);
         icon.HighestLevel:Show();
         icon.HighestLevel:SetWidth(icon:GetWidth() - 1);
         self:AutoFitText(icon.HighestLevel);
     end
 
-    local currentMapInfo = mapInfo[mapId];
-    if (not currentMapInfo.score or not currentMapInfo.level or currentMapInfo.score == 0) then return end
-
-    local currentAffixLevelColor = currentMapInfo.completedInTime and HIGHLIGHT_FONT_COLOR or GRAY_FONT_COLOR;
-    local currentAffixScoreColor = C_ChallengeMode.GetSpecificDungeonScoreRarityColor(currentMapInfo.score) or HIGHLIGHT_FONT_COLOR;
+    local affixInfo = Util:GetAffixInfoByMapId(mapId);
+    if (not affixInfo or affixInfo.score == 0) then return; end
 
     if (not icon.CurrentLevel) then
         self:InitCurrentLevelText(icon);
     end
-    icon.CurrentLevel:SetText(currentAffixLevelColor:WrapTextInColorCode(currentMapInfo.level) .. ' - ' .. currentAffixScoreColor:WrapTextInColorCode(currentMapInfo.score));
+    icon.CurrentLevel:SetText(affixInfo.levelColor:WrapTextInColorCode(affixInfo.level) .. separator .. affixInfo.scoreColor:WrapTextInColorCode(affixInfo.score));
     icon.CurrentLevel:Show();
     icon.CurrentLevel:SetWidth(icon:GetWidth() - 1);
     self:AutoFitText(icon.CurrentLevel);
