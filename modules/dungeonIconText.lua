@@ -7,7 +7,7 @@ local Util = MPT.Util;
 local Module = Main:NewModule('DungeonIconText', 'AceHook-3.0', 'AceEvent-3.0');
 
 function Module:OnInitialize()
-    self.font = CreateFont('');
+    self.font = CreateFont('MythicPlusTweaks_DungeonIconText_Font');
     self.font:CopyFontObject(SystemFont_Huge1_Outline);
     self.minFontSize = 10;
     self.db = self.db or {};
