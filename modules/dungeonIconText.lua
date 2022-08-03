@@ -100,6 +100,7 @@ function Module:AddScoresToAllIcons(challengesFrame)
 end
 
 function Module:AddScoresToIcon(icon)
+    if icon.CurrentLevel then icon.CurrentLevel:Hide(); end
     local mapId = icon.mapID;
 
     local overallInfo = Util:GetOverallInfoByMapId(mapId);
