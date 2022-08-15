@@ -46,7 +46,7 @@ function Module:OnTooltipShow(tooltip)
     local mapId = owner.mapID
     local affixScores, _ = C_MythicPlus.GetSeasonBestAffixScoreInfoForMap(mapId);
 
-    local linesLeft, linesRight = self:ExtractTooltipLines(tooltip)
+    local linesLeft, linesRight = Util:ExtractTooltipLines(tooltip)
     if(affixScores and #affixScores > 0) then
         self:ProcessAffixScores(linesLeft, linesRight, affixScores)
     end
@@ -56,16 +56,8 @@ function Module:OnTooltipShow(tooltip)
         table.insert(linesRight, {text=''})
     end
 
-    tooltip:ClearLines()
-    for i = 1, max(#linesLeft, #linesRight) do
-        local left = linesLeft[i] or ''
-        local right = linesRight[i] or ''
-
-        tooltip:AddDoubleLine(left.text, right.text, left.r, left.g, left.b, right.r, right.g, right.b)
-    end
-
     self.skipOnTooltipShow = true
-    tooltip:Show()
+    Util:ReplaceTooltipLines(tooltip, linesLeft, linesRight);
     self.skipOnTooltipShow = nil
 end
 
@@ -98,23 +90,4 @@ function Module:MapIdIsAddedToTooltip(linesLeft, mapId)
         end
     end
     return false
-end
-
-function Module:ExtractTooltipLines(tooltip)
-    local linesLeft, linesRight = {}, {}
-    for i = 1, 15 do
-        local lineLeft = _G[tooltip:GetName() .. 'TextLeft' .. i]
-        local lineRight = _G[tooltip:GetName() .. 'TextRight' .. i]
-
-        local left, right
-        if lineLeft then left = lineLeft:GetText() end
-        if lineRight then right = lineRight:GetText() end
-
-        if not left and not right then break end
-        local leftR, leftG, leftB, _ = lineLeft:GetTextColor()
-        local rightR, rightG, rightB, _ = lineRight:GetTextColor()
-        table.insert(linesLeft, {text=left, r=leftR, g=leftG, b=leftB})
-        table.insert(linesRight, {text=right, r=rightR, g=rightG, b=rightB})
-    end
-    return linesLeft, linesRight
 end

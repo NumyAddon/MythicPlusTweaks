@@ -83,13 +83,5 @@ function Module:OnTooltipShow(tooltip, resultId)
         end
     end
 
-    tooltip:ClearLines()
-    for i = 1, max(#linesLeft, #linesRight) do
-        local left = linesLeft[i] or '';
-        local right = linesRight[i] or '';
-
-        tooltip:AddDoubleLine(left.text, right.text, left.r, left.g, left.b, right.r, right.g, right.b);
-    end
-
-    tooltip:Show();
+    Util:ReplaceTooltipLines(tooltip, linesLeft, linesRight);
 end

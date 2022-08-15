@@ -17,3 +17,4 @@ modules\dungeonIconText.lua
 modules\alwaysShowAffixes.lua
 modules\showOwnRatingOnLFGTooltip.lua
 modules\fixLeaderOverallScoreOnLFGTooltip.lua
+modules\showScoreOnKeystoneTooltip.lua

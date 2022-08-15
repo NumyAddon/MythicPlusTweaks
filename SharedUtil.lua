@@ -9,17 +9,35 @@ function Util:ExtractTooltipLines(tooltip)
         local lineLeft = _G[tooltip:GetName() .. 'TextLeft' .. i];
         local lineRight = _G[tooltip:GetName() .. 'TextRight' .. i];
 
-        local left, right;
-        if lineLeft then left = lineLeft:GetText(); end
+        local left, leftWrap, right;
+        if lineLeft then
+            left = lineLeft:GetText();
+            leftWrap = abs(lineLeft:GetWrappedWidth() - lineLeft:GetUnboundedStringWidth()) > 5;
+        end
         if lineRight then right = lineRight:GetText(); end
 
         if not left and not right then break; end
         local leftR, leftG, leftB, _ = lineLeft:GetTextColor();
         local rightR, rightG, rightB, _ = lineRight:GetTextColor();
-        table.insert(linesLeft, {text=left, r=leftR, g=leftG, b=leftB});
+        table.insert(linesLeft, {text=left, r=leftR, g=leftG, b=leftB, wrap=leftWrap});
         table.insert(linesRight, {text=right, r=rightR, g=rightG, b=rightB});
     end
     return linesLeft, linesRight;
+end
+
+function Util:ReplaceTooltipLines(tooltip, linesLeft, linesRight)
+    tooltip:ClearLines()
+    for i = 1, max(#linesLeft, #linesRight) do
+        local left = linesLeft[i];
+        local right = linesRight[i];
+        if not right or not right.text or string.len(right.text) == 0 then
+            tooltip:AddLine(left.text, left.r, left.g, left.b, left.wrap);
+        else
+            tooltip:AddDoubleLine(left.text, right.text, left.r, left.g, left.b, right.r, right.g, right.b);
+        end
+    end
+
+    tooltip:Show();
 end
 
 function Util:GetOverallInfoByMapId(mapId)
