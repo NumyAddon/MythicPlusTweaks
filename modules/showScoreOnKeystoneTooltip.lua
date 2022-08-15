@@ -41,9 +41,12 @@ function Module:OnTooltipShow(tooltip)
     local _, itemLink = tooltip:GetItem();
     if not itemLink then return end
 
-    if not C_Item.IsItemKeystoneByID(itemLink:match('item:(%d+)')) then return end
-
-    local mapId = itemLink:match(string.format(':%s:(%%d+):', Enum.ItemModification.KeystoneMapChallengeModeID));
+    local mapId = itemLink:match('keystone:%d+:(%d+)');
+    if not mapId then
+        local itemId = itemLink:match('item:(%d+)');
+        if not itemId or not C_Item.IsItemKeystoneByID(itemId) then return end
+        mapId = itemLink:match(string.format(':%s:(%%d+):', Enum.ItemModification.KeystoneMapChallengeModeID));
+    end
     if not mapId then return end
 
     local overallInfo = Util:GetOverallInfoByMapId(mapId);
