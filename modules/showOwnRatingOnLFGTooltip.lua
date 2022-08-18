@@ -7,7 +7,7 @@ local Util = MPT.Util;
 local Module = Main:NewModule('ShowOwnRatingOnLFGTooltip', 'AceHook-3.0');
 
 -- there is currently no in-game way to get the ChallengeModeMapId from the ActivityID, so we have to resort to a hardcoded map
-Module.ChallengeModeMapId_to_activityId_map = {
+Module.ActivityIdToChallengeMapIdMap = {
     [703] = 375,  -- Mists of Tirna Scithe
     [713] = 376,  -- The Necrotic Wake
     [695] = 377,  -- De Other Side
@@ -25,6 +25,7 @@ Module.ChallengeModeMapId_to_activityId_map = {
     [180] = 169, -- Iron Docks (Mythic Keystone)
     [183] = 166, -- Grimrail Depot (Mythic Keystone)
 };
+local missingActivityIds = {};
 
 function Module:OnEnable()
     self:SecureHook('LFGListUtil_SetSearchEntryTooltip', function(tooltip, resultId) Module:OnTooltipShow(tooltip, resultId); end);
@@ -48,7 +49,8 @@ function Module:OnTooltipShow(tooltip, resultId)
     if not activityInfo.isMythicPlusActivity then return; end
 
     local mapId = self.ChallengeModeMapId_to_activityId_map[searchResultInfo.activityID];
-    if not mapId then
+    if not mapId and not missingActivityIds[searchResultInfo.activityID] then
+        missingActivityIds[searchResultInfo.activityID] = true;
         Main:Print('LFG Module: no mapId found for activityID', searchResultInfo.activityID, 'please report this on curse or github');
         return;
     end
