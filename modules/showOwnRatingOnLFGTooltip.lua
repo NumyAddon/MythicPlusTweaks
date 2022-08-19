@@ -48,10 +48,12 @@ function Module:OnTooltipShow(tooltip, resultId)
     local activityInfo = C_LFGList.GetActivityInfoTable(searchResultInfo.activityID, nil, searchResultInfo.isWarMode);
     if not activityInfo.isMythicPlusActivity then return; end
 
-    local mapId = self.ChallengeModeMapId_to_activityId_map[searchResultInfo.activityID];
-    if not mapId and not missingActivityIds[searchResultInfo.activityID] then
-        missingActivityIds[searchResultInfo.activityID] = true;
-        Main:Print('LFG Module: no mapId found for activityID', searchResultInfo.activityID, 'please report this on curse or github');
+    local mapId = self.ActivityIdToChallengeMapIdMap[searchResultInfo.activityID];
+    if not mapId then
+        if not missingActivityIds[searchResultInfo.activityID] then
+            missingActivityIds[searchResultInfo.activityID] = true;
+            --Main:Print('LFG Module: no mapId found for activityID', searchResultInfo.activityID, 'please report this on curse or github');
+        end
         return;
     end
     local overallInfo = Util:GetOverallInfoByMapId(mapId);
