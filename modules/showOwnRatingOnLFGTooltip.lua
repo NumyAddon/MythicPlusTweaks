@@ -8,22 +8,45 @@ local Module = Main:NewModule('ShowOwnRatingOnLFGTooltip', 'AceHook-3.0');
 
 -- there is currently no in-game way to get the ChallengeModeMapId from the ActivityID, so we have to resort to a hardcoded map
 Module.ActivityIdToChallengeMapIdMap = {
-    [703] = 375,  -- Mists of Tirna Scithe
-    [713] = 376,  -- The Necrotic Wake
-    [695] = 377,  -- De Other Side
-    [699] = 378,  -- Halls of Atonement
-    [691] = 379,  -- Plaguefall
-    [705] = 380,  -- Sanguine Depths
-    [709] = 381,  -- Spires of Ascension
-    [717] = 382,  -- Theater of Pain
-    [1017] = 392, -- Tazavesh Gambit (Mythic Keystone)
-    [1016] = 391, -- Tazavesh Streets (Mythic Keystone)
-    [683] = 370, -- Mechagon Workshop (Mythic Keystone)
-    [679] = 369, -- Mechagon Junkyard (Mythic Keystone)
-    [473] = 234, -- Upper Karazhan (Mythic Keystone)
-    [471] = 227, -- Lower Karazhan (Mythic Keystone)
-    [180] = 169, -- Iron Docks (Mythic Keystone)
-    [183] = 166, -- Grimrail Depot (Mythic Keystone)
+    [1017] = 392, -- Tazavesh: So'leah's Gambit
+    [1016] = 391, -- Tazavesh: Streets of Wonder
+    [717] = 382, -- Theater of Pain
+    [713] = 376, -- The Necrotic Wake
+    [709] = 381, -- Spires of Ascension
+    [705] = 380, -- Sanguine Depths
+    [703] = 375, -- Mists of Tirna Scithe
+    [699] = 378, -- Halls of Atonement
+    [695] = 377, -- De Other Side
+    [691] = 379, -- Plaguefall
+    [683] = 370, -- Operation: Mechagon - Workshop
+    [679] = 369, -- Operation: Mechagon - Junkyard
+    [661] = 249, -- Kings' Rest
+    [659] = 353, -- Siege of Boralus
+    [534] = 353, -- Siege of Boralus
+    [530] = 248, -- Waycrest Manor
+    [526] = 246, -- Tol Dagor
+    [522] = 252, -- Shrine of the Storm
+    [518] = 245, -- Freehold
+    [514] = 249, -- Kings' Rest
+    [510] = 247, -- The MOTHERLODE!!
+    [507] = 251, -- The Underrot
+    [504] = 250, -- Temple of Sethraliss
+    [502] = 244, -- Atal'Dazar
+    [486] = 239, -- Seat of the Triumvirate
+    [476] = 233, -- Cathedral of Eternal Night
+    [473] = 234, -- Return to Karazhan: Upper
+    [471] = 227, -- Return to Karazhan: Lower
+    [467] = 209, -- The Arcway
+    [466] = 210, -- Court of Stars
+    [465] = 208, -- Maw of Souls
+    [464] = 207, -- Vault of the Wardens
+    [463] = 199, -- Black Rook Hold
+    [462] = 206, -- Neltharion's Lair
+    [461] = 200, -- Halls of Valor
+    [460] = 198, -- Darkheart Thicket
+    [459] = 197, -- Eye of Azshara
+    [183] = 166, -- Grimrail Depot
+    [180] = 169, -- Iron Docks
 };
 local missingActivityIds = {};
 
@@ -52,7 +75,7 @@ function Module:OnTooltipShow(tooltip, resultId)
     if not mapId then
         if not missingActivityIds[searchResultInfo.activityID] then
             missingActivityIds[searchResultInfo.activityID] = true;
-            --Main:Print('LFG Module: no mapId found for activityID', searchResultInfo.activityID, 'please report this on curse or github');
+            Main:Print('LFG Module: no mapId found for activityID', searchResultInfo.activityID, 'please report this on curse or github');
         end
         return;
     end
