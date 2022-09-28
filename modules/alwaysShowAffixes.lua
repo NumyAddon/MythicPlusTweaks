@@ -14,7 +14,7 @@ end
 function Module:OnDisable()
     self:UnhookAll();
     if IsAddOnLoaded('Blizzard_ChallengesUI') then
-        ChallengesFrame_Update(ChallengesFrame);
+        self.updateFunc(ChallengesFrame);
     end
 end
 
@@ -43,10 +43,17 @@ function Module:ADDON_LOADED(event, addon)
 end
 
 function Module:SetupHook()
-    self:SecureHook('ChallengesFrame_Update', function(frame)
-        frame.WeeklyInfo:SetUp();
-    end);
+    self.updateFunc = ChallengesFrame_Update or ChallengesFrame.Update;
+    if ChallengesFrame_Update then
+        self:SecureHook('ChallengesFrame_Update', function(frame)
+            frame.WeeklyInfo:SetUp();
+        end);
+    else
+        self:SecureHook(ChallengesFrame, 'Update', function(frame)
+            frame.WeeklyInfo:SetUp();
+        end);
+    end
     if ChallengesFrame:IsShown() then
-        ChallengesFrame_Update(ChallengesFrame);
+        self.updateFunc(ChallengesFrame);
     end
 end
