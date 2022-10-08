@@ -8,6 +8,14 @@ local Module = Main:NewModule('ShowOwnRatingOnLFGTooltip', 'AceHook-3.0');
 
 -- there is currently no in-game way to get the ChallengeModeMapId from the ActivityID, so we have to resort to a hardcoded map
 Module.ActivityIdToChallengeMapIdMap = {
+    [1188] = 403, -- Uldaman: Legacy of Tyr
+    [1184] = 400, -- The Nokhud Offensive
+    [1180] = 401, -- The Azure Vault
+    [1176] = 399, -- Ruby Life Pools
+    [1172] = 404, -- Neltharus
+    [1168] = 406, -- Halls of Infusion
+    [1164] = 405, -- Brackenhide Hollow
+    [1160] = 402, -- Algeth'ar Academy
     [1017] = 392, -- Tazavesh: So'leah's Gambit
     [1016] = 391, -- Tazavesh: Streets of Wonder
     [717] = 382, -- Theater of Pain
