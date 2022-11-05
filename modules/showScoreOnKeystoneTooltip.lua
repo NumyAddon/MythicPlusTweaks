@@ -6,18 +6,10 @@ local Util = MPT.Util;
 
 local Module = Main:NewModule('ShowScoreOnKeystoneTooltip', 'AceHook-3.0');
 
-function Module:OnInitialize()
-    if TooltipDataProcessor and TooltipDataProcessor.AddTooltipPostCall then
-        hooksecurefunc(GameTooltip, 'SetHyperlink', function(tooltip, hyperlink) Module:OnSetHyperlink(tooltip, hyperlink) end)
-        hooksecurefunc(ItemRefTooltip, 'SetHyperlink', function(tooltip, hyperlink) Module:OnSetHyperlink(tooltip, hyperlink) end)
-    end
-end
-
 function Module:OnEnable()
     self.enabled = true
     if TooltipDataProcessor and TooltipDataProcessor.AddTooltipPostCall then
-        -- uncomment if they fix the issue that data.hyperlink is a generic keystone item link instead of the specific keystone link
-        --TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item,function(tooltip, data) Module:TooltipPostCall(tooltip, data) end)
+        TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item,function(tooltip, data,...) Module:TooltipPostCall(tooltip, data) end)
     else
         self:SecureHookScript(GameTooltip, 'OnTooltipSetItem', function(tooltip) Module:OnTooltipShow(tooltip); end);
         self:SecureHookScript(ItemRefTooltip, 'OnTooltipSetItem', function(tooltip) Module:OnTooltipShow(tooltip); end);
@@ -52,13 +44,11 @@ function Module:GetOptions(defaultOptionsTable)
     return defaultOptionsTable;
 end
 
-function Module:OnSetHyperlink(tooltip, hyperlink)
+function Module:TooltipPostCall(tooltip)
     if not self.enabled then return; end
-    self:HandleHyperlink(tooltip, hyperlink);
-end
+    if not tooltip or not tooltip.GetItem then return end
 
-function Module:TooltipPostCall(tooltip, data)
-    local itemLink = data.hyperlink;
+    local _, itemLink = tooltip:GetItem();
     if not itemLink then return; end
 
     self:HandleHyperlink(tooltip, itemLink);
