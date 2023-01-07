@@ -8,6 +8,8 @@ local Module = Main:NewModule('ShowOwnRatingOnLFGTooltip', 'AceHook-3.0');
 
 -- there is currently no in-game way to get the ChallengeModeMapId from the ActivityID, so we have to resort to a hardcoded map
 Module.ActivityIdToChallengeMapIdMap = {
+    [1193] = 165, -- Shadowmoon Burial Grounds
+    [1192] = 2, -- Temple of the Jade Serpent
     [1188] = 403, -- Uldaman: Legacy of Tyr
     [1184] = 400, -- The Nokhud Offensive
     [1180] = 401, -- The Azure Vault
