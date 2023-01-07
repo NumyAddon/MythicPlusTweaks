@@ -85,16 +85,10 @@ function Module:ADDON_LOADED(event, addon)
 end
 
 function Module:SetupHook()
-    self.updateFunc = ChallengesFrame_Update or ChallengesFrame.Update;
-    if ChallengesFrame_Update then
-        self:SecureHook('ChallengesFrame_Update', function(frame)
-            Module:AddScoresToAllIcons(frame);
-        end);
-    else
-        self:SecureHook(ChallengesFrame, 'Update', function(frame)
-            Module:AddScoresToAllIcons(frame);
-        end);
-    end
+    self.updateFunc = ChallengesFrame.Update;
+    self:SecureHook(ChallengesFrame, 'Update', function(frame)
+        Module:AddScoresToAllIcons(frame);
+    end);
     if ChallengesFrame:IsShown() then
         self.updateFunc(ChallengesFrame);
     end

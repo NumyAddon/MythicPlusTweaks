@@ -44,15 +44,9 @@ end
 
 function Module:SetupHook()
     self.updateFunc = ChallengesFrame.Update;
-    if ChallengesFrame_Update then
-        self:SecureHook('ChallengesFrame_Update', function(frame)
-            frame.WeeklyInfo:SetUp();
-        end);
-    else
-        self:SecureHook(ChallengesFrame, 'Update', function(frame)
-            frame.WeeklyInfo:SetUp();
-        end);
-    end
+    self:SecureHook(ChallengesFrame, 'Update', function(frame)
+        frame.WeeklyInfo:SetUp();
+    end);
     if ChallengesFrame:IsShown() then
         self.updateFunc(ChallengesFrame);
     end
