@@ -14,17 +14,15 @@ function Module:OnInitialize()
 end
 
 function Module:OnEnable()
-    if IsAddOnLoaded('Blizzard_ChallengesUI') then
+    EventUtil.ContinueOnAddOnLoaded('Blizzard_ChallengesUI', function()
         self:SetupHook();
-    else
-        self:RegisterEvent('ADDON_LOADED');
-    end
+    end);
 end
 
 function Module:OnDisable()
     self:UnhookAll();
     if IsAddOnLoaded('Blizzard_ChallengesUI') then
-        self.updateFunc(ChallengesFrame);
+        ChallengesFrame:Update();
         for i = 1, #ChallengesFrame.DungeonIcons do
             if ChallengesFrame.DungeonIcons[i].CurrentLevel then
                 ChallengesFrame.DungeonIcons[i].CurrentLevel:Hide();
@@ -68,7 +66,7 @@ function Module:GetOptions(defaultOptionsTable, db)
             db.dash = value;
             self.font:CopyFontObject(SystemFont_Huge1_Outline);
             if ChallengesFrame and ChallengesFrame.IsShown and ChallengesFrame:IsShown() then
-                self.updateFunc(ChallengesFrame);
+                ChallengesFrame:Update();
             end
         end,
         order = 11,
@@ -77,20 +75,12 @@ function Module:GetOptions(defaultOptionsTable, db)
     return defaultOptionsTable;
 end
 
-function Module:ADDON_LOADED(event, addon)
-    if addon == 'Blizzard_ChallengesUI' then
-        self:SetupHook();
-        self:UnregisterEvent('ADDON_LOADED');
-    end
-end
-
 function Module:SetupHook()
-    self.updateFunc = ChallengesFrame.Update;
     self:SecureHook(ChallengesFrame, 'Update', function(frame)
         Module:AddScoresToAllIcons(frame);
     end);
     if ChallengesFrame:IsShown() then
-        self.updateFunc(ChallengesFrame);
+        ChallengesFrame:Update();
     end
 end
 

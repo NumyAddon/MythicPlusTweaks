@@ -7,7 +7,17 @@ local Util = MPT.Util;
 local Module = Main:NewModule('DungeonIconTooltip', 'AceHook-3.0');
 
 function Module:OnEnable()
-    self:SecureHook(GameTooltip, 'Show', function(tooltip) Module:OnTooltipShow(tooltip); end);
+    EventUtil.ContinueOnAddOnLoaded('Blizzard_ChallengesUI', function()
+        self:SecureHook(ChallengesFrame, 'Update', function()
+            for _, icon in ipairs(ChallengesFrame.DungeonIcons) do
+                if not self:IsHooked(icon, 'OnEnter') then
+                    self:SecureHookScript(icon, 'OnEnter', function()
+                        Module:OnTooltipShow(GameTooltip, icon);
+                    end);
+                end
+            end
+        end);
+    end);
 end
 
 function Module:OnDisable()
@@ -35,48 +45,41 @@ function Module:GetOptions(defaultOptionsTable)
     return defaultOptionsTable;
 end
 
-function Module:OnTooltipShow(tooltip)
-    if self.skipOnTooltipShow then return end
-    local owner = tooltip.GetOwner and tooltip:GetOwner() or nil
-    if not owner then return end
+function Module:OnTooltipShow(tooltip, icon)
+    if not icon.mapID then return; end
 
-    local parent = owner.GetParent and owner:GetParent() or nil
-    if parent ~= ChallengesFrame or not owner.mapID then return end
-
-    local mapId = owner.mapID
+    local mapId = icon.mapID;
     local affixScores, _ = C_MythicPlus.GetSeasonBestAffixScoreInfoForMap(mapId);
 
-    local linesLeft, linesRight = Util:ExtractTooltipLines(tooltip)
+    local linesLeft, linesRight = Util:ExtractTooltipLines(tooltip);
     if(affixScores and #affixScores > 0) then
-        self:ProcessAffixScores(linesLeft, linesRight, affixScores)
+        self:ProcessAffixScores(linesLeft, linesRight, affixScores);
     end
 
     if(not self:MapIdIsAddedToTooltip(linesLeft, mapId)) then
-        table.insert(linesLeft, {text='|cFFEE6161ID|r ' .. mapId})
-        table.insert(linesRight, {text=''})
+        table.insert(linesLeft, {text='|cFFEE6161ID|r ' .. mapId});
+        table.insert(linesRight, {text=''});
     end
 
-    self.skipOnTooltipShow = true
     Util:ReplaceTooltipLines(tooltip, linesLeft, linesRight);
-    self.skipOnTooltipShow = nil
 end
 
 function Module:ProcessAffixScores(linesLeft, linesRight, affixScores)
-    local higherScore, higherAffix = 0, nil
+    local higherScore, higherAffix = 0, nil;
     for _, affixInfo in ipairs(affixScores) do
         if affixInfo.score > higherScore then
-            higherScore = affixInfo.score
-            higherAffix = affixInfo.name
+            higherScore = affixInfo.score;
+            higherAffix = affixInfo.name;
         end
     end
     for _, affixInfo in ipairs(affixScores) do
-        local affixName, score = affixInfo.name, affixInfo.score
-        local color = C_ChallengeMode.GetSpecificDungeonScoreRarityColor(score)
-        local multiplier = affixName == higherAffix and '|cFFFFFFFF (x1.5)|r' or '|cFFFFFFFF (x0.5)|r'
+        local affixName, score = affixInfo.name, affixInfo.score;
+        local color = C_ChallengeMode.GetSpecificDungeonScoreRarityColor(score);
+        local multiplier = affixName == higherAffix and '|cFFFFFFFF (x1.5)|r' or '|cFFFFFFFF (x0.5)|r';
         for i, line in ipairs(linesLeft) do
             if string.find(line.text, affixName) then
-                table.insert(linesLeft, i+3, {text='Affix rating: ' .. color:WrapTextInColorCode(score) .. multiplier})
-                table.insert(linesRight, i+3, {text=''})
+                table.insert(linesLeft, i+3, {text='Affix rating: ' .. color:WrapTextInColorCode(score) .. multiplier});
+                table.insert(linesRight, i+3, {text=''});
                 break
             end
         end
@@ -85,9 +88,9 @@ end
 
 function Module:MapIdIsAddedToTooltip(linesLeft, mapId)
     for _, line in ipairs(linesLeft) do
-        if string.find(line.text, mapId) then
-            return true
+        if string.find(line.text, mapId) and string.find(line.text:lower(), 'id') then
+            return true;
         end
     end
-    return false
+    return false;
 end
