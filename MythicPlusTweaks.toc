@@ -1,6 +1,7 @@
 ## Interface: @toc-version-retail@
 ## Title: Mythic+ Tweaks
 ## Author: Numy
+## IconTexture: 982414
 ## Notes: Various improvements for m+
 ## Version: @project-version@
 ## X-Curse-Project-ID: 646999
