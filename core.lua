@@ -13,7 +13,7 @@ MPT.Main = Main;
 function Main:OnInitialize()
     MythicPlusTweaksDB = MythicPlusTweaksDB or {};
     self.db = MythicPlusTweaksDB;
-    self.version = GetAddOnMetadata(name, "Version") or "";
+    self.version = C_AddOns.GetAddOnMetadata(name, "Version") or "";
     self:InitDefaults();
     for moduleName, module in self:IterateModules() do
         if self.db.modules[moduleName] == false then
