@@ -24,6 +24,7 @@ local events = {
     CHAT_MSG_WHISPER = true,
     CHAT_MSG_WHISPER_INFORM = true,
     CHAT_MSG_YELL = true,
+    CHAT_MSG_LOOT = true,
 };
 
 local function Filter(...) return Module:Filter(...) end
