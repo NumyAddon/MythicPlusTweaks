@@ -13,6 +13,7 @@ SharedUtil.lua
 core.lua
 
 modules\dungeonScoreTooltipFix.lua
+modules\dungeonTeleports.lua
 modules\dungeonIconTooltip.lua
 modules\dungeonIconText.lua
 modules\alwaysShowAffixes.lua
