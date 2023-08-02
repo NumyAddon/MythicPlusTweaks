@@ -67,7 +67,7 @@ function Module:OnChallengesFrameUpdate()
 end
 
 function Module:AddInfoToTooltip(tooltip, spellID)
-    tooltip:AddLine('|cFFFFFFFFClick to teleport to the dungeon entrance.|r');
+    tooltip:AddLine(GREEN_FONT_COLOR:WrapTextInColorCode('Click to teleport to the dungeon entrance.'));
     local _, duration = GetSpellCooldown(spellID);
     if(duration and duration > 3) then -- global cooldown is counted here as well, so lets just ignore anything below 3 seconds
         local minutes = math.floor(duration / 60);
