@@ -60,9 +60,7 @@ end
 
 function Module:OnChallengesFrameUpdate()
     for _, icon in ipairs(ChallengesFrame.DungeonIcons) do
-        if not hooked[icon] then
-            hooked[icon] = self:ProcessIcon(icon);
-        end
+        self:ProcessIcon(icon);
     end
 end
 
@@ -83,12 +81,12 @@ function Module:ProcessIcon(icon)
 
     local mapId = icon.mapID;
     local spellID = self.spellMap[mapId];
-    if not spellID then return false; end
+    self.buttons[icon]:RegisterSpell(spellID); -- nil will unregister the spell
 
-    self.buttons[icon]:RegisterSpell(spellID);
+    if not spellID then return; end
     self.buttons[icon]:Show();
 
-    return true;
+    return;
 end
 
 function Module:MakeButton(parent)
@@ -109,7 +107,7 @@ function Module:MakeButton(parent)
     function button:RegisterSpell(spellID)
         self.spellID = spellID;
         self:SetAttribute('spell', spellID);
-        self.highlight:SetAlpha(IsSpellKnown(spellID) and 1 or 0);
+        self.highlight:SetAlpha(spellID and IsSpellKnown(spellID) and 1 or 0);
     end
 
     function button:GetRegisteredSpell()
