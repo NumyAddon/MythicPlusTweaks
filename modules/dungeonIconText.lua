@@ -74,7 +74,7 @@ Module.shortNames = {
     [405] = {"BH", "Brackenhide"}, -- Brackenhide Hollow
     [406] = {"HoI", "Halls of Infusion"}, -- Halls of Infusion
     [438] = {"VP", "Vortex Pinnacle"}, -- The Vortex Pinnacle
-    [456] = {"TotT", "Throne of the Tides"}, -- Throne of the Tides
+    [456] = {"TotT", "Throne ot Tides"}, -- Throne of the Tides
     [463] = {"DotI:GF", "DawnOTI:GalakrondF"}, -- Dawn of the Infinite: Galakrond's Fall
     [464] = {"DotI:MR", "DawnOTI:MurozondR"}, -- Dawn of the Infinite: Murozond's Rise"
 };
