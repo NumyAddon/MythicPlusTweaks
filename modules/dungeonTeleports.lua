@@ -116,8 +116,9 @@ function Module:MakeButton(parent)
 
     button:SetScript("OnEnter", function(button, ...)
         button:GetParent():GetScript("OnEnter")(button:GetParent(), ...);
-        if GameTooltip:IsShown() and IsSpellKnown(button:GetRegisteredSpell()) then
-            self:AddInfoToTooltip(GameTooltip, button:GetRegisteredSpell());
+        local spell = button:GetRegisteredSpell();
+        if spell and GameTooltip:IsShown() and IsSpellKnown(spell) then
+            self:AddInfoToTooltip(GameTooltip, spell);
         end
     end)
 
@@ -129,47 +130,44 @@ function Module:MakeButton(parent)
 end
 
 Module.spellMap = {
-    [2] = 131204, -- the Temple of the Jade Serpent
-    [56] = 131205, -- Stormstout Brewery
-    [58] = 131206, -- Shado-Pan Monastery
-    [60] = 131222, -- Mogu'shan Palace
-    [57] = 131225, -- Gate of the Setting Sun
-    [59] = 131228, -- Siege of Niuzao
-    [78] = 131229, -- Scarlet Monastery
-    [77] = 131231, -- Scarlet Halls
-    [76] = 131232, -- Scholomance
-    [163] = 159895, -- Bloodmaul Slag Mines
-    [169] = 159896, -- Iron Docks
-    [164] = 159897, -- Auchindoun
-    [161] = 159898, -- Skyreach
+    [2] = 131204, -- Temple of the Jade Serpent
     [165] = 159899, -- Shadowmoon Burial Grounds
     [166] = 159900, -- Grimrail Depot
     [168] = 159901, -- The Everbloom
-    [167] = 159902, -- Upper Blackrock Spire
-    [376] = 354462, -- The Necrotic Wake
-    [379] = 354463, -- Plaguefall
+    [169] = 159896, -- Iron Docks
+    [198] = 424163, -- Darkheart Thicket
+    [199] = 424153, -- Black Rook Hold
+    [200] = 393764, -- Halls of Valor
+    [206] = 410078, -- Neltharion's Lair
+    [210] = 393766, -- Court of Stars
+    [227] = 373262, -- Return to Karazhan: Lower
+    [234] = 373262, -- Return to Karazhan: Upper
+    [244] = 424187, -- Atal'Dazar
+    [245] = 410071, -- Freehold
+    [248] = 424167, -- Waycrest Manor
+    [251] = 410074, -- The Underrot
+    [369] = 373274, -- Operation: Mechagon - Junkyard
+    [370] = 373274, -- Operation: Mechagon - Workshop
     [375] = 354464, -- Mists of Tirna Scithe
+    [376] = 354462, -- The Necrotic Wake
+    [377] = 354468, -- De Other Side
     [378] = 354465, -- Halls of Atonement
+    [379] = 354463, -- Plaguefall
+    [380] = 354469, -- Sanguine Depths
     [381] = 354466, -- Spires of Ascension
     [382] = 354467, -- Theater of Pain
-    [377] = 354468, -- De Other Side
-    [380] = 354469, -- Sanguine Depths
-    [392] = 367416, -- Tazavesh: So'leah's Gambit
     [391] = 367416, -- Tazavesh: Streets of Wonder
-    [370] = 373274, -- Operation: Mechagon - Workshop
-    [369] = 373274, -- Operation: Mechagon - Junkyard
-    [403] = 393222, -- Uldaman: Legacy of Tyr
+    [392] = 367416, -- Tazavesh: So'leah's Gambit
     [399] = 393256, -- Ruby Life Pools
     [400] = 393262, -- The Nokhud Offensive
-    [405] = 393267, -- Brackenhide Hollow
-    [402] = 393273, -- Algeth'ar Academy
-    [404] = 393276, -- Neltharus
     [401] = 393279, -- The Azure Vault
+    [402] = 393273, -- Algeth'ar Academy
+    [403] = 393222, -- Uldaman: Legacy of Tyr
+    [404] = 393276, -- Neltharus
+    [405] = 393267, -- Brackenhide Hollow
     [406] = 393283, -- Halls of Infusion
-    [200] = 393764, -- Halls of Valor
-    [210] = 393766, -- Court of Stars
-    [245] = 410071, -- Freehold
-    [251] = 410074, -- The Underrot
-    [206] = 410078, -- Neltharion's Lair
     [438] = 410080, -- The Vortex Pinnacle
+    [456] = 424142, -- Throne of the Tides
+    [463] = 424197, -- Dawn of the Infinite: Galakrond's Fall
+    [464] = 424197, -- Dawn of the Infinite: Murozond's Rise
 }
