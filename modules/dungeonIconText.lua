@@ -39,8 +39,8 @@ Module.shortNames = {
     [208] = {"MoS", "Maw of Souls"}, -- Maw of Souls
     [209] = {"AW", "Arcway"}, -- The Arcway
     [210] = {"CoS", "Court of Stars"}, -- Court of Stars
-    [227] = {"RtK:Low", "Lower Karazhan"}, -- Return to Karazhan: Lower
-    [234] = {"RtK:Up", "Upper Karazhan"}, -- Return to Karazhan: Upper
+    [227] = {"RtK1:Low", "Lower Karazhan"}, -- Return to Karazhan: Lower
+    [234] = {"RtK2:Up", "Upper Karazhan"}, -- Return to Karazhan: Upper
     [233] = {"CoEN", "Cath of Et Ni"}, -- Cathedral of Eternal Night
     [239] = {"SotT", "Seat ot Trium"}, -- Seat of the Triumvirate
     [244] = {"AD", "Atal'Dazar"}, -- Atal'Dazar
@@ -53,8 +53,8 @@ Module.shortNames = {
     [251] = {"UR", "Underrot"}, -- The Underrot
     [252] = {"SotS", "Shrine ot Storm"}, -- Shrine of the Storm
     [353] = {"SoB", "S. of Boralus"}, -- Siege of Boralus
-    [369] = {"OM-JY", "Mecha-Junk"}, -- Operation: Mechagon - Junkyard
-    [370] = {"OM-WS", "Mecha-Workshop"}, -- Operation: Mechagon - Workshop
+    [369] = {"OM1-JY", "Mecha1-Junk"}, -- Operation: Mechagon - Junkyard
+    [370] = {"OM2-WS", "Mecha2-Workshop"}, -- Operation: Mechagon - Workshop
     [375] = {"MoTS", "Mists of TS"}, -- Mists of Tirna Scithe
     [376] = {"NW", "Necrotic Wake"}, -- The Necrotic Wake
     [377] = {"DOS", "Other Side"}, -- De Other Side
@@ -63,8 +63,8 @@ Module.shortNames = {
     [380] = {"SD", "Sang Depths"}, -- Sanguine Depths
     [381] = {"SoA", "Spires of Asc"}, -- Spires of Ascension
     [382] = {"ToP", "Theater of Pain"}, -- Theater of Pain
-    [391] = {"T:SoW", "Tazavesh Streets"}, -- Tazavesh: Streets of Wonder
-    [392] = {"T:SG", "Tazavesh Gambit"}, -- Tazavesh: So'leah's Gambit
+    [391] = {"T1:SoW", "Taza1 Streets"}, -- Tazavesh: Streets of Wonder
+    [392] = {"T2:SG", "Taza2 Gambit"}, -- Tazavesh: So'leah's Gambit
     [399] = {"RLP", "Ruby Life"}, -- Ruby Life Pools
     [400] = {"NO", "Nokhud Off"}, -- The Nokhud Offensive
     [401] = {"AV", "Azure Vault"}, -- The Azure Vault
@@ -75,8 +75,8 @@ Module.shortNames = {
     [406] = {"HoI", "Halls of Infusion"}, -- Halls of Infusion
     [438] = {"VP", "Vortex Pinnacle"}, -- The Vortex Pinnacle
     [456] = {"TotT", "Throne ot Tides"}, -- Throne of the Tides
-    [463] = {"DotI:GF", "DawnOTI:GalakrondF"}, -- Dawn of the Infinite: Galakrond's Fall
-    [464] = {"DotI:MR", "DawnOTI:MurozondR"}, -- Dawn of the Infinite: Murozond's Rise"
+    [463] = {"DotI1:GF", "DawnOTI1:GalakrondF"}, -- Dawn of the Infinite: Galakrond's Fall
+    [464] = {"DotI2:MR", "DawnOTI2:MurozondR"}, -- Dawn of the Infinite: Murozond's Rise"
 };
 
 function Module:OnInitialize()
@@ -138,6 +138,8 @@ function Module:GetOptions(defaultOptionsTable, db)
             ChallengesFrame:Update();
         end
     end
+    local order = 10;
+    local function increment() order = order + 1; return order; end
     defaultOptionsTable.args.showExample = {
         type = 'execute',
         name = 'Open Mythic+ UI',
@@ -145,7 +147,7 @@ function Module:GetOptions(defaultOptionsTable, db)
         func = function()
             PVEFrame_ToggleFrame('ChallengesFrame');
         end,
-        order = 10,
+        order = increment(),
     };
     defaultOptionsTable.args.dash = {
         type = 'toggle',
@@ -156,7 +158,7 @@ function Module:GetOptions(defaultOptionsTable, db)
             self.font:CopyFontObject(SystemFont_Huge1_Outline);
             set(info, value);
         end,
-        order = 11,
+        order = increment(),
     };
     defaultOptionsTable.args.name = {
         type = 'select',
@@ -176,7 +178,7 @@ function Module:GetOptions(defaultOptionsTable, db)
         },
         get = get,
         set = set,
-        order = 12,
+        order = increment(),
         width = 'double',
         style = 'radio'
     };
@@ -189,6 +191,9 @@ function Module:SetupHook()
         self:AddScoresToAllIcons(frame);
         self:RepositionFrameElements(frame);
         self:AddNamesAboveIcons(frame);
+        RunNextFrame(function()
+            self:RepositionFrameElements(frame);
+        end);
     end);
     if ChallengesFrame:IsShown() then
         ChallengesFrame:Update();

@@ -8,12 +8,7 @@ local Module = Main:NewModule('ShowScoreOnKeystoneTooltip', 'AceHook-3.0');
 
 function Module:OnEnable()
     self.enabled = true
-    if TooltipDataProcessor and TooltipDataProcessor.AddTooltipPostCall then
-        TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item,function(tooltip, data,...) Module:TooltipPostCall(tooltip, data) end)
-    else
-        self:SecureHookScript(GameTooltip, 'OnTooltipSetItem', function(tooltip) Module:OnTooltipShow(tooltip); end);
-        self:SecureHookScript(ItemRefTooltip, 'OnTooltipSetItem', function(tooltip) Module:OnTooltipShow(tooltip); end);
-    end
+    TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tooltip) Module:TooltipPostCall(tooltip) end)
 end
 
 function Module:OnDisable()
@@ -35,7 +30,10 @@ function Module:GetOptions(defaultOptionsTable)
         name = 'Show Example Tooltip',
         desc = 'Open an example keystone tooltip.',
         func = function()
-            local link = string.format('|cffa335ee|Hkeystone:180653:%d:16:10:1:2:3|h[Keystone]|h|r', C_ChallengeMode.GetMapTable()[1]);
+            local link = string.format(
+                '|cffa335ee|Hkeystone:180653:%d:16:10:1:2:3|h[Keystone]|h|r',
+                C_ChallengeMode.GetMapTable()[1]
+            );
             --local link = string.format('|cFFA335EE|Hitem:180653::::::::60:252::::6:17:%d:18:16:19:10:20:1:21:2:22:3:::::|h[Mythic Keystone]|h|r', C_ChallengeMode.GetMapTable()[1]);
             SetItemRef(link, link, 'LeftButton');
         end,
@@ -79,28 +77,35 @@ function Module:HandleHyperlink(tooltip, itemLink)
         if string.find(line.text, CHALLENGE_MODE_ITEM_POWER_LEVEL) then
             if (overallInfo and overallInfo.score > 0) then
                 table.insert(linesLeft, i + 1, {
-                    text = HIGHLIGHT_FONT_COLOR:WrapTextInColorCode('Your Overall: '
-                            .. overallInfo.scoreColor:WrapTextInColorCode(overallInfo.score)
-                            .. ' (' .. overallInfo.levelColor:WrapTextInColorCode(overallInfo.level) .. ')'),
+                    text = HIGHLIGHT_FONT_COLOR:WrapTextInColorCode(
+                        'Your Overall: '
+                        .. overallInfo.scoreColor:WrapTextInColorCode(overallInfo.score)
+                        .. ' (' .. overallInfo.levelColor:WrapTextInColorCode(overallInfo.level) .. ')'
+                    ),
                 });
                 table.insert(linesRight, i + 1, { text = '' });
                 if (affixInfo and affixInfo.score > 0) then
                     table.insert(linesLeft, i + 2, {
-                        text = HIGHLIGHT_FONT_COLOR:WrapTextInColorCode('Your Affix score: '
-                                .. affixInfo.scoreColor:WrapTextInColorCode(affixInfo.score)
-                                .. ' (' .. affixInfo.levelColor:WrapTextInColorCode(affixInfo.level) .. ')'),
+                        text = HIGHLIGHT_FONT_COLOR:WrapTextInColorCode(
+                            'Your Affix score: '
+                            .. affixInfo.scoreColor:WrapTextInColorCode(affixInfo.score)
+                            .. ' (' .. affixInfo.levelColor:WrapTextInColorCode(affixInfo.level) .. ')'
+                        ),
                     });
                     table.insert(linesRight, i + 2, { text = '' });
                 else
                     table.insert(linesLeft, i + 2, {
-                        text = HIGHLIGHT_FONT_COLOR:WrapTextInColorCode('Your Affix score: '
-                                .. GRAY_FONT_COLOR:WrapTextInColorCode('-never completed-')),
+                        text = HIGHLIGHT_FONT_COLOR:WrapTextInColorCode(
+                            'Your Affix score: ' .. GRAY_FONT_COLOR:WrapTextInColorCode('-never completed-')
+                        ),
                     });
                     table.insert(linesRight, i + 2, { text = '' });
                 end
             else
                 table.insert(linesLeft, i + 1, {
-                    text = HIGHLIGHT_FONT_COLOR:WrapTextInColorCode('Your Overall: ' .. GRAY_FONT_COLOR:WrapTextInColorCode('-never completed-')),
+                    text = HIGHLIGHT_FONT_COLOR:WrapTextInColorCode(
+                        'Your Overall: ' .. GRAY_FONT_COLOR:WrapTextInColorCode('-never completed-')
+                    ),
                 });
                 table.insert(linesRight, i + 1, { text = '' });
             end
