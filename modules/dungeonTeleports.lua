@@ -4,9 +4,17 @@ local Main = MPT.Main;
 --- @type Util
 local Util = MPT.Util;
 
+local OPTION_ALWAYS = 'always';
+local OPTION_MAIN_ON_COOLDOWN = 'main_on_cooldown';
+local OPTION_MAIN_UNKNOWN = 'main_unknown';
+local OPTION_NEVER = 'never';
+
+local TYPE_DUNGEON_PORTAL = 'dungeon_portal';
+local TYPE_TOY = 'toy';
+local TYPE_MAGE_TELEPORT = 'mage_teleport';
+
 local Module = Main:NewModule('DungeonTeleports', 'AceHook-3.0', 'AceEvent-3.0');
 
-local hooked = {};
 Module.buttons = {};
 function Module:OnEnable()
     EventUtil.ContinueOnAddOnLoaded('Blizzard_ChallengesUI', function()
@@ -36,15 +44,80 @@ function Module:GetDescription()
     return 'Turns the dungeon icons in the Mythic+ UI into clickable buttons to teleport to the dungeon entrance.';
 end
 
-function Module:GetOptions(defaultOptionsTable)
+function Module:GetOptions(defaultOptionsTable, db)
+    self.db = db;
+    local defaults = {
+        ['showAlternates'] = true,
+        [TYPE_DUNGEON_PORTAL] = OPTION_MAIN_UNKNOWN,
+        [TYPE_TOY] = OPTION_MAIN_ON_COOLDOWN,
+        [TYPE_MAGE_TELEPORT] = OPTION_MAIN_ON_COOLDOWN,
+    }
+    for k, v in pairs(defaults) do
+        if db[k] == nil then
+            db[k] = v;
+        end
+    end
+    local function get(info) return db[info[#info]]; end
+    local function set(info, value) db[info[#info]] = value; end
+    local order = 10;
+    local function increment() order = order + 1; return order; end
     defaultOptionsTable.args.showExample = {
         type = 'execute',
+        order = increment(),
         name = 'Open Mythic+ UI',
         desc = 'Open the Mythic+ UI and you\'ll be able to click any of the icons to teleport to the dungeons, if you have earned the Hero achievement.',
-        func = function()
-            PVEFrame_ToggleFrame('ChallengesFrame');
-        end,
+        func = function() PVEFrame_ToggleFrame('ChallengesFrame'); end,
     };
+
+    defaultOptionsTable.args.showAlternates = {
+        type = 'toggle',
+        order = increment(),
+        name = 'Show alternative teleports',
+        desc = 'Show alternative teleports, such as mage portals, nearby dungeons, engineering toys, etc.',
+        get = get,
+        set = set,
+        width = 'double',
+    };
+
+    local function addAlternateOption(type, name, desc)
+        defaultOptionsTable.args[type] = {
+            type = 'select',
+            order = increment(),
+            name = name,
+            desc = desc,
+            get = get,
+            set = set,
+            values = {
+                [OPTION_ALWAYS] = 'Always',
+                [OPTION_MAIN_ON_COOLDOWN] = 'When main teleport is on cooldown or unknown',
+                [OPTION_MAIN_UNKNOWN] = 'Only when main teleport is unknown',
+                [OPTION_NEVER] = 'Never',
+            },
+            sorting = {
+                OPTION_ALWAYS,
+                OPTION_MAIN_ON_COOLDOWN,
+                OPTION_MAIN_UNKNOWN,
+                OPTION_NEVER,
+            },
+            width = 'double',
+            disabled = function() return not db.showAlternates; end,
+        };
+    end
+    addAlternateOption(
+        TYPE_DUNGEON_PORTAL,
+        'Dungeon portals',
+        'Show dungeon portals as an alternative teleport.'
+    );
+    addAlternateOption(
+        TYPE_TOY,
+        'Toys (engineering and Dalaran/Garrison hearthstones)',
+        'Show toys as an alternative teleport.'
+    );
+    addAlternateOption(
+        TYPE_MAGE_TELEPORT,
+        'Mage teleports',
+        'Show mage teleports as an alternative teleport.'
+    );
 
     return defaultOptionsTable;
 end
@@ -80,13 +153,12 @@ function Module:ProcessIcon(icon)
     self.buttons[icon] = self.buttons[icon] or self:MakeButton(icon);
 
     local mapId = icon.mapID;
-    local spellID = self.spellMap[mapId];
+    local mapName = self.maps[mapId];
+    local spellID = self.portals[mapName] and self.portals[mapName].spellID or nil;
     self.buttons[icon]:RegisterSpell(spellID); -- nil will unregister the spell
 
     if not spellID then return; end
     self.buttons[icon]:Show();
-
-    return;
 end
 
 function Module:MakeButton(parent)
@@ -115,59 +187,403 @@ function Module:MakeButton(parent)
     end
 
     button:SetScript("OnEnter", function(button, ...)
-        button:GetParent():GetScript("OnEnter")(button:GetParent(), ...);
-        local spell = button:GetRegisteredSpell();
-        if spell and GameTooltip:IsShown() and IsSpellKnown(spell) then
-            self:AddInfoToTooltip(GameTooltip, spell);
+        parent:GetScript("OnEnter")(parent, ...);
+        local spellID = button:GetRegisteredSpell();
+        local spellKnown = IsSpellKnown(spellID);
+        if spellID and GameTooltip:IsShown() and spellKnown then
+            self:AddInfoToTooltip(GameTooltip, spellID);
+        end
+        if self.db.showAlternates then
+            self:AttachAlternates(button, parent.mapID, spellKnown, spellID);
+            C_Timer.NewTicker(0.2, function(ticker) -- refresh a few times, cause I'm too lazy to properly wait for toy info to be loaded :P
+                if
+                    button:IsMouseOver()
+                    or (self.alternatesContainer and self.alternatesContainer:IsMouseOver() and self.alternatesContainer:GetParent() == button)
+                then
+                    self:AttachAlternates(button, parent.mapID, spellKnown, spellID);
+                else
+                    ticker:Cancel();
+                end
+            end, 10); -- 2 seconds
         end
     end)
 
     button:SetScript("OnLeave", function(button, ...)
         button:GetParent():GetScript("OnLeave")(button:GetParent(), ...);
+        if self.alternatesContainer and not self.alternatesContainer:IsMouseOver() then
+            self.alternatesContainer:Hide();
+        end
     end)
 
     return button;
 end
 
-Module.spellMap = {
-    [2] = 131204, -- Temple of the Jade Serpent
-    [165] = 159899, -- Shadowmoon Burial Grounds
-    [166] = 159900, -- Grimrail Depot
-    [168] = 159901, -- The Everbloom
-    [169] = 159896, -- Iron Docks
-    [198] = 424163, -- Darkheart Thicket
-    [199] = 424153, -- Black Rook Hold
-    [200] = 393764, -- Halls of Valor
-    [206] = 410078, -- Neltharion's Lair
-    [210] = 393766, -- Court of Stars
-    [227] = 373262, -- Return to Karazhan: Lower
-    [234] = 373262, -- Return to Karazhan: Upper
-    [244] = 424187, -- Atal'Dazar
-    [245] = 410071, -- Freehold
-    [248] = 424167, -- Waycrest Manor
-    [251] = 410074, -- The Underrot
-    [369] = 373274, -- Operation: Mechagon - Junkyard
-    [370] = 373274, -- Operation: Mechagon - Workshop
-    [375] = 354464, -- Mists of Tirna Scithe
-    [376] = 354462, -- The Necrotic Wake
-    [377] = 354468, -- De Other Side
-    [378] = 354465, -- Halls of Atonement
-    [379] = 354463, -- Plaguefall
-    [380] = 354469, -- Sanguine Depths
-    [381] = 354466, -- Spires of Ascension
-    [382] = 354467, -- Theater of Pain
-    [391] = 367416, -- Tazavesh: Streets of Wonder
-    [392] = 367416, -- Tazavesh: So'leah's Gambit
-    [399] = 393256, -- Ruby Life Pools
-    [400] = 393262, -- The Nokhud Offensive
-    [401] = 393279, -- The Azure Vault
-    [402] = 393273, -- Algeth'ar Academy
-    [403] = 393222, -- Uldaman: Legacy of Tyr
-    [404] = 393276, -- Neltharus
-    [405] = 393267, -- Brackenhide Hollow
-    [406] = 393283, -- Halls of Infusion
-    [438] = 410080, -- The Vortex Pinnacle
-    [456] = 424142, -- Throne of the Tides
-    [463] = 424197, -- Dawn of the Infinite: Galakrond's Fall
-    [464] = 424197, -- Dawn of the Infinite: Murozond's Rise
+function Module:AttachAlternates(button, mapID, mainKnown, mainSpellID)
+    local mapName = self.maps[mapID];
+    local alternates = self.alternates[mapName];
+    if not alternates or next(alternates) == nil then return; end
+
+    local onCooldown = false;
+    if mainKnown then
+        local _, duration = GetSpellCooldown(mainSpellID);
+        if (duration and duration > 3) then -- global cooldown is counted here as well, so lets just ignore anything below 3 seconds
+            onCooldown = true;
+        end
+    end
+
+    local alternatatesToShow = {};
+    for _, alternate in ipairs(alternates) do
+        local option = self.db[alternate.type] or OPTION_MAIN_UNKNOWN;
+        if option == OPTION_ALWAYS and alternate.available() then
+            table.insert(alternatatesToShow, alternate);
+        elseif option == OPTION_MAIN_ON_COOLDOWN and (onCooldown or not mainKnown) and alternate.available() then
+            table.insert(alternatatesToShow, alternate);
+        elseif option == OPTION_MAIN_UNKNOWN and not mainKnown and alternate.available() then
+            table.insert(alternatatesToShow, alternate);
+        end
+    end
+
+    if #alternatatesToShow == 0 then return; end
+
+    local container = self:GetAlternatesContainer(button, #alternatatesToShow);
+    local buttonPool = container.buttonPool;
+    for i, alternate in ipairs(alternatatesToShow) do
+        local alternateButton = buttonPool:Acquire();
+        alternateButton.data = alternate;
+        if alternate.type == TYPE_TOY then
+            alternateButton:SetAttribute('type', 'toy');
+            alternateButton:SetAttribute('toy', alternate.itemID);
+        else
+            alternateButton:SetAttribute('type', 'spell');
+            alternateButton:SetAttribute('spell', alternate.spellID);
+        end
+
+        alternateButton:SetNormalTexture(alternate.icon);
+        alternateButton:Show();
+        alternateButton:SetPoint('BOTTOMLEFT', container, 'BOTTOMLEFT', ((i - 1) % 3) * alternateButton:GetWidth(), math.floor((i - 1) / 3) * alternateButton:GetHeight());
+        local startTime, duration, _ = alternate.cooldown();
+        alternateButton.cooldownFrame:SetCooldown(startTime, duration);
+    end
+end
+
+function Module:GetAlternatesContainer(button, numberOfAlternates)
+    local alternateButtonSize = button:GetWidth() / 2;
+
+    local container = self.alternatesContainer;
+    if not container then
+        container = CreateFrame('Frame', nil, button);
+        self.alternatesContainer = container;
+        container:SetFrameLevel(10);
+
+        local function initFunc(alternateButton)
+            alternateButton:SetSize(alternateButtonSize, alternateButtonSize);
+            alternateButton:RegisterForClicks('AnyUp', 'AnyDown');
+
+            local cooldownFrame = CreateFrame('Cooldown', nil, alternateButton, 'CooldownFrameTemplate');
+            cooldownFrame:SetAllPoints();
+            cooldownFrame:SetDrawEdge(false);
+            cooldownFrame:Show();
+            alternateButton.cooldownFrame = cooldownFrame;
+
+            alternateButton:SetHighlightTexture("Interface\\Buttons\\CheckButtonHighlight", "ADD")
+            alternateButton:SetScript('OnEnter', function()
+                GameTooltip:SetOwner(alternateButton, 'ANCHOR_TOPRIGHT');
+                if alternateButton.data.type == TYPE_TOY then
+                    GameTooltip:SetToyByItemID(alternateButton.data.itemID);
+                else
+                    GameTooltip:SetSpellByID(alternateButton.data.spellID);
+                end
+                GameTooltip:Show();
+            end);
+            alternateButton:SetScript('OnLeave', function()
+                GameTooltip:Hide();
+                if not container:IsMouseOver() and not container:GetParent():IsMouseOver() then
+                    container:Hide();
+                end
+            end);
+            alternateButton:SetScript('OnHide', function()
+                container:Hide();
+            end);
+        end
+        container.buttonPool = CreateFramePool('Button', container, 'InsecureActionButtonTemplate', nil, nil, initFunc);
+    end
+    container:SetParent(button);
+    container:ClearAllPoints();
+    container:SetPoint('BOTTOM', button, 'TOP');
+
+    container:SetWidth(alternateButtonSize * 3);
+    if numberOfAlternates < 3 then
+        container:SetWidth(alternateButtonSize * numberOfAlternates);
+    end
+    container:SetHeight(alternateButtonSize * (math.ceil(numberOfAlternates / 3)));
+    container.buttonPool:ReleaseAll();
+    container:Show();
+
+    return container;
+end
+
+local function toy(itemID, spellID)
+    return {
+        icon = select(5, GetItemInfoInstant(itemID)),
+        itemID = itemID,
+        spellID = spellID,
+        available = function()
+            return PlayerHasToy(itemID) and C_ToyBox.IsToyUsable(itemID);
+        end,
+        cooldown = function() return GetItemCooldown(itemID); end,
+        type = TYPE_TOY,
+    };
+end
+local function spell(spellID, type)
+    return {
+        icon = select(3, GetSpellInfo(spellID)),
+        spellID = spellID,
+        available = function()
+            return IsSpellKnown(spellID);
+        end,
+        cooldown = function() return GetSpellCooldown(spellID); end,
+        type = type,
+    };
+end
+local function dungeonPortal(spellID)
+    return spell(spellID, TYPE_DUNGEON_PORTAL);
+end
+local function mageTeleport(spellID)
+    return spell(spellID, TYPE_MAGE_TELEPORT);
+end
+
+Module.portals = {
+    TempleoftheJadeSerpent = dungeonPortal(131204),
+    StormstoutBrewery = dungeonPortal(131205),
+    GateoftheSettingSun = dungeonPortal(131225),
+    ShadoPanMonastery = dungeonPortal(131206),
+    SiegeofNiuzaoTemple = dungeonPortal(131228),
+    MogushanPalace = dungeonPortal(131222),
+    Scholomance = dungeonPortal(131232),
+    ScarletHalls = dungeonPortal(131231),
+    ScarletMonastery = dungeonPortal(131229),
+    Skyreach = dungeonPortal(159898),
+    BloodmaulSlagMines = dungeonPortal(159895),
+    Auchindoun = dungeonPortal(159897),
+    ShadowmoonBurialGrounds = dungeonPortal(159899),
+    GrimrailDepot = dungeonPortal(159900),
+    UpperBlackrockSpire = dungeonPortal(159902),
+    TheEverbloom = dungeonPortal(159901),
+    IronDocks = dungeonPortal(159896),
+    DarkheartThicket = dungeonPortal(424163),
+    BlackRookHold = dungeonPortal(424153),
+    HallsofValor = dungeonPortal(393764),
+    NeltharionsLair = dungeonPortal(410078),
+    CourtofStars = dungeonPortal(393766),
+    ReturntoKarazhan = dungeonPortal(373262),
+    AtalDazar = dungeonPortal(424187),
+    Freehold = dungeonPortal(410071),
+    WaycrestManor = dungeonPortal(424167),
+    TheUnderrot = dungeonPortal(410074),
+    OperationMechagon = dungeonPortal(373274),
+    MistsofTirnaScithe = dungeonPortal(354464),
+    TheNecroticWake = dungeonPortal(354462),
+    DeOtherSide = dungeonPortal(354468),
+    HallsofAtonement = dungeonPortal(354465),
+    Plaguefall = dungeonPortal(354463),
+    SanguineDepths = dungeonPortal(354469),
+    SpiresofAscension = dungeonPortal(354466),
+    TheaterofPain = dungeonPortal(354467),
+    Tazavesh = dungeonPortal(367416),
+    RubyLifePools = dungeonPortal(393256),
+    TheNokhudOffensive = dungeonPortal(393262),
+    TheAzureVault = dungeonPortal(393279),
+    AlgetharAcademy = dungeonPortal(393273),
+    UldamanLegacyofTyr = dungeonPortal(393222),
+    Neltharus = dungeonPortal(393276),
+    BrackenhideHollow = dungeonPortal(393267),
+    HallsofInfusion = dungeonPortal(393283),
+    TheVortexPinnacle = dungeonPortal(410080),
+    ThroneoftheTides = dungeonPortal(424142),
+    DawnoftheInfinite = dungeonPortal(424197),
 }
+Module.toys = {
+    GarrisonHearthstone = toy(110560, 171253),
+    DalaranHearthstone = toy(140192, 222695),
+    EngiWormholeDraenor = toy(112059, 163830), -- Engineering, can select which zone to go to
+    EngiWormholeNorthrend = toy(48933, 67833), -- Engineering, can't select zone
+    EngiWormholePandaria = toy(87215, 126755), -- Engineering, can't select zone
+    EngiWormholeArgus = toy(151652, 250796), -- Engineering, can't select zone
+    EngiWormholeZandalar = toy(168808, 299084), -- Engineering, can't select zone
+    EngiWormholeKulTiras = toy(168807, 299083), -- Engineering, can't select zone
+    EngiWormholeShadowlands = toy(172924, 324031), -- Engineering, can select which zone to go to
+    EngiWormholeDragonIsles = toy(198156, 386379), -- Engineering, can select which zone to go to
+    EngiToshelysStation = toy(30544, 36941), -- Gnomish Engineering, Blade's Edge Mountains, northern Outland
+    EngiGadgetzan = toy(18986, 23453), -- Gnomish Engineering, Tanaris, north-east of Uldum
+    EngiArea52 = toy(30542, 36890), -- Goblin Engineering, Netherstorm, northern Outland
+    EngiEverlook = toy(18984, 23442), -- Goblin Engineering, Winterspring, north of Mount Hyjal, probably kinda useless for this ;)
+}
+Module.mage = {
+   Dazaralor = mageTeleport(281404),
+   Stormshield = mageTeleport(176248),
+   ValeofEternalBlossoms1 = mageTeleport(132621),
+   ValeofEternalBlossoms2 = mageTeleport(132627),
+   Warspear = mageTeleport(176242),
+   LegionOrderHall = mageTeleport(193759), -- Hall of the Guardian, useful for all legion locations
+   Boralus = mageTeleport(281403),
+   DalaranBrokenIsles = mageTeleport(224869),
+   DalaranNorthrend = mageTeleport(53140),
+   Darnassus = mageTeleport(3565),
+   Exodar = mageTeleport(32271),
+   Ironforge = mageTeleport(3562),
+   Orgrimmar = mageTeleport(3567),
+   Shattrath1 = mageTeleport(33690),
+   Shattrath2 = mageTeleport(35715),
+   Silvermoon = mageTeleport(32272),
+   Stonard = mageTeleport(49358),
+   Stormwind = mageTeleport(3561),
+   Theramore = mageTeleport(49359),
+   ThunderBluff = mageTeleport(3566),
+   TolBarad1 = mageTeleport(88342),
+   TolBarad2 = mageTeleport(88344),
+   Undercity = mageTeleport(3563),
+   DalaranCrater = mageTeleport(120145),
+   Oribos = mageTeleport(344587),
+   Valdrakken = mageTeleport(395277),
+}
+
+local portals, toys, mage = Module.portals, Module.toys, Module.mage;
+
+Module.maps = {
+    [2] = 'TempleoftheJadeSerpent',
+    [56] = 'StormstoutBrewery',
+    [57] = 'GateoftheSettingSun',
+    [58] = 'ShadoPanMonastery',
+    [59] = 'SiegeofNiuzaoTemple',
+    [60] = 'MogushanPalace',
+    [76] = 'Scholomance',
+    [77] = 'ScarletHalls',
+    [78] = 'ScarletMonastery',
+    [161] = 'Skyreach',
+    [163] = 'BloodmaulSlagMines',
+    [164] = 'Auchindoun',
+    [165] = 'ShadowmoonBurialGrounds',
+    [166] = 'GrimrailDepot',
+    [167] = 'UpperBlackrockSpire',
+    [168] = 'TheEverbloom',
+    [169] = 'IronDocks',
+    [198] = 'DarkheartThicket',
+    [199] = 'BlackRookHold',
+    [200] = 'HallsofValor',
+    [206] = 'NeltharionsLair',
+    [210] = 'CourtofStars',
+    [227] = 'ReturntoKarazhan',
+    [234] = 'ReturntoKarazhan',
+    [244] = 'AtalDazar',
+    [245] = 'Freehold',
+    [248] = 'WaycrestManor',
+    [251] = 'TheUnderrot',
+    [369] = 'OperationMechagon',
+    [370] = 'OperationMechagon',
+    [375] = 'MistsofTirnaScithe',
+    [376] = 'TheNecroticWake',
+    [377] = 'DeOtherSide',
+    [378] = 'HallsofAtonement',
+    [379] = 'Plaguefall',
+    [380] = 'SanguineDepths',
+    [381] = 'SpiresofAscension',
+    [382] = 'TheaterofPain',
+    [391] = 'Tazavesh',
+    [392] = 'Tazavesh',
+    [399] = 'RubyLifePools',
+    [400] = 'TheNokhudOffensive',
+    [401] = 'TheAzureVault',
+    [402] = 'AlgetharAcademy',
+    [403] = 'UldamanLegacyofTyr',
+    [404] = 'Neltharus',
+    [405] = 'BrackenhideHollow',
+    [406] = 'HallsofInfusion',
+    [438] = 'TheVortexPinnacle',
+    [456] = 'ThroneoftheTides',
+    [463] = 'DawnoftheInfinite',
+    [464] = 'DawnoftheInfinite',
+};
+
+Module.alternates = {
+    TempleoftheJadeSerpent = {},
+    StormstoutBrewery = {},
+    GateoftheSettingSun = {},
+    ShadoPanMonastery = {},
+    SiegeofNiuzaoTemple = {},
+    MogushanPalace = {},
+    Scholomance = {},
+    ScarletHalls = {},
+    ScarletMonastery = {},
+    Skyreach = {},
+    BloodmaulSlagMines = {},
+    Auchindoun = {},
+    ShadowmoonBurialGrounds = {},
+    GrimrailDepot = {},
+    UpperBlackrockSpire = {},
+    TheEverbloom = {
+        portals.GrimrailDepot,
+        portals.IronDocks,
+        toys.EngiWormholeDraenor,
+    },
+    IronDocks = {},
+    DarkheartThicket = {
+        portals.BlackRookHold,
+        portals.NeltharionsLair,
+        portals.CourtofStars,
+        toys.DalaranHearthstone,
+        mage.LegionOrderHall,
+    },
+    BlackRookHold = {
+        portals.DarkheartThicket,
+        portals.NeltharionsLair,
+        portals.CourtofStars,
+        mage.LegionOrderHall,
+        toys.DalaranHearthstone,
+    },
+    HallsofValor = {},
+    NeltharionsLair = {},
+    CourtofStars = {},
+    ReturntoKarazhan = {},
+    AtalDazar = {
+        mage.Dazaralor,
+        toys.EngiWormholeZandalar,
+        portals.TheUnderrot,
+    },
+    Freehold = {},
+    WaycrestManor = {
+        portals.OperationMechagon,
+        portals.Freehold,
+        toys.EngiWormholeKulTiras,
+        mage.Boralus,
+    },
+    TheUnderrot = {},
+    OperationMechagon = {},
+    MistsofTirnaScithe = {},
+    TheNecroticWake = {},
+    DeOtherSide = {},
+    HallsofAtonement = {},
+    Plaguefall = {},
+    SanguineDepths = {},
+    SpiresofAscension = {},
+    TheaterofPain = {},
+    Tazavesh = {},
+    RubyLifePools = {},
+    TheNokhudOffensive = {},
+    TheAzureVault = {},
+    AlgetharAcademy = {},
+    UldamanLegacyofTyr = {},
+    Neltharus = {},
+    BrackenhideHollow = {},
+    HallsofInfusion = {},
+    TheVortexPinnacle = {},
+    ThroneoftheTides = {
+        mage.Valdrakken, -- tbh, there isn't really any 'good' alternative for this one
+    },
+    DawnoftheInfinite = {
+        portals.HallsofInfusion,
+        portals.AlgetharAcademy,
+        toys.EngiWormholeDragonIsles,
+        portals.RubyLifePools,
+        mage.Valdrakken,
+    },
+};
