@@ -40,7 +40,7 @@ function Util:ReplaceTooltipLines(tooltip, linesLeft, linesRight)
     tooltip:Show();
 end
 
-function Util:GetOverallInfoByMapId(mapId)
+function Util:GetOverallInfoByMapId(mapId, includeAffixInfo)
     local inTimeInfo, overtimeInfo = C_MythicPlus.GetSeasonBestForMap(mapId);
 
     local bestLevel = 0;
@@ -50,10 +50,49 @@ function Util:GetOverallInfoByMapId(mapId)
         bestLevel = bestLevelInTime and inTimeInfo.level or overtimeInfo.level;
     elseif (inTimeInfo or overtimeInfo) then
         bestLevelInTime = inTimeInfo ~= nil
-        bestLevel = inTimeInfo and inTimeInfo.level or overtimeInfo.level;
+        bestLevel = (inTimeInfo and inTimeInfo.level) or (overtimeInfo and overtimeInfo.level) or 0;
     end
-    local _, overAllScore = C_MythicPlus.GetSeasonBestAffixScoreInfoForMap(mapId);
+    local affixInfos, overAllScore = C_MythicPlus.GetSeasonBestAffixScoreInfoForMap(mapId);
     overAllScore = overAllScore or 0
+    local currentAffixInfo;
+    local secondaryAffixInfo;
+    if affixInfos and includeAffixInfo then
+        local localizedAffixName = self:GetLocalizedAffixName();
+        for _, affixInfo in pairs(affixInfos) do
+            if affixInfo then
+                local isCurrentAffix = affixInfo.name == localizedAffixName;
+                if isCurrentAffix then
+                    currentAffixInfo = {
+                       level = affixInfo.level,
+                       levelColor = affixInfo.overTime and GRAY_FONT_COLOR or HIGHLIGHT_FONT_COLOR,
+                       score = affixInfo.score,
+                       scoreColor = C_ChallengeMode.GetSpecificDungeonScoreRarityColor(affixInfo.score or 0),
+                   };
+                else
+                    secondaryAffixInfo = {
+                       level = affixInfo.level,
+                       levelColor = affixInfo.overTime and GRAY_FONT_COLOR or HIGHLIGHT_FONT_COLOR,
+                       score = affixInfo.score,
+                       scoreColor = C_ChallengeMode.GetSpecificDungeonScoreRarityColor(affixInfo.score or 0),
+                   };
+                end
+            end
+        end
+    end
+    if includeAffixInfo then
+        currentAffixInfo = currentAffixInfo or {
+            level = 0,
+            levelColor = GRAY_FONT_COLOR,
+            score = 0,
+            scoreColor = GRAY_FONT_COLOR,
+        };
+        secondaryAffixInfo = secondaryAffixInfo or {
+            level = 0,
+            levelColor = GRAY_FONT_COLOR,
+            score = 0,
+            scoreColor = GRAY_FONT_COLOR,
+        };
+    end
 
     local bestLevelColor = bestLevelInTime and HIGHLIGHT_FONT_COLOR or GRAY_FONT_COLOR;
     local overAllScoreColor = C_ChallengeMode.GetSpecificDungeonOverallScoreRarityColor(overAllScore) or HIGHLIGHT_FONT_COLOR;
@@ -61,8 +100,12 @@ function Util:GetOverallInfoByMapId(mapId)
     return {
         level = bestLevel,
         levelColor = bestLevelColor,
+        inTimeLevel = inTimeInfo and inTimeInfo.level or 0,
+        overTimeLevel = overtimeInfo and overtimeInfo.level or 0,
         score = overAllScore,
         scoreColor = overAllScoreColor,
+        currentAffixInfo = currentAffixInfo,
+        secondaryAffixInfo = secondaryAffixInfo,
     };
 end
 

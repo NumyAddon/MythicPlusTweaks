@@ -11,6 +11,13 @@ if not Main then return; end
 MPT.Main = Main;
 
 function Main:OnInitialize()
+    if NumyProfiler then
+        NumyProfiler:WrapModules(name, 'Main', self);
+        NumyProfiler:WrapModules(name, 'Util', MPT.Util);
+        for moduleName, module in self:IterateModules() do
+            NumyProfiler:WrapModules(name, moduleName, module);
+        end
+    end
     MythicPlusTweaksDB = MythicPlusTweaksDB or {};
     self.db = MythicPlusTweaksDB;
     self.version = C_AddOns.GetAddOnMetadata(name, "Version") or "";
