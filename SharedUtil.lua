@@ -5,7 +5,9 @@ MPT.Util = Util;
 
 function Util:ExtractTooltipLines(tooltip)
     local linesLeft, linesRight = {}, {};
-    for i = 1, 15 do
+    local i = 0;
+    while i < 100 do -- hard cap to 100 lines, just in case :)
+        i = i + 1;
         local lineLeft = _G[tooltip:GetName() .. 'TextLeft' .. i];
         local lineRight = _G[tooltip:GetName() .. 'TextRight' .. i];
 

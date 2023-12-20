@@ -8,11 +8,11 @@ local Module = Main:NewModule('ShowScoreOnKeystoneTooltip', 'AceHook-3.0');
 
 function Module:OnEnable()
     self.enabled = true
-    TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tooltip) Module:TooltipPostCall(tooltip) end)
+    TooltipDataProcessor.AddLinePostCall(Enum.TooltipDataType.Item, function(tooltip, lineData) Module:TooltipLinePostCall(tooltip, lineData) end);
 end
 
 function Module:OnDisable()
-    self.enabled = false
+    self.enabled = false;
     self:UnhookAll();
 end
 
@@ -42,21 +42,16 @@ function Module:GetOptions(defaultOptionsTable)
     return defaultOptionsTable;
 end
 
-function Module:TooltipPostCall(tooltip)
+function Module:TooltipLinePostCall(tooltip, lineData)
     if not self.enabled then return; end
     if not tooltip or not tooltip.GetItem then return end
 
     local _, itemLink = tooltip:GetItem();
     if not itemLink then return; end
 
-    self:HandleHyperlink(tooltip, itemLink);
-end
+    if not string.find(lineData.leftText, CHALLENGE_MODE_ITEM_POWER_LEVEL) then return; end
 
-function Module:OnTooltipShow(tooltip)
-    local _, itemLink = tooltip:GetItem();
-    if not itemLink then return end
-
-    self:HandleHyperlink(tooltip, itemLink);
+    self:HandleHyperlink(tooltip, itemLink, lineData);
 end
 
 function Module:HandleHyperlink(tooltip, itemLink)
@@ -71,47 +66,26 @@ function Module:HandleHyperlink(tooltip, itemLink)
     local overallInfo = Util:GetOverallInfoByMapId(mapId);
     local affixInfo = Util:GetAffixInfoByMapId(mapId);
 
-    local linesLeft, linesRight = Util:ExtractTooltipLines(tooltip);
-
-    for i, line in ipairs(linesLeft) do
-        if string.find(line.text, CHALLENGE_MODE_ITEM_POWER_LEVEL) then
-            if (overallInfo and overallInfo.score > 0) then
-                table.insert(linesLeft, i + 1, {
-                    text = HIGHLIGHT_FONT_COLOR:WrapTextInColorCode(
-                        'Your Overall: '
-                        .. overallInfo.scoreColor:WrapTextInColorCode(overallInfo.score)
-                        .. ' (' .. overallInfo.levelColor:WrapTextInColorCode(overallInfo.level) .. ')'
-                    ),
-                });
-                table.insert(linesRight, i + 1, { text = '' });
-                if (affixInfo and affixInfo.score > 0) then
-                    table.insert(linesLeft, i + 2, {
-                        text = HIGHLIGHT_FONT_COLOR:WrapTextInColorCode(
-                            'Your Affix score: '
-                            .. affixInfo.scoreColor:WrapTextInColorCode(affixInfo.score)
-                            .. ' (' .. affixInfo.levelColor:WrapTextInColorCode(affixInfo.level) .. ')'
-                        ),
-                    });
-                    table.insert(linesRight, i + 2, { text = '' });
-                else
-                    table.insert(linesLeft, i + 2, {
-                        text = HIGHLIGHT_FONT_COLOR:WrapTextInColorCode(
-                            'Your Affix score: ' .. GRAY_FONT_COLOR:WrapTextInColorCode('-never completed-')
-                        ),
-                    });
-                    table.insert(linesRight, i + 2, { text = '' });
-                end
-            else
-                table.insert(linesLeft, i + 1, {
-                    text = HIGHLIGHT_FONT_COLOR:WrapTextInColorCode(
-                        'Your Overall: ' .. GRAY_FONT_COLOR:WrapTextInColorCode('-never completed-')
-                    ),
-                });
-                table.insert(linesRight, i + 1, { text = '' });
-            end
-            break;
+    if (overallInfo and overallInfo.score > 0) then
+        tooltip:AddLine(HIGHLIGHT_FONT_COLOR:WrapTextInColorCode(
+            'Your Overall: '
+            .. overallInfo.scoreColor:WrapTextInColorCode(overallInfo.score)
+            .. ' (' .. overallInfo.levelColor:WrapTextInColorCode(overallInfo.level) .. ')'
+        ));
+        if (affixInfo and affixInfo.score > 0) then
+            tooltip:AddLine(HIGHLIGHT_FONT_COLOR:WrapTextInColorCode(
+                'Your Affix score: '
+                .. affixInfo.scoreColor:WrapTextInColorCode(affixInfo.score)
+                .. ' (' .. affixInfo.levelColor:WrapTextInColorCode(affixInfo.level) .. ')'
+            ));
+        else
+            tooltip:AddLine(HIGHLIGHT_FONT_COLOR:WrapTextInColorCode(
+                'Your Affix score: ' .. GRAY_FONT_COLOR:WrapTextInColorCode('-never completed-')
+            ));
         end
+    else
+        tooltip:AddLine(HIGHLIGHT_FONT_COLOR:WrapTextInColorCode(
+            'Your Overall: ' .. GRAY_FONT_COLOR:WrapTextInColorCode('-never completed-')
+        ));
     end
-
-    Util:ReplaceTooltipLines(tooltip, linesLeft, linesRight);
 end
