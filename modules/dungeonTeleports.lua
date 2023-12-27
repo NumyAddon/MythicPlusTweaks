@@ -11,7 +11,7 @@ local OPTION_NEVER = 'never';
 
 local TYPE_DUNGEON_PORTAL = 'dungeon_portal';
 local TYPE_TOY = 'toy';
-local TYPE_MAGE_TELEPORT = 'mage_teleport';
+local TYPE_CLASS_TELEPORT = 'mage_teleport';
 
 local Module = Main:NewModule('DungeonTeleports', 'AceHook-3.0', 'AceEvent-3.0');
 
@@ -50,7 +50,7 @@ function Module:GetOptions(defaultOptionsTable, db)
         ['showAlternates'] = true,
         [TYPE_DUNGEON_PORTAL] = OPTION_MAIN_UNKNOWN,
         [TYPE_TOY] = OPTION_MAIN_ON_COOLDOWN,
-        [TYPE_MAGE_TELEPORT] = OPTION_MAIN_ON_COOLDOWN,
+        [TYPE_CLASS_TELEPORT] = OPTION_MAIN_ON_COOLDOWN,
     }
     for k, v in pairs(defaults) do
         if db[k] == nil then
@@ -114,9 +114,9 @@ function Module:GetOptions(defaultOptionsTable, db)
         'Show toys as an alternative teleport.'
     );
     addAlternateOption(
-        TYPE_MAGE_TELEPORT,
-        'Mage teleports',
-        'Show mage teleports as an alternative teleport.'
+        TYPE_CLASS_TELEPORT,
+        'Class teleports',
+        'Show class teleports as an alternative teleport. (Mage portals, Druid Dreamwalk, etc.)'
     );
 
     return defaultOptionsTable;
@@ -348,8 +348,8 @@ end
 local function dungeonPortal(spellID)
     return spell(spellID, TYPE_DUNGEON_PORTAL);
 end
-local function mageTeleport(spellID)
-    return spell(spellID, TYPE_MAGE_TELEPORT);
+local function classTeleport(spellID)
+    return spell(spellID, TYPE_CLASS_TELEPORT);
 end
 
 Module.portals = {
@@ -419,35 +419,38 @@ Module.toys = {
     EngiEverlook = toy(18984, 23442), -- Goblin Engineering, Winterspring, north of Mount Hyjal, probably kinda useless for this ;)
 }
 Module.mage = {
-   Dazaralor = mageTeleport(281404),
-   Stormshield = mageTeleport(176248),
-   ValeofEternalBlossoms1 = mageTeleport(132621),
-   ValeofEternalBlossoms2 = mageTeleport(132627),
-   Warspear = mageTeleport(176242),
-   LegionOrderHall = mageTeleport(193759), -- Hall of the Guardian, useful for all legion locations
-   Boralus = mageTeleport(281403),
-   DalaranBrokenIsles = mageTeleport(224869),
-   DalaranNorthrend = mageTeleport(53140),
-   Darnassus = mageTeleport(3565),
-   Exodar = mageTeleport(32271),
-   Ironforge = mageTeleport(3562),
-   Orgrimmar = mageTeleport(3567),
-   Shattrath1 = mageTeleport(33690),
-   Shattrath2 = mageTeleport(35715),
-   Silvermoon = mageTeleport(32272),
-   Stonard = mageTeleport(49358),
-   Stormwind = mageTeleport(3561),
-   Theramore = mageTeleport(49359),
-   ThunderBluff = mageTeleport(3566),
-   TolBarad1 = mageTeleport(88342),
-   TolBarad2 = mageTeleport(88344),
-   Undercity = mageTeleport(3563),
-   DalaranCrater = mageTeleport(120145),
-   Oribos = mageTeleport(344587),
-   Valdrakken = mageTeleport(395277),
+   Dazaralor = classTeleport(281404),
+   Stormshield = classTeleport(176248),
+   ValeofEternalBlossoms1 = classTeleport(132621),
+   ValeofEternalBlossoms2 = classTeleport(132627),
+   Warspear = classTeleport(176242),
+   LegionOrderHall = classTeleport(193759), -- Hall of the Guardian, useful for all legion locations
+   Boralus = classTeleport(281403),
+   DalaranBrokenIsles = classTeleport(224869),
+   DalaranNorthrend = classTeleport(53140),
+   Darnassus = classTeleport(3565),
+   Exodar = classTeleport(32271),
+   Ironforge = classTeleport(3562),
+   Orgrimmar = classTeleport(3567),
+   Shattrath1 = classTeleport(33690),
+   Shattrath2 = classTeleport(35715),
+   Silvermoon = classTeleport(32272),
+   Stonard = classTeleport(49358),
+   Stormwind = classTeleport(3561),
+   Theramore = classTeleport(49359),
+   ThunderBluff = classTeleport(3566),
+   TolBarad1 = classTeleport(88342),
+   TolBarad2 = classTeleport(88344),
+   Undercity = classTeleport(3563),
+   DalaranCrater = classTeleport(120145),
+   Oribos = classTeleport(344587),
+   Valdrakken = classTeleport(395277),
+}
+Module.others = {
+    DruidDreamwalk = classTeleport(193753),
 }
 
-local portals, toys, mage = Module.portals, Module.toys, Module.mage;
+local portals, toys, mage, others = Module.portals, Module.toys, Module.mage, Module.others;
 
 Module.maps = {
     [2] = 'TempleoftheJadeSerpent',
@@ -528,6 +531,7 @@ Module.alternates = {
     IronDocks = {},
     DarkheartThicket = {
         portals.BlackRookHold,
+        others.DruidDreamwalk,
         portals.NeltharionsLair,
         portals.CourtofStars,
         toys.DalaranHearthstone,
@@ -535,6 +539,7 @@ Module.alternates = {
     },
     BlackRookHold = {
         portals.DarkheartThicket,
+        others.DruidDreamwalk,
         portals.NeltharionsLair,
         portals.CourtofStars,
         mage.LegionOrderHall,
