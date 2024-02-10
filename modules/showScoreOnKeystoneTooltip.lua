@@ -46,12 +46,12 @@ function Module:TooltipLinePostCall(tooltip, lineData)
     if not self.enabled then return; end
     if not tooltip or not tooltip.GetItem then return end
 
+    if not string.find(lineData.leftText, CHALLENGE_MODE_ITEM_POWER_LEVEL) then return; end
+
     local _, itemLink = tooltip:GetItem();
     if not itemLink then return; end
 
-    if not string.find(lineData.leftText, CHALLENGE_MODE_ITEM_POWER_LEVEL) then return; end
-
-    self:HandleHyperlink(tooltip, itemLink, lineData);
+    self:HandleHyperlink(tooltip, itemLink);
 end
 
 function Module:HandleHyperlink(tooltip, itemLink)
