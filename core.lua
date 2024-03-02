@@ -124,8 +124,7 @@ function Main:InitConfig()
 end
 
 function Main:OpenConfig()
-    InterfaceOptionsFrame_OpenToCategory(self.configCategory);
-    InterfaceOptionsFrame_OpenToCategory(self.configCategory);
+    Settings.OpenToCategory(self.configCategory);
 end
 
 function Main:SetModuleState(moduleName, enabled)
