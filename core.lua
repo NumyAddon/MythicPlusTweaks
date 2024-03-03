@@ -5,13 +5,15 @@ _G.MythicPlusTweaks = MPT;
 if not _G.MPT then _G.MPT = MPT; end
 --@end-debug@
 
---- @class Main
+--- @class Main: AceAddon,AceHook-3.0,AceEvent-3.0,AceConsole-3.0
 local Main = LibStub('AceAddon-3.0'):NewAddon(name, 'AceConsole-3.0', 'AceHook-3.0', 'AceEvent-3.0');
 if not Main then return; end
 MPT.Main = Main;
 
 function Main:OnInitialize()
     if NumyProfiler then
+        --- @type NumyProfiler
+        local NumyProfiler = NumyProfiler;
         NumyProfiler:WrapModules(name, 'Main', self);
         NumyProfiler:WrapModules(name, 'Util', MPT.Util);
         for moduleName, module in self:IterateModules() do

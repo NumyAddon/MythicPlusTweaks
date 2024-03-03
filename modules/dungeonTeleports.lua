@@ -13,8 +13,12 @@ local TYPE_DUNGEON_PORTAL = 'dungeon_portal';
 local TYPE_TOY = 'toy';
 local TYPE_CLASS_TELEPORT = 'mage_teleport';
 
+--- @class MPT_DTP_Module : AceModule,AceHook-3.0,AceEvent-3.0
 local Module = Main:NewModule('DungeonTeleports', 'AceHook-3.0', 'AceEvent-3.0');
 
+local frameSetAttribute = GetFrameMetatable().__index.SetAttribute;
+
+--- @type table<Frame, MPT_DTP_Button>
 Module.buttons = {};
 function Module:OnEnable()
     EventUtil.ContinueOnAddOnLoaded('Blizzard_ChallengesUI', function()
@@ -161,11 +165,13 @@ function Module:ProcessIcon(icon)
     self.buttons[icon]:Show();
 end
 
+--- @return MPT_DTP_Button
 function Module:MakeButton(parent)
+    --- @class MPT_DTP_Button : Button|InsecureActionButtonTemplate
     local button = CreateFrame('Button', nil, parent, 'InsecureActionButtonTemplate');
     button:Show()
     button:SetAllPoints();
-    button:SetAttribute('type', 'spell');
+    frameSetAttribute(button, 'type', 'spell');
     button:SetFrameLevel(999);
     button:RegisterForClicks('AnyUp', 'AnyDown');
 
@@ -178,7 +184,7 @@ function Module:MakeButton(parent)
 
     function button:RegisterSpell(spellID)
         self.spellID = spellID;
-        self:SetAttribute('spell', spellID);
+        frameSetAttribute(self, 'spell', spellID);
         self.highlight:SetAlpha(spellID and IsSpellKnown(spellID) and 1 or 0);
     end
 
@@ -214,6 +220,13 @@ function Module:MakeButton(parent)
             self.alternatesContainer:Hide();
         end
     end)
+
+    function button:SetScript(script, func)
+        error('unexpected SetScript call on button');
+    end
+    function button:SetAttribute(attribute, value)
+        error('unexpected SetAttribute call on button');
+    end
 
     return button;
 end
@@ -251,11 +264,11 @@ function Module:AttachAlternates(button, mapID, mainKnown, mainSpellID)
         local alternateButton = buttonPool:Acquire();
         alternateButton.data = alternate;
         if alternate.type == TYPE_TOY then
-            alternateButton:SetAttribute('type', 'toy');
-            alternateButton:SetAttribute('toy', alternate.itemID);
+            frameSetAttribute(alternateButton, 'type', 'toy');
+            frameSetAttribute(alternateButton, 'toy', alternate.itemID);
         else
-            alternateButton:SetAttribute('type', 'spell');
-            alternateButton:SetAttribute('spell', alternate.spellID);
+            frameSetAttribute(alternateButton, 'type', 'spell');
+            frameSetAttribute(alternateButton, 'spell', alternate.spellID);
         end
 
         alternateButton:SetNormalTexture(alternate.icon);
@@ -269,8 +282,10 @@ end
 function Module:GetAlternatesContainer(button, numberOfAlternates)
     local alternateButtonSize = button:GetWidth() / 2;
 
+    --- @class MPT_DTP_AlternatesContainer : Frame
     local container = self.alternatesContainer;
     if not container then
+        --- @class MPT_DTP_AlternatesContainer : Frame
         container = CreateFrame('Frame', nil, button);
         self.alternatesContainer = container;
         container:SetFrameLevel(10);
@@ -304,6 +319,12 @@ function Module:GetAlternatesContainer(button, numberOfAlternates)
             alternateButton:SetScript('OnHide', function()
                 container:Hide();
             end);
+            function alternateButton:SetScript(script, func)
+                error('unexpected SetScript call on alternateButton');
+            end
+            function alternateButton:SetAttribute(attribute, value)
+                error('unexpected SetAttribute call on alternateButton');
+            end
         end
         container.buttonPool = CreateFramePool('Button', container, 'InsecureActionButtonTemplate', nil, nil, initFunc);
     end
