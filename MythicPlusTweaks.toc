@@ -6,6 +6,7 @@
 ## Version: @project-version@
 ## X-Curse-Project-ID: 646999
 ## SavedVariables: MythicPlusTweaksDB
+## OptionalDeps: AngryKeystones, AstralKeys
 
 libs\embeds.xml
 
@@ -22,3 +23,5 @@ modules\fixLeaderOverallScoreOnLFGTooltip.lua
 modules\showScoreOnKeystoneTooltip.lua
 modules\improveKeystoneLink.lua
 modules\sortDungeonIcons.lua
+
+modules\keystoneSharingAddons\keystoneSharing.xml
