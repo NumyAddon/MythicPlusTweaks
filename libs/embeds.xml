@@ -9,6 +9,6 @@
 	<Include file="AceEvent-3.0\AceEvent-3.0.xml"/>
 	<Include file="AceComm-3.0\AceComm-3.0.xml"/>
 	<Include file="AceSerializer-3.0\AceSerializer-3.0.xml"/>
-	<Include file="LibDeflate\LibDeflate.lua"/>
+	<Script file="LibDeflate\LibDeflate.lua"/>
 	<Include file="LibOpenRaid\lib.xml"/>
 </Ui>

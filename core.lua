@@ -49,8 +49,8 @@ function Main:InitDefaults()
 end
 
 function Main:InitConfig()
-    local count = 1;
-    local function increment() count = count + 1; return count end;
+    local search = '';
+    local increment = CreateCounter();
     self.options = {
         type = 'group',
         name = 'Mythic+ Tweaks',
@@ -66,32 +66,59 @@ function Main:InitConfig()
                 order = increment(),
                 type = 'group',
                 name = 'Modules',
-                childGroups = 'tree',
+                inline = true,
                 args = {
                     desc = {
                         order = increment(),
+                        width = 'full',
                         type = 'description',
                         name = 'This addon consists of a number of modules, each of which can be enabled or disabled, to fine-tune your experience.',
                     },
+                    filtr = {
+                        name = "Filter",
+                        type = "input",
+                        desc = "Search by module name or description, or '-' for disabled modules, or '+' for enabled modules.",
+                        order = increment(),
+                        get = function() return search; end,
+                        set = function(_, value) search = value; end
+                    },
+                    clear = {
+                        name = "Clear",
+                        type = "execute",
+                        desc = "Clear the search filter.",
+                        order = increment(),
+                        func = function() search = ""; end,
+                        width = 0.5,
+                    },
                 },
-            }
-        }
+            },
+        },
     };
+
+    local function hiddenFunc(info)
+        if 2 ~= #info then return false; end -- prevents the function from running when it's inherited down the option chain
+        local moduleName = info[#info];
+        local module = Main:GetModule(moduleName, true);
+        if not module then return false; end
+
+        if '' == search then return false; end
+        if '+' == search then return not Main:IsModuleEnabled(moduleName); end
+        if '-' == search then return Main:IsModuleEnabled(moduleName); end
+
+        local moduleName = module.GetName and module:GetName() or moduleName;
+        local desc = module.GetDescription and module:GetDescription() or '';
+        return not (moduleName:lower():find(search:lower()) or desc:lower():find(search:lower()));
+    end
+
     local defaultModuleOptions = {
         type = 'group',
         name = function(info)
             return info[#info - 1];
         end,
+        hidden = hiddenFunc,
         args = {
-            name = {
-                order = 1,
-                type = 'header',
-                name = function(info)
-                    return info.options.args.modules.args[info[#info - 1]].name;
-                end,
-            },
             description = {
-                order = 2,
+                order = 1,
                 type = 'description',
                 name = function(info)
                     local module = Main:GetModule(info[#info - 1]);
@@ -102,7 +129,7 @@ function Main:InitConfig()
                 end,
             },
             enable = {
-                order = 3,
+                order = 2,
                 name = 'Enable',
                 desc = 'Enable this module',
                 type = 'toggle',
@@ -114,7 +141,8 @@ function Main:InitConfig()
     for moduleName, module in self:IterateModules() do
         local copy = CopyTable(defaultModuleOptions);
         self.db.moduleDb[moduleName] = self.db.moduleDb[moduleName] or {};
-        local moduleOptions = module.GetOptions and module:GetOptions(copy, self.db.moduleDb[moduleName]) or copy;
+        local subIncrement = CreateCounter(2);
+        local moduleOptions = module.GetOptions and module:GetOptions(copy, self.db.moduleDb[moduleName], subIncrement) or copy;
         moduleOptions.name = module.GetName and module:GetName() or moduleName;
         moduleOptions.order = increment();
         self.options.args.modules.args[moduleName] = moduleOptions;
