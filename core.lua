@@ -22,7 +22,7 @@ function Main:OnInitialize()
     end
     MythicPlusTweaksDB = MythicPlusTweaksDB or {};
     self.db = MythicPlusTweaksDB;
-    self.version = C_AddOns.GetAddOnMetadata(name, "Version") or "";
+    self.version = C_AddOns.GetAddOnMetadata(name, 'Version') or '';
     self:InitDefaults();
     for moduleName, module in self:IterateModules() do
         if self.db.modules[moduleName] == false then
@@ -39,6 +39,7 @@ function Main:InitDefaults()
     local defaults = {
         modules = {},
         moduleDb = {},
+        inlineConfig = true,
     };
 
     for key, value in pairs(defaults) do
@@ -51,6 +52,12 @@ end
 function Main:InitConfig()
     local search = '';
     local increment = CreateCounter();
+    local inline = self.db.inlineConfig;
+
+    local function registerOptions()
+        LibStub('AceConfig-3.0'):RegisterOptionsTable(self.configCategory, self.options);
+    end
+
     self.options = {
         type = 'group',
         name = 'Mythic+ Tweaks',
@@ -66,7 +73,8 @@ function Main:InitConfig()
                 order = increment(),
                 type = 'group',
                 name = 'Modules',
-                inline = true,
+                childGroups = 'tree',
+                inline = inline,
                 args = {
                     desc = {
                         order = increment(),
@@ -74,20 +82,35 @@ function Main:InitConfig()
                         type = 'description',
                         name = 'This addon consists of a number of modules, each of which can be enabled or disabled, to fine-tune your experience.',
                     },
-                    filtr = {
-                        name = "Filter",
-                        type = "input",
-                        desc = "Search by module name or description, or '-' for disabled modules, or '+' for enabled modules.",
+                    inlineConfig = {
+                        name = 'Show options as a list',
+                        type = 'toggle',
+                        desc = 'Show the module options in one long list, instead of a tree.',
                         order = increment(),
+                        get = function() return inline; end,
+                        set = function(_, value)
+                            inline = value;
+                            self.db.inlineConfig = value;
+                            self.options.args.modules.inline = value;
+                            registerOptions();
+                        end,
+                    },
+                    filter = {
+                        name = 'Filter',
+                        type = 'input',
+                        desc = 'Search by module name or description, or \'-\' for disabled modules, or \'+\' for enabled modules.',
+                        order = increment(),
+                        hidden = function() return not inline end,
                         get = function() return search; end,
                         set = function(_, value) search = value; end
                     },
                     clear = {
-                        name = "Clear",
-                        type = "execute",
-                        desc = "Clear the search filter.",
+                        name = 'Clear',
+                        type = 'execute',
+                        desc = 'Clear the search filter.',
                         order = increment(),
-                        func = function() search = ""; end,
+                        hidden = function() return not inline end,
+                        func = function() search = ''; end,
                         width = 0.5,
                     },
                 },
@@ -96,20 +119,22 @@ function Main:InitConfig()
     };
 
     local function hiddenFunc(info)
+        if not inline then return false; end
         if 2 ~= #info then return false; end -- prevents the function from running when it's inherited down the option chain
         local moduleName = info[#info];
         local module = Main:GetModule(moduleName, true);
         if not module then return false; end
 
         if '' == search then return false; end
-        if '+' == search then return not Main:IsModuleEnabled(moduleName); end
-        if '-' == search then return Main:IsModuleEnabled(moduleName); end
+        if '+' == search or "'+'" == search then return not Main:IsModuleEnabled(moduleName); end
+        if '-' == search or "'-'" == search then return Main:IsModuleEnabled(moduleName); end
 
-        local moduleName = module.GetName and module:GetName() or moduleName;
+        local displayName = module.GetName and module:GetName() or moduleName;
         local desc = module.GetDescription and module:GetDescription() or '';
-        return not (moduleName:lower():find(search:lower()) or desc:lower():find(search:lower()));
+        return not (displayName:lower():find(search:lower()) or desc:lower():find(search:lower()));
     end
 
+    local subIncrement = CreateCounter();
     local defaultModuleOptions = {
         type = 'group',
         name = function(info)
@@ -117,8 +142,16 @@ function Main:InitConfig()
         end,
         hidden = hiddenFunc,
         args = {
+            name = {
+                order = subIncrement(),
+                type = 'header',
+                hidden = function() return inline end,
+                name = function(info)
+                    return info.options.args.modules.args[info[#info - 1]].name;
+                end,
+            },
             description = {
-                order = 1,
+                order = subIncrement(),
                 type = 'description',
                 name = function(info)
                     local module = Main:GetModule(info[#info - 1]);
@@ -129,7 +162,7 @@ function Main:InitConfig()
                 end,
             },
             enable = {
-                order = 2,
+                order = subIncrement(),
                 name = 'Enable',
                 desc = 'Enable this module',
                 type = 'toggle',
@@ -138,19 +171,20 @@ function Main:InitConfig()
             },
         },
     };
+    local subIncrementCount = subIncrement();
     for moduleName, module in self:IterateModules() do
         local copy = CopyTable(defaultModuleOptions);
         self.db.moduleDb[moduleName] = self.db.moduleDb[moduleName] or {};
-        local subIncrement = CreateCounter(2);
-        local moduleOptions = module.GetOptions and module:GetOptions(copy, self.db.moduleDb[moduleName], subIncrement) or copy;
+        local moduleIncrement = CreateCounter(subIncrementCount);
+        local moduleOptions = module.GetOptions and module:GetOptions(copy, self.db.moduleDb[moduleName], moduleIncrement) or copy;
         moduleOptions.name = module.GetName and module:GetName() or moduleName;
         moduleOptions.order = increment();
         self.options.args.modules.args[moduleName] = moduleOptions;
     end
 
     self.configCategory = 'Mythic+ Tweaks';
-    LibStub('AceConfig-3.0'):RegisterOptionsTable(self.configCategory, self.options);
-    LibStub("AceConfigDialog-3.0"):AddToBlizOptions(self.configCategory);
+    registerOptions();
+    LibStub('AceConfigDialog-3.0'):AddToBlizOptions(self.configCategory);
 end
 
 function Main:OpenConfig()
