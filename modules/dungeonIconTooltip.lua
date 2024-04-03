@@ -1,9 +1,10 @@
 local _, MPT = ...;
---- @type Main
+--- @type MPT_Main
 local Main = MPT.Main;
---- @type Util
+--- @type MPT_Util
 local Util = MPT.Util;
 
+--- @class MPT_DungeonIconTooltip: AceModule,AceHook-3.0
 local Module = Main:NewModule('DungeonIconTooltip', 'AceHook-3.0');
 
 function Module:OnEnable()

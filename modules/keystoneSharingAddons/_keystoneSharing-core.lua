@@ -1,5 +1,5 @@
 local _, MPT = ...;
---- @type Main
+--- @type MPT_Main
 local Main = MPT.Main;
 
 --- @type KeystoneSharingUtil

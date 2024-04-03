@@ -1,7 +1,7 @@
 local _, MPT = ...;
---- @type Main
+--- @type MPT_Main
 local Main = MPT.Main;
---- @type Util
+--- @type MPT_Util
 local Util = MPT.Util;
 
 local Module = Main:NewModule('DungeonIconText', 'AceHook-3.0', 'AceEvent-3.0');

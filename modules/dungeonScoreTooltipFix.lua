@@ -1,5 +1,7 @@
 local _, MPT = ...;
 local Main = MPT.Main;
+--- @type MPT_Util
+local Util = MPT.Util;
 
 local Module = Main:NewModule('DungeonScoreTooltipFix');
 

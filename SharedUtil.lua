@@ -1,5 +1,5 @@
 local _, MPT = ...
---- @class Util
+--- @class MPT_Util
 local Util = {};
 MPT.Util = Util;
 
