@@ -12,6 +12,10 @@ local OPTION_NEVER = 'never';
 local TYPE_DUNGEON_PORTAL = 'dungeon_portal';
 local TYPE_TOY = 'toy';
 local TYPE_CLASS_TELEPORT = 'mage_teleport';
+local TYPE_HEARTHSTONE = 'hearthstone';
+
+-- not used directly, but as a subtype for TYPE_HEARTHSTONE
+local TYPE_ITEM = 'item';
 
 --- @class MPT_DTP_Module : AceModule,AceHook-3.0,AceEvent-3.0
 local Module = Main:NewModule('DungeonTeleports', 'AceHook-3.0', 'AceEvent-3.0');
@@ -51,9 +55,11 @@ end
 function Module:GetOptions(defaultOptionsTable, db)
     self.db = db;
     local defaults = {
-        ['showAlternates'] = true,
+        showAlternates = true,
+        shuffleSharedCooldown = true,
         [TYPE_DUNGEON_PORTAL] = OPTION_MAIN_UNKNOWN,
         [TYPE_TOY] = OPTION_MAIN_ON_COOLDOWN,
+        [TYPE_HEARTHSTONE] = OPTION_MAIN_ON_COOLDOWN,
         [TYPE_CLASS_TELEPORT] = OPTION_MAIN_ON_COOLDOWN,
     }
     for k, v in pairs(defaults) do
@@ -122,6 +128,21 @@ function Module:GetOptions(defaultOptionsTable, db)
         'Class teleports',
         'Show class teleports as an alternative teleport. (Mage portals, Druid Dreamwalk, etc.)'
     );
+    addAlternateOption(
+        TYPE_HEARTHSTONE,
+        'Hearthstone',
+        'Show hearthstone as an alternative teleport. Only some specific locations are supported. Includes Shaman Astral Recall.'
+    );
+
+    defaultOptionsTable.args.shuffleSharedCooldown = {
+        type = 'toggle',
+        order = increment(),
+        name = 'Show a random hearthstone',
+        desc = 'Shows a random hearthstone, if a hearthstone would show up, and you have multiple toys',
+        get = get,
+        set = set,
+        width = 'double',
+    };
 
     return defaultOptionsTable;
 end
@@ -199,7 +220,8 @@ function Module:MakeButton(parent)
         if spellID and GameTooltip:IsShown() and spellKnown then
             self:AddInfoToTooltip(GameTooltip, spellID);
         end
-        if self.db.showAlternates then
+        local containerShown = self.alternatesContainer and self.alternatesContainer:IsShown();
+        if self.db.showAlternates and not containerShown then
             self:AttachAlternates(button, parent.mapID, spellKnown, spellID);
             C_Timer.NewTicker(0.2, function(ticker) -- refresh a few times, cause I'm too lazy to properly wait for toy info to be loaded :P
                 if
@@ -231,6 +253,17 @@ function Module:MakeButton(parent)
     return button;
 end
 
+local function getShuffledList(tbl)
+    local shuffled = {}
+    for i = 1, #tbl do shuffled[i] = tbl[i] end
+    for i = #tbl, 2, -1 do
+        local j = math.random(i)
+        shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
+    end
+
+    return shuffled
+end
+
 function Module:AttachAlternates(button, mapID, mainKnown, mainSpellID)
     local mapName = self.maps[mapID];
     local alternates = self.alternates[mapName];
@@ -247,12 +280,30 @@ function Module:AttachAlternates(button, mapID, mainKnown, mainSpellID)
     local alternatatesToShow = {};
     for _, alternate in ipairs(alternates) do
         local option = self.db[alternate.type] or OPTION_MAIN_UNKNOWN;
+        local showAlternative = false;
         if option == OPTION_ALWAYS and alternate.available() then
-            table.insert(alternatatesToShow, alternate);
+            showAlternative = true;
         elseif option == OPTION_MAIN_ON_COOLDOWN and (onCooldown or not mainKnown) and alternate.available() then
-            table.insert(alternatatesToShow, alternate);
+            showAlternative = true;
         elseif option == OPTION_MAIN_UNKNOWN and not mainKnown and alternate.available() then
-            table.insert(alternatatesToShow, alternate);
+            showAlternative = true;
+        end
+        if showAlternative then
+            if alternate.implementations then
+                for _, implementationList in ipairs(alternate.implementations) do
+                    if self.db.shuffleSharedCooldown then
+                        implementationList = getShuffledList(implementationList);
+                    end
+                    for _, implementation in ipairs(implementationList) do
+                        if implementation.available() then
+                            table.insert(alternatatesToShow, implementation);
+                            break;
+                        end
+                    end
+                end
+            else
+                table.insert(alternatatesToShow, alternate);
+            end
         end
     end
 
@@ -266,6 +317,9 @@ function Module:AttachAlternates(button, mapID, mainKnown, mainSpellID)
         if alternate.type == TYPE_TOY then
             frameSetAttribute(alternateButton, 'type', 'toy');
             frameSetAttribute(alternateButton, 'toy', alternate.itemID);
+        elseif alternate.type == TYPE_ITEM then
+            frameSetAttribute(alternateButton, 'type', 'item');
+            frameSetAttribute(alternateButton, 'item', alternate.itemID);
         else
             frameSetAttribute(alternateButton, 'type', 'spell');
             frameSetAttribute(alternateButton, 'spell', alternate.spellID);
@@ -305,6 +359,8 @@ function Module:GetAlternatesContainer(button, numberOfAlternates)
                 GameTooltip:SetOwner(alternateButton, 'ANCHOR_TOPRIGHT');
                 if alternateButton.data.type == TYPE_TOY then
                     GameTooltip:SetToyByItemID(alternateButton.data.itemID);
+                elseif alternateButton.data.type == TYPE_ITEM then
+                    GameTooltip:SetItemByID(alternateButton.data.itemID);
                 else
                     GameTooltip:SetSpellByID(alternateButton.data.spellID);
                 end
@@ -343,11 +399,10 @@ function Module:GetAlternatesContainer(button, numberOfAlternates)
     return container;
 end
 
-local function toy(itemID, spellID)
+local function toy(itemID)
     return {
         icon = select(5, GetItemInfoInstant(itemID)),
         itemID = itemID,
-        spellID = spellID,
         available = function()
             return PlayerHasToy(itemID) and C_ToyBox.IsToyUsable(itemID);
         end,
@@ -372,6 +427,62 @@ end
 local function classTeleport(spellID)
     return spell(spellID, TYPE_CLASS_TELEPORT);
 end
+local hearthstoneImplementations = { -- implementations that share a cooldown, go into the same subtable
+    {
+        classTeleport(556), -- Astral Recall
+    },
+    {
+        { -- Hearthstone
+            icon = select(5, GetItemInfoInstant(6948)),
+            itemID = 6948,
+            available = function()
+                return C_Item.GetItemCount(6948) > 0;
+            end,
+            cooldown = function()
+                return GetItemCooldown(6948);
+            end,
+            type = TYPE_ITEM,
+        },
+        toy(166747), -- Brewfest Reveler's Hearthstone
+        toy(190237), -- Broker Translocation Matrix
+        toy(93672), -- Dark Portal
+        toy(208704), -- Deepdweller's Earthen Hearthstone
+        toy(188952), -- Dominated Hearthstone
+        toy(190196), -- Enlightened Hearthstone
+        toy(54452), -- Ethereal Portal
+        toy(166746), -- Fire Eater's Hearthstone
+        toy(162973), -- Greatfather Winter's Hearthstone
+        toy(163045), -- Headless Horseman's Hearthstone
+        toy(209035), -- Hearthstone of the Flame
+        toy(168907), -- Holographic Digitalization Hearthstone
+        toy(184353), -- Kyrian Hearthstone
+        toy(165669), -- Lunar Elder's Hearthstone
+        toy(182773), -- Necrolord Hearthstone
+        toy(180290), -- Night Fae Hearthstone
+        toy(165802), -- Noble Gardener's Hearthstone
+        toy(200630), -- Ohn'ir Windsage's Hearthstone
+        toy(206195), -- Path of the Naaru
+        toy(165670), -- Peddlefeet's Lovely Hearthstone
+        toy(64488), -- The Innkeeper's Daughter
+        toy(193588), -- Timewalker's Hearthstone
+        toy(183716), -- Venthyr Sinstone
+    }
+};
+local function hearthstone(areaID)
+    local areaName = C_Map.GetAreaInfo(areaID);
+
+    return {
+        available = function()
+            return GetBindLocation() == areaName;
+        end,
+        type = TYPE_HEARTHSTONE,
+        implementations = hearthstoneImplementations,
+    };
+end
+
+Module.hearthstoneLocations = {
+    Valdrakken = hearthstone(13862),
+}
 
 Module.portals = {
     TempleoftheJadeSerpent = dungeonPortal(131204),
@@ -424,20 +535,20 @@ Module.portals = {
     DawnoftheInfinite = dungeonPortal(424197),
 }
 Module.toys = {
-    GarrisonHearthstone = toy(110560, 171253),
-    DalaranHearthstone = toy(140192, 222695),
-    EngiWormholeDraenor = toy(112059, 163830), -- Engineering, can select which zone to go to
-    EngiWormholeNorthrend = toy(48933, 67833), -- Engineering, can't select zone
-    EngiWormholePandaria = toy(87215, 126755), -- Engineering, can't select zone
-    EngiWormholeArgus = toy(151652, 250796), -- Engineering, can't select zone
-    EngiWormholeZandalar = toy(168808, 299084), -- Engineering, can't select zone
-    EngiWormholeKulTiras = toy(168807, 299083), -- Engineering, can't select zone
-    EngiWormholeShadowlands = toy(172924, 324031), -- Engineering, can select which zone to go to
-    EngiWormholeDragonIsles = toy(198156, 386379), -- Engineering, can select which zone to go to
-    EngiToshelysStation = toy(30544, 36941), -- Gnomish Engineering, Blade's Edge Mountains, northern Outland
-    EngiGadgetzan = toy(18986, 23453), -- Gnomish Engineering, Tanaris, north-east of Uldum
-    EngiArea52 = toy(30542, 36890), -- Goblin Engineering, Netherstorm, northern Outland
-    EngiEverlook = toy(18984, 23442), -- Goblin Engineering, Winterspring, north of Mount Hyjal, probably kinda useless for this ;)
+    GarrisonHearthstone = toy(110560),
+    DalaranHearthstone = toy(140192),
+    EngiWormholeDraenor = toy(112059), -- Engineering, can select which zone to go to
+    EngiWormholeNorthrend = toy(48933), -- Engineering, can't select zone
+    EngiWormholePandaria = toy(87215), -- Engineering, can't select zone
+    EngiWormholeArgus = toy(151652), -- Engineering, can't select zone
+    EngiWormholeZandalar = toy(168808), -- Engineering, can't select zone
+    EngiWormholeKulTiras = toy(168807), -- Engineering, can't select zone
+    EngiWormholeShadowlands = toy(172924), -- Engineering, can select which zone to go to
+    EngiWormholeDragonIsles = toy(198156), -- Engineering, can select which zone to go to
+    EngiToshelysStation = toy(30544), -- Gnomish Engineering, Blade's Edge Mountains, northern Outland
+    EngiGadgetzan = toy(18986), -- Gnomish Engineering, Tanaris, north-east of Uldum
+    EngiArea52 = toy(30542), -- Goblin Engineering, Netherstorm, northern Outland
+    EngiEverlook = toy(18984), -- Goblin Engineering, Winterspring, north of Mount Hyjal, probably kinda useless for this ;)
 }
 Module.mage = {
    Dazaralor = classTeleport(281404),
@@ -471,7 +582,7 @@ Module.others = {
     DruidDreamwalk = classTeleport(193753),
 }
 
-local portals, toys, mage, others = Module.portals, Module.toys, Module.mage, Module.others;
+local portals, toys, mage, others, hearthstones = Module.portals, Module.toys, Module.mage, Module.others, Module.hearthstoneLocations;
 
 Module.maps = {
     [2] = 'TempleoftheJadeSerpent',
@@ -593,17 +704,58 @@ Module.alternates = {
     SpiresofAscension = {},
     TheaterofPain = {},
     Tazavesh = {},
-    RubyLifePools = {},
-    TheNokhudOffensive = {},
-    TheAzureVault = {},
-    AlgetharAcademy = {},
-    UldamanLegacyofTyr = {},
-    Neltharus = {},
-    BrackenhideHollow = {},
-    HallsofInfusion = {},
+    RubyLifePools = {
+        mage.Valdrakken,
+        hearthstones.Valdrakken,
+        toys.EngiWormholeDragonIsles,
+        portals.Neltharus, -- not so great options frankly
+        portals.AlgetharAcademy,
+    },
+    TheNokhudOffensive = {
+        toys.EngiWormholeDragonIsles,
+        mage.Valdrakken,
+        hearthstones.Valdrakken,
+        portals.RubyLifePools, -- not great
+        portals.Neltharus,
+    },
+    TheAzureVault = {
+        portals.BrackenhideHollow,
+        toys.EngiWormholeDragonIsles,
+    },
+    AlgetharAcademy = {
+        portals.HallsofInfusion,
+        portals.DawnoftheInfinite,
+        mage.Valdrakken,
+        hearthstones.Valdrakken,
+        portals.RubyLifePools,
+
+    },
+    UldamanLegacyofTyr = {
+        mage.Valdrakken, -- tbh, there isn't really any 'good' alternative for this one
+        hearthstones.Valdrakken,
+    },
+    Neltharus = {
+        portals.RubyLifePools,
+        portals.TheNokhudOffensive,
+        toys.EngiWormholeDragonIsles,
+        mage.Valdrakken,
+        hearthstones.Valdrakken,
+    },
+    BrackenhideHollow = {
+        portals.TheAzureVault,
+        toys.EngiWormholeDragonIsles,
+    },
+    HallsofInfusion = {
+    portals.DawnoftheInfinite,
+        portals.AlgetharAcademy,
+        toys.EngiWormholeDragonIsles,
+        mage.Valdrakken,
+        hearthstones.Valdrakken,
+    },
     TheVortexPinnacle = {},
     ThroneoftheTides = {
         mage.Valdrakken, -- tbh, there isn't really any 'good' alternative for this one
+        hearthstones.Valdrakken,
     },
     DawnoftheInfinite = {
         portals.HallsofInfusion,
@@ -611,5 +763,6 @@ Module.alternates = {
         toys.EngiWormholeDragonIsles,
         portals.RubyLifePools,
         mage.Valdrakken,
+        hearthstones.Valdrakken,
     },
 };
