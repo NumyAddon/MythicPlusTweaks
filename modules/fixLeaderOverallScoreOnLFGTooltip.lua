@@ -34,7 +34,7 @@ function Module:OnTooltipShow(tooltip, resultId)
     for i, line in ipairs(linesLeft) do
         if string.find(line.text, leaderNameLine) then
             if (searchResultInfo.leaderOverallDungeonScore) then
-                local color = C_ChallengeMode.GetDungeonScoreRarityColor(searchResultInfo.leaderOverallDungeonScore);
+                local color = Util:GetRarityColorOverallScore(searchResultInfo.leaderOverallDungeonScore);
                 if(not color) then
                     color = HIGHLIGHT_FONT_COLOR;
                 end

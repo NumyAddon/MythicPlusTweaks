@@ -75,7 +75,7 @@ function Module:ProcessAffixScores(linesLeft, linesRight, affixScores)
     end
     for _, affixInfo in ipairs(affixScores) do
         local affixName, score = affixInfo.name, affixInfo.score;
-        local color = C_ChallengeMode.GetSpecificDungeonScoreRarityColor(score);
+        local color = Util:GetRarityColorDungeonAffixScore(score);
         local multiplier = affixName == higherAffix and '|cFFFFFFFF (x1.5)|r' or '|cFFFFFFFF (x0.5)|r';
         for i, line in ipairs(linesLeft) do
             if string.find(line.text, affixName) then

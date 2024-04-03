@@ -3,6 +3,48 @@ local _, MPT = ...
 local Util = {};
 MPT.Util = Util;
 
+local scoreRarityColors = {
+    colors = {ITEM_STANDARD_COLOR, ITEM_GOOD_COLOR, ITEM_SUPERIOR_COLOR, ITEM_EPIC_COLOR, ITEM_LEGENDARY_COLOR},
+    overallScore = {0, 1000, 1500, 1800, 2200},
+    level = {0, 4, 7, 10, 15},
+    dungeonAffixScore = {0, 63, 94, 113, 138},
+    dungeonOverallScore = {0, 125, 188, 225, 275},
+};
+
+--- @return ColorMixin
+function Util:GetRarityColorOverallScore(score)
+    return C_ChallengeMode.GetDungeonScoreRarityColor(score) or self:GetRarityColor(score, 'overallScore');
+end
+
+--- @return ColorMixin
+function Util:GetRarityColorDungeonAffixScore(score)
+    return C_ChallengeMode.GetSpecificDungeonScoreRarityColor(score) or self:GetRarityColor(score, 'dungeonAffixScore');
+end
+
+--- @return ColorMixin
+function Util:GetRarityColorDungeonOverallScore(score)
+    return C_ChallengeMode.GetSpecificDungeonOverallScoreRarityColor(score) or self:GetRarityColor(score, 'dungeonOverallScore');
+end
+
+--- @return ColorMixin
+function Util:GetRarityColorLevel(level)
+    return C_ChallengeMode.GetKeystoneLevelRarityColor(level) or self:GetRarityColor(level, 'level');
+end
+
+--- @return ColorMixin
+function Util:GetRarityColor(score, scoreType)
+    local colors = scoreRarityColors.colors;
+    local scoreValues = scoreRarityColors[scoreType];
+    assert(scoreValues, 'Invalid score type: ' .. scoreType);
+
+    for i = #scoreValues, 1, -1 do
+        if score >= scoreValues[i] then
+            return colors[i];
+        end
+    end
+    return colors[#colors];
+end
+
 function Util:ExtractTooltipLines(tooltip)
     local linesLeft, linesRight = {}, {};
     local i = 0;
@@ -68,14 +110,14 @@ function Util:GetOverallInfoByMapId(mapId, includeAffixInfo)
                        level = affixInfo.level,
                        levelColor = affixInfo.overTime and GRAY_FONT_COLOR or HIGHLIGHT_FONT_COLOR,
                        score = affixInfo.score,
-                       scoreColor = C_ChallengeMode.GetSpecificDungeonScoreRarityColor(affixInfo.score or 0),
+                       scoreColor = self:GetRarityColorDungeonAffixScore(affixInfo.score or 0),
                    };
                 else
                     secondaryAffixInfo = {
                        level = affixInfo.level,
                        levelColor = affixInfo.overTime and GRAY_FONT_COLOR or HIGHLIGHT_FONT_COLOR,
                        score = affixInfo.score,
-                       scoreColor = C_ChallengeMode.GetSpecificDungeonScoreRarityColor(affixInfo.score or 0),
+                       scoreColor = self:GetRarityColorDungeonAffixScore(affixInfo.score or 0),
                    };
                 end
             end
@@ -97,7 +139,7 @@ function Util:GetOverallInfoByMapId(mapId, includeAffixInfo)
     end
 
     local bestLevelColor = bestLevelInTime and HIGHLIGHT_FONT_COLOR or GRAY_FONT_COLOR;
-    local overAllScoreColor = C_ChallengeMode.GetSpecificDungeonOverallScoreRarityColor(overAllScore) or HIGHLIGHT_FONT_COLOR;
+    local overAllScoreColor = self:GetRarityColorDungeonOverallScore(overAllScore) or HIGHLIGHT_FONT_COLOR;
 
     return {
         level = bestLevel,
@@ -130,7 +172,7 @@ function Util:GetAffixInfoByMapId(mapId)
                 level = affixInfo.level,
                 levelColor = affixInfo.overTime and GRAY_FONT_COLOR or HIGHLIGHT_FONT_COLOR,
                 score = affixInfo.score,
-                scoreColor = C_ChallengeMode.GetSpecificDungeonScoreRarityColor(affixInfo.score or 0),
+                scoreColor = self:GetRarityColorDungeonAffixScore(affixInfo.score or 0),
             };
         end
     end
