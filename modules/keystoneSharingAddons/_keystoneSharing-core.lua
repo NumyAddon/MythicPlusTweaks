@@ -113,7 +113,7 @@ function Module:GetOptions(defaultOptionsTable, db, increment)
                 end,
                 hidden = function(info)
                     local subModule = self:GetModule(info[#info - 1]);
-                    return not (subModule.emulatedAddonName and IsAddOnLoaded(subModule.emulatedAddonName))
+                    return not (subModule.emulatedAddonName and C_AddOns.IsAddOnLoaded(subModule.emulatedAddonName))
                 end,
             },
             enable = {
@@ -123,7 +123,7 @@ function Module:GetOptions(defaultOptionsTable, db, increment)
                 type = 'toggle',
                 disabled = function(info)
                     local subModule = self:GetModule(info[#info - 1]);
-                    return subModule.emulatedAddonName and IsAddOnLoaded(subModule.emulatedAddonName);
+                    return subModule.emulatedAddonName and C_AddOns.IsAddOnLoaded(subModule.emulatedAddonName);
                 end,
                 get = function(info) return self:IsSubModuleEnabled(info[#info - 1]); end,
                 set = function(info, enabled) self:SetSubModuleState(info[#info - 1], enabled); end,

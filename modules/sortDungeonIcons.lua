@@ -15,7 +15,7 @@ end
 function Module:OnDisable()
     self:UnhookAll();
     self.allowIconSetUp = true;
-    if IsAddOnLoaded('Blizzard_ChallengesUI') then
+    if C_AddOns.IsAddOnLoaded('Blizzard_ChallengesUI') then
         ChallengesFrame:Update();
     end
 end

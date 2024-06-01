@@ -4,7 +4,7 @@ local Main = MPT.Main;
 local Module = Main:NewModule('AlwaysShowAffixes', 'AceHook-3.0', 'AceEvent-3.0');
 
 function Module:OnEnable()
-    if IsAddOnLoaded('Blizzard_ChallengesUI') then
+    if C_AddOns.IsAddOnLoaded('Blizzard_ChallengesUI') then
         self:SetupHook();
     else
         self:RegisterEvent('ADDON_LOADED');
@@ -13,7 +13,7 @@ end
 
 function Module:OnDisable()
     self:UnhookAll();
-    if IsAddOnLoaded('Blizzard_ChallengesUI') then
+    if C_AddOns.IsAddOnLoaded('Blizzard_ChallengesUI') then
         self.updateFunc(ChallengesFrame);
     end
 end

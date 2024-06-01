@@ -100,7 +100,7 @@ function Module:OnEnable()
     self.playerClass = select(2, UnitClass('player'));
     self.playerFaction = UnitFactionGroup('player') == 'Alliance' and 0 or 1; -- 0 = Alliance, 1 = Horde/Neutral
 
-    if IsAddOnLoaded(self.emulatedAddonName) then
+    if C_AddOns.IsAddOnLoaded(self.emulatedAddonName) then
         self.officialAddonLoaded = true;
 
         return;

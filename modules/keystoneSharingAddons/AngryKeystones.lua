@@ -31,7 +31,7 @@ Module.prefix = 'AngryKeystones';
 Module.emulatedAddonName = 'AngryKeystones';
 
 function Module:OnEnable()
-    if IsAddOnLoaded(self.emulatedAddonName) then
+    if C_AddOns.IsAddOnLoaded(self.emulatedAddonName) then
         self.officialAddonLoaded = true;
 
         return;

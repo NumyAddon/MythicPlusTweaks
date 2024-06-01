@@ -94,7 +94,7 @@ end
 
 function Module:OnDisable()
     self:UnhookAll();
-    if IsAddOnLoaded('Blizzard_ChallengesUI') then
+    if C_AddOns.IsAddOnLoaded('Blizzard_ChallengesUI') then
         ChallengesFrame:Update();
         self:RepositionFrameElements(ChallengesFrame, true);
         for i = 1, #ChallengesFrame.DungeonIcons do
@@ -207,7 +207,7 @@ function Module:RepositionFrameElements(frame, forceReset)
         seasonBestOffsetY = 15;
         weeklyChestOffsetY = 0;
     end
-    if IsAddOnLoaded('AngryKeystones') then
+    if C_AddOns.IsAddOnLoaded('AngryKeystones') then
         -- AngryKeystones shifts the weekly chest to the left, adds a text underneath it, which would badly overlap with the SeasonBest text.
         GetFrameMetatable().__index.ClearAllPoints(frame.WeeklyInfo.Child.WeeklyChest);
         GetFrameMetatable().__index.SetPoint(frame.WeeklyInfo.Child.WeeklyChest, 'LEFT', 100, weeklyChestOffsetY);

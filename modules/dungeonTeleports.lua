@@ -22,6 +22,27 @@ local Module = Main:NewModule('DungeonTeleports', 'AceHook-3.0', 'AceEvent-3.0')
 
 local frameSetAttribute = GetFrameMetatable().__index.SetAttribute;
 
+local GetSpellInfo, GetSpellCooldown;
+do -- todo: remove after 11.0 release
+	GetSpellInfo = _G.GetSpellInfo or function(spellID)
+		if not spellID then
+			return nil;
+		end
+
+		local spellInfo = C_Spell.GetSpellInfo(spellID);
+		if spellInfo then
+			return spellInfo.name, nil, spellInfo.iconID, spellInfo.castTime, spellInfo.minRange, spellInfo.maxRange, spellInfo.spellID, spellInfo.originalIconID;
+		end
+	end
+
+	GetSpellCooldown = _G.GetSpellCooldown or function(spellID)
+		local spellCooldownInfo = C_Spell.GetSpellCooldown(spellID);
+		if spellCooldownInfo then
+			return spellCooldownInfo.startTime, spellCooldownInfo.duration, spellCooldownInfo.isEnabled, spellCooldownInfo.modRate;
+		end
+	end
+end
+
 --- @type table<Frame, MPT_DTP_Button>
 Module.buttons = {};
 function Module:OnEnable()
@@ -401,12 +422,12 @@ end
 
 local function toy(itemID)
     return {
-        icon = select(5, GetItemInfoInstant(itemID)),
+        icon = select(5, C_Item.GetItemInfoInstant(itemID)),
         itemID = itemID,
         available = function()
             return PlayerHasToy(itemID) and C_ToyBox.IsToyUsable(itemID);
         end,
-        cooldown = function() return GetItemCooldown(itemID); end,
+        cooldown = function() return C_Item.GetItemCooldown(itemID); end,
         type = TYPE_TOY,
     };
 end
@@ -433,13 +454,13 @@ local hearthstoneImplementations = { -- implementations that share a cooldown, g
     },
     {
         { -- Hearthstone
-            icon = select(5, GetItemInfoInstant(6948)),
+            icon = select(5, C_Item.GetItemInfoInstant(6948)),
             itemID = 6948,
             available = function()
                 return C_Item.GetItemCount(6948) > 0;
             end,
             cooldown = function()
-                return GetItemCooldown(6948);
+                return C_Item.GetItemCooldown(6948);
             end,
             type = TYPE_ITEM,
         },
