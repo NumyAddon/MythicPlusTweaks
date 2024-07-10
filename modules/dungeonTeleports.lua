@@ -237,7 +237,7 @@ function Module:MakeButton(parent)
     button:SetScript("OnEnter", function(button, ...)
         parent:GetScript("OnEnter")(parent, ...);
         local spellID = button:GetRegisteredSpell();
-        local spellKnown = IsSpellKnown(spellID);
+        local spellKnown = spellID and IsSpellKnown(spellID);
         if spellID and GameTooltip:IsShown() and spellKnown then
             self:AddInfoToTooltip(GameTooltip, spellID);
         end
@@ -533,6 +533,7 @@ Module.portals = {
     Freehold = dungeonPortal(410071),
     WaycrestManor = dungeonPortal(424167),
     TheUnderrot = dungeonPortal(410074),
+    SiegeofBoralus = dungeonPortal(445418),
     OperationMechagon = dungeonPortal(373274),
     MistsofTirnaScithe = dungeonPortal(354464),
     TheNecroticWake = dungeonPortal(354462),
@@ -554,6 +555,15 @@ Module.portals = {
     TheVortexPinnacle = dungeonPortal(410080),
     ThroneoftheTides = dungeonPortal(424142),
     DawnoftheInfinite = dungeonPortal(424197),
+    PrioryoftheSacredFlame = dungeonPortal(445444),
+    TheRookery = dungeonPortal(445443),
+    TheStonevault = dungeonPortal(445269),
+    CityofThreads = dungeonPortal(445416),
+    AraKaraCityofEchoes = dungeonPortal(445417),
+    DarkflameCleft = dungeonPortal(445441),
+    TheDawnbreaker = dungeonPortal(445414),
+    CinderbrewMeadery = dungeonPortal(445440),
+    GrimBatol = dungeonPortal(445424),
 }
 Module.toys = {
     GarrisonHearthstone = toy(110560),
@@ -598,6 +608,7 @@ Module.mage = {
    DalaranCrater = classTeleport(120145),
    Oribos = classTeleport(344587),
    Valdrakken = classTeleport(395277),
+   Dornogal = classTeleport(446540),
 }
 Module.others = {
     DruidDreamwalk = classTeleport(193753),
@@ -623,17 +634,29 @@ Module.maps = {
     [167] = 'UpperBlackrockSpire',
     [168] = 'TheEverbloom',
     [169] = 'IronDocks',
+    [197] = 'EyeofAzshara',
     [198] = 'DarkheartThicket',
     [199] = 'BlackRookHold',
     [200] = 'HallsofValor',
     [206] = 'NeltharionsLair',
+    [207] = 'VaultoftheWardens',
+    [208] = 'MawofSouls',
+    [209] = 'TheArcway',
     [210] = 'CourtofStars',
     [227] = 'ReturntoKarazhan',
+    [233] = 'CathedralofEternalNight',
     [234] = 'ReturntoKarazhan',
+    [239] = 'SeatoftheTriumvirate',
     [244] = 'AtalDazar',
     [245] = 'Freehold',
+    [246] = 'TolDagor',
+    [247] = 'TheMOTHERLODE',
     [248] = 'WaycrestManor',
+    [249] = 'KingsRest',
+    [250] = 'TempleofSethraliss',
     [251] = 'TheUnderrot',
+    [252] = 'ShrineoftheStorm',
+    [353] = 'SiegeofBoralus',
     [369] = 'OperationMechagon',
     [370] = 'OperationMechagon',
     [375] = 'MistsofTirnaScithe',
@@ -658,6 +681,15 @@ Module.maps = {
     [456] = 'ThroneoftheTides',
     [463] = 'DawnoftheInfinite',
     [464] = 'DawnoftheInfinite',
+    [499] = 'PrioryoftheSacredFlame',
+    [500] = 'TheRookery',
+    [501] = 'TheStonevault',
+    [502] = 'CityofThreads',
+    [503] = 'AraKaraCityofEchoes',
+    [504] = 'DarkflameCleft',
+    [505] = 'TheDawnbreaker',
+    [506] = 'CinderbrewMeadery',
+    [507] = 'GrimBatol',
 };
 
 Module.alternates = {
@@ -682,6 +714,7 @@ Module.alternates = {
         toys.EngiWormholeDraenor,
     },
     IronDocks = {},
+    EyeofAzshara = {},
     DarkheartThicket = {
         portals.BlackRookHold,
         others.DruidDreamwalk,
@@ -700,29 +733,56 @@ Module.alternates = {
     },
     HallsofValor = {},
     NeltharionsLair = {},
+    VaultoftheWardens = {},
+    MawofSouls = {},
+    TheArcway = {},
     CourtofStars = {},
     ReturntoKarazhan = {},
+    CathedralofEternalNight = {},
+    SeatoftheTriumvirate = {},
     AtalDazar = {
         mage.Dazaralor,
         toys.EngiWormholeZandalar,
         portals.TheUnderrot,
     },
     Freehold = {},
+    TolDagor = {},
+    TheMOTHERLODE = {},
     WaycrestManor = {
         portals.OperationMechagon,
         portals.Freehold,
         toys.EngiWormholeKulTiras,
         mage.Boralus,
     },
+    KingsRest = {},
+    TempleofSethraliss = {},
     TheUnderrot = {},
+    ShrineoftheStorm = {},
+    SiegeofBoralus = {},
     OperationMechagon = {},
-    MistsofTirnaScithe = {},
-    TheNecroticWake = {},
-    DeOtherSide = {},
+    MistsofTirnaScithe = {
+        portals.DeOtherSide,
+        mage.Oribos,
+        toys.EngiWormholeShadowlands,
+    },
+    TheNecroticWake = {
+        portals.SpiresofAscension,
+        mage.Oribos,
+        toys.EngiWormholeShadowlands,
+    },
+    DeOtherSide = {
+        portals.MistsofTirnaScithe,
+        mage.Oribos,
+        toys.EngiWormholeShadowlands,
+    },
     HallsofAtonement = {},
     Plaguefall = {},
     SanguineDepths = {},
-    SpiresofAscension = {},
+    SpiresofAscension = {
+        portals.TheNecroticWake,
+        mage.Oribos,
+        toys.EngiWormholeShadowlands,
+    },
     TheaterofPain = {},
     Tazavesh = {},
     RubyLifePools = {
@@ -749,7 +809,6 @@ Module.alternates = {
         mage.Valdrakken,
         hearthstones.Valdrakken,
         portals.RubyLifePools,
-
     },
     UldamanLegacyofTyr = {
         mage.Valdrakken, -- tbh, there isn't really any 'good' alternative for this one
@@ -767,7 +826,7 @@ Module.alternates = {
         toys.EngiWormholeDragonIsles,
     },
     HallsofInfusion = {
-    portals.DawnoftheInfinite,
+        portals.DawnoftheInfinite,
         portals.AlgetharAcademy,
         toys.EngiWormholeDragonIsles,
         mage.Valdrakken,
@@ -785,5 +844,18 @@ Module.alternates = {
         portals.RubyLifePools,
         mage.Valdrakken,
         hearthstones.Valdrakken,
+    },
+    PrioryoftheSacredFlame = {},
+    TheRookery = {},
+    TheStonevault = {},
+    CityofThreads = {},
+    AraKaraCityofEchoes = {},
+    DarkflameCleft = {},
+    TheDawnbreaker = {},
+    CinderbrewMeadery = {},
+    GrimBatol = {
+        portals.UldamanLegacyofTyr, -- not great still :/
+        -- hearthstones.Dornogal,
+        mage.Dornogal, -- assuming there's a portal from there to Grim Batol
     },
 };

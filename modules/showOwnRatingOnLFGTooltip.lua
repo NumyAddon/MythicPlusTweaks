@@ -59,10 +59,18 @@ Module.ActivityIdToChallengeMapIdMap = {
     [1192] = 2, -- Temple of the Jade Serpent
     [1193] = 165, -- Shadowmoon Burial Grounds
     [1195] = 438, -- The Vortex Pinnacle
-    [1247] = 464, -- Dawn of the Infinite: Murozond's Rise
+    [1247] = 463, -- Dawn of the Infinite: Galakrond's Fall
     [1248] = 464, -- Dawn of the Infinite: Murozond's Rise
-    [1250] = 463, -- Dawn of the Infinite: Galakrond's Fall
     [1274] = 456, -- Throne of the Tides
+    [1281] = 499, -- Priory of the Sacred Flame
+    [1282] = 504, -- Darkflame Cleft
+    [1283] = 500, -- The Rookery
+    [1284] = 503, -- Ara-Kara, City of Echoes
+    [1285] = 505, -- The Dawnbreaker
+    [1286] = 506, -- Cinderbrew Meadery
+    [1287] = 501, -- The Stonevault
+    [1288] = 502, -- City of Threads
+    [1290] = 507, -- Grim Batol
 };
 local missingActivityIds = {};
 

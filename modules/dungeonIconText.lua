@@ -76,7 +76,16 @@ Module.shortNames = {
     [438] = {"VP", "Vortex Pinnacle"}, -- The Vortex Pinnacle
     [456] = {"TotT", "Throne ot Tides"}, -- Throne of the Tides
     [463] = {"DotI1:GF", "DawnOTI1:GalakrondF"}, -- Dawn of the Infinite: Galakrond's Fall
-    [464] = {"DotI2:MR", "DawnOTI2:MurozondR"}, -- Dawn of the Infinite: Murozond's Rise"
+    [464] = {"DotI2:MR", "DawnOTI2:MurozondR"}, -- Dawn of the Infinite: Murozond's Rise
+    [499] = {"PSF", "Priory ot SF"}, -- Priory of the Sacred Flame
+    [500] = {"Rook", "Rookery"}, -- The Rookery
+    [501] = {"SV", "Stonevault"}, -- The Stonevault
+    [502] = {"CoT", "City of Threads"}, -- City of Threads
+    [503] = {"A CoE", "Ara-Kara"}, -- Ara-Kara, City of Echoes - will it be called AK, ACoE, CoE / Ara-Kara, or City of Echoes?
+    [504] = {"DC", "DarkflameC"}, -- Darkflame Cleft
+    [505] = {"DB", "Dawnbreaker"}, -- The Dawnbreaker
+    [506] = {"CM", "Cinderbrew"}, -- Cinderbrew Meadery
+    [507] = {"GB", "Grim Batol"}, -- Grim Batol
 };
 
 function Module:OnInitialize()

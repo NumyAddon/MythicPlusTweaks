@@ -43,10 +43,10 @@ function Module:ADDON_LOADED(event, addon)
 end
 
 function Module:SetupHook()
-    self.updateFunc = ChallengesFrame.Update;
     self:SecureHook(ChallengesFrame, 'Update', function(frame)
         frame.WeeklyInfo:SetUp();
     end);
+    self.updateFunc = ChallengesFrame.Update;
     if ChallengesFrame:IsShown() then
         self.updateFunc(ChallengesFrame);
     end
