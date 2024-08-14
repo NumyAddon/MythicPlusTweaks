@@ -22,27 +22,6 @@ local Module = Main:NewModule('DungeonTeleports', 'AceHook-3.0', 'AceEvent-3.0')
 
 local frameSetAttribute = GetFrameMetatable().__index.SetAttribute;
 
-local GetSpellInfo, GetSpellCooldown;
-do -- todo: remove after 11.0 release
-	GetSpellInfo = _G.GetSpellInfo or function(spellID)
-		if not spellID then
-			return nil;
-		end
-
-		local spellInfo = C_Spell.GetSpellInfo(spellID);
-		if spellInfo then
-			return spellInfo.name, nil, spellInfo.iconID, spellInfo.castTime, spellInfo.minRange, spellInfo.maxRange, spellInfo.spellID, spellInfo.originalIconID;
-		end
-	end
-
-	GetSpellCooldown = _G.GetSpellCooldown or function(spellID)
-		local spellCooldownInfo = C_Spell.GetSpellCooldown(spellID);
-		if spellCooldownInfo then
-			return spellCooldownInfo.startTime, spellCooldownInfo.duration, spellCooldownInfo.isEnabled, spellCooldownInfo.modRate;
-		end
-	end
-end
-
 --- @type table<Frame, MPT_DTP_Button>
 Module.buttons = {};
 function Module:OnEnable()
@@ -185,7 +164,8 @@ end
 
 function Module:AddInfoToTooltip(tooltip, spellID)
     tooltip:AddLine(GREEN_FONT_COLOR:WrapTextInColorCode('Click to teleport to the dungeon entrance.'));
-    local _, duration = GetSpellCooldown(spellID);
+    local cooldownInfo = C_Spell.GetSpellCooldown(spellID);
+    local duration = cooldownInfo and cooldownInfo.duration;
     if(duration and duration > 3) then -- global cooldown is counted here as well, so lets just ignore anything below 3 seconds
         local minutes = math.floor(duration / 60);
         tooltip:AddLine(string.format('%sDungeon teleport is on cooldown.|r (%02d:%02d)', ERROR_COLOR_CODE, math.floor(minutes / 60), minutes % 60));
@@ -292,7 +272,8 @@ function Module:AttachAlternates(button, mapID, mainKnown, mainSpellID)
 
     local onCooldown = false;
     if mainKnown then
-        local _, duration = GetSpellCooldown(mainSpellID);
+        local cooldownInfo = C_Spell.GetSpellCooldown(mainSpellID);
+        local duration = cooldownInfo and cooldownInfo.duration;
         if (duration and duration > 3) then -- global cooldown is counted here as well, so lets just ignore anything below 3 seconds
             onCooldown = true;
         end
@@ -433,12 +414,17 @@ local function toy(itemID)
 end
 local function spell(spellID, type)
     return {
-        icon = select(3, GetSpellInfo(spellID)),
+        icon = C_Spell.GetSpellTexture(spellID),
         spellID = spellID,
         available = function()
             return IsSpellKnown(spellID);
         end,
-        cooldown = function() return GetSpellCooldown(spellID); end,
+        cooldown = function()
+            local spellCooldownInfo = C_Spell.GetSpellCooldown(spellID);
+            if spellCooldownInfo then
+                return spellCooldownInfo.startTime, spellCooldownInfo.duration, spellCooldownInfo.isEnabled;
+            end
+        end,
         type = type,
     };
 end
@@ -503,6 +489,7 @@ end
 
 Module.hearthstoneLocations = {
     Valdrakken = hearthstone(13862),
+    --Dornogal = hearthstone(),
 }
 
 Module.portals = {
@@ -533,7 +520,6 @@ Module.portals = {
     Freehold = dungeonPortal(410071),
     WaycrestManor = dungeonPortal(424167),
     TheUnderrot = dungeonPortal(410074),
-    SiegeofBoralus = dungeonPortal(445418),
     OperationMechagon = dungeonPortal(373274),
     MistsofTirnaScithe = dungeonPortal(354464),
     TheNecroticWake = dungeonPortal(354462),
@@ -564,7 +550,15 @@ Module.portals = {
     TheDawnbreaker = dungeonPortal(445414),
     CinderbrewMeadery = dungeonPortal(445440),
     GrimBatol = dungeonPortal(445424),
+    SiegeofBoralus = dungeonPortal(464256), -- HORDE
 }
+if UnitFactionGroup("player") == 'Alliance' then
+    for k, v in pairs({
+        SiegeofBoralus = dungeonPortal(445418), -- ALLIANCE
+    }) do
+        Module.portals[k] = v;
+    end
+end
 Module.toys = {
     GarrisonHearthstone = toy(110560),
     DalaranHearthstone = toy(140192),
@@ -845,17 +839,37 @@ Module.alternates = {
         mage.Valdrakken,
         hearthstones.Valdrakken,
     },
-    PrioryoftheSacredFlame = {},
-    TheRookery = {},
-    TheStonevault = {},
-    CityofThreads = {},
-    AraKaraCityofEchoes = {},
-    DarkflameCleft = {},
-    TheDawnbreaker = {},
-    CinderbrewMeadery = {},
+    PrioryoftheSacredFlame = {
+        portals.TheDawnbreaker,
+    },
+    TheRookery = {
+        mage.Dornogal,
+        --hearthstones.Dornogal,
+        portals.CinderbrewMeadery,
+    },
+    TheStonevault = {
+        portals.DarkflameCleft,
+    },
+    CityofThreads = {
+        portals.AraKaraCityofEchoes,
+    },
+    AraKaraCityofEchoes = {
+        portals.CityofThreads,
+    },
+    DarkflameCleft = {
+        portals.TheStonevault,
+    },
+    TheDawnbreaker = {
+        portals.PrioryoftheSacredFlame,
+    },
+    CinderbrewMeadery = {
+        mage.Dornogal,
+        --heartstones.Dornogal,
+        portals.TheRookery,
+    },
     GrimBatol = {
         portals.UldamanLegacyofTyr, -- not great still :/
-        -- hearthstones.Dornogal,
         mage.Dornogal, -- assuming there's a portal from there to Grim Batol
+        -- hearthstones.Dornogal,
     },
 };
