@@ -864,7 +864,7 @@ Module.alternates = {
     },
     CinderbrewMeadery = {
         mage.Dornogal,
-        heartstones.Dornogal,
+        hearthstones.Dornogal,
         portals.TheRookery,
     },
     GrimBatol = {
