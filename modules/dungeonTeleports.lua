@@ -489,7 +489,7 @@ end
 
 Module.hearthstoneLocations = {
     Valdrakken = hearthstone(13862),
-    --Dornogal = hearthstone(),
+    Dornogal = hearthstone(14771),
 }
 
 Module.portals = {
@@ -844,7 +844,7 @@ Module.alternates = {
     },
     TheRookery = {
         mage.Dornogal,
-        --hearthstones.Dornogal,
+        hearthstones.Dornogal,
         portals.CinderbrewMeadery,
     },
     TheStonevault = {
@@ -864,12 +864,12 @@ Module.alternates = {
     },
     CinderbrewMeadery = {
         mage.Dornogal,
-        --heartstones.Dornogal,
+        heartstones.Dornogal,
         portals.TheRookery,
     },
     GrimBatol = {
         portals.UldamanLegacyofTyr, -- not great still :/
         mage.Dornogal, -- assuming there's a portal from there to Grim Batol
-        -- hearthstones.Dornogal,
+        hearthstones.Dornogal,
     },
 };
