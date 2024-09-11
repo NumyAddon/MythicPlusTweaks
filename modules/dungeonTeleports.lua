@@ -490,6 +490,7 @@ end
 Module.hearthstoneLocations = {
     Valdrakken = hearthstone(13862),
     Dornogal = hearthstone(14771),
+    CurrentHub = hearthstone(14771),
 }
 
 Module.portals = {
@@ -570,6 +571,7 @@ Module.toys = {
     EngiWormholeKulTiras = toy(168807), -- Engineering, can't select zone
     EngiWormholeShadowlands = toy(172924), -- Engineering, can select which zone to go to
     EngiWormholeDragonIsles = toy(198156), -- Engineering, can select which zone to go to
+    EngiWormholeKhazAlgar = toy(221966), -- Engineering, can select which zone to go to
     EngiToshelysStation = toy(30544), -- Gnomish Engineering, Blade's Edge Mountains, northern Outland
     EngiGadgetzan = toy(18986), -- Gnomish Engineering, Tanaris, north-east of Uldum
     EngiArea52 = toy(30542), -- Goblin Engineering, Netherstorm, northern Outland
@@ -603,6 +605,7 @@ Module.mage = {
    Oribos = classTeleport(344587),
    Valdrakken = classTeleport(395277),
    Dornogal = classTeleport(446540),
+   CurrentHub = classTeleport(446540),
 }
 Module.others = {
     DruidDreamwalk = classTeleport(193753),
@@ -752,7 +755,14 @@ Module.alternates = {
     TempleofSethraliss = {},
     TheUnderrot = {},
     ShrineoftheStorm = {},
-    SiegeofBoralus = {},
+    SiegeofBoralus = {
+        portals.TolDagor,
+        portals.Freehold,
+        toys.EngiWormholeKulTiras,
+        mage.Boralus,
+        mage.CurrentHub, -- assuming there's a portal
+        hearthstones.CurrentHub,
+    },
     OperationMechagon = {},
     MistsofTirnaScithe = {
         portals.DeOtherSide,
@@ -763,6 +773,8 @@ Module.alternates = {
         portals.SpiresofAscension,
         mage.Oribos,
         toys.EngiWormholeShadowlands,
+        mage.CurrentHub, -- assuming there's a portal
+        hearthstones.CurrentHub,
     },
     DeOtherSide = {
         portals.MistsofTirnaScithe,
@@ -807,6 +819,7 @@ Module.alternates = {
     UldamanLegacyofTyr = {
         mage.Valdrakken, -- tbh, there isn't really any 'good' alternative for this one
         hearthstones.Valdrakken,
+        portals.GrimBatol,
     },
     Neltharus = {
         portals.RubyLifePools,
@@ -828,48 +841,62 @@ Module.alternates = {
     },
     TheVortexPinnacle = {},
     ThroneoftheTides = {
-        mage.Valdrakken, -- tbh, there isn't really any 'good' alternative for this one
-        hearthstones.Valdrakken,
+        mage.CurrentHub, -- tbh, there isn't really any 'good' alternative for this one
+        hearthstones.CurrentHub,
     },
     DawnoftheInfinite = {
         portals.HallsofInfusion,
         portals.AlgetharAcademy,
         toys.EngiWormholeDragonIsles,
-        portals.RubyLifePools,
         mage.Valdrakken,
         hearthstones.Valdrakken,
+        portals.RubyLifePools,
     },
     PrioryoftheSacredFlame = {
         portals.TheDawnbreaker,
+        toys.EngiWormholeKhazAlgar,
     },
     TheRookery = {
         mage.Dornogal,
         hearthstones.Dornogal,
         portals.CinderbrewMeadery,
+        toys.EngiWormholeKhazAlgar,
     },
     TheStonevault = {
         portals.DarkflameCleft,
+        mage.Dornogal,
+        hearthstones.Dornogal,
+        toys.EngiWormholeKhazAlgar,
     },
     CityofThreads = {
         portals.AraKaraCityofEchoes,
+        toys.EngiWormholeKhazAlgar,
     },
     AraKaraCityofEchoes = {
         portals.CityofThreads,
+        mage.Dornogal,
+        hearthstones.Dornogal,
+        toys.EngiWormholeKhazAlgar,
     },
     DarkflameCleft = {
         portals.TheStonevault,
+        mage.Dornogal,
+        hearthstones.Dornogal,
+        toys.EngiWormholeKhazAlgar,
     },
     TheDawnbreaker = {
         portals.PrioryoftheSacredFlame,
+        toys.EngiWormholeKhazAlgar,
     },
     CinderbrewMeadery = {
         mage.Dornogal,
         hearthstones.Dornogal,
         portals.TheRookery,
+        toys.EngiWormholeKhazAlgar,
     },
     GrimBatol = {
         portals.UldamanLegacyofTyr, -- not great still :/
-        mage.Dornogal, -- assuming there's a portal from there to Grim Batol
-        hearthstones.Dornogal,
+        mage.CurrentHub, -- assuming there's a portal from there to Grim Batol
+        hearthstones.CurrentHub,
     },
 };
