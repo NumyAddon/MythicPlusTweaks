@@ -756,7 +756,7 @@ Module.alternates = {
     TheUnderrot = {},
     ShrineoftheStorm = {},
     SiegeofBoralus = {
-        portals.TolDagor,
+        --portals.TolDagor,
         portals.Freehold,
         toys.EngiWormholeKulTiras,
         mage.Boralus,
