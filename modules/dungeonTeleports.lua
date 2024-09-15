@@ -490,7 +490,7 @@ end
 Module.hearthstoneLocations = {
     Valdrakken = hearthstone(13862),
     Dornogal = hearthstone(14771),
-    CurrentHub = hearthstone(14771),
+    CurrentHub = hearthstone(14771), -- the current hub generally has a portal to seasonal dungeons from older expansions
 }
 
 Module.portals = {
@@ -605,7 +605,7 @@ Module.mage = {
    Oribos = classTeleport(344587),
    Valdrakken = classTeleport(395277),
    Dornogal = classTeleport(446540),
-   CurrentHub = classTeleport(446540),
+   CurrentHub = classTeleport(446540), -- the current hub generally has a portal to seasonal dungeons from older expansions
 }
 Module.others = {
     DruidDreamwalk = classTeleport(193753),
@@ -756,11 +756,10 @@ Module.alternates = {
     TheUnderrot = {},
     ShrineoftheStorm = {},
     SiegeofBoralus = {
-        --portals.TolDagor,
         portals.Freehold,
         toys.EngiWormholeKulTiras,
         mage.Boralus,
-        mage.CurrentHub, -- assuming there's a portal
+        mage.CurrentHub,
         hearthstones.CurrentHub,
     },
     OperationMechagon = {},
@@ -768,18 +767,22 @@ Module.alternates = {
         portals.DeOtherSide,
         mage.Oribos,
         toys.EngiWormholeShadowlands,
+        mage.CurrentHub,
+        hearthstones.CurrentHub,
     },
     TheNecroticWake = {
         portals.SpiresofAscension,
         mage.Oribos,
         toys.EngiWormholeShadowlands,
-        mage.CurrentHub, -- assuming there's a portal
+        mage.CurrentHub,
         hearthstones.CurrentHub,
     },
     DeOtherSide = {
         portals.MistsofTirnaScithe,
         mage.Oribos,
         toys.EngiWormholeShadowlands,
+        mage.CurrentHub,
+        hearthstones.CurrentHub,
     },
     HallsofAtonement = {},
     Plaguefall = {},
@@ -870,6 +873,8 @@ Module.alternates = {
     },
     CityofThreads = {
         portals.AraKaraCityofEchoes,
+        mage.Dornogal,
+        hearthstones.Dornogal,
         toys.EngiWormholeKhazAlgar,
     },
     AraKaraCityofEchoes = {
@@ -896,7 +901,7 @@ Module.alternates = {
     },
     GrimBatol = {
         portals.UldamanLegacyofTyr, -- not great still :/
-        mage.CurrentHub, -- assuming there's a portal from there to Grim Batol
+        mage.CurrentHub,
         hearthstones.CurrentHub,
     },
 };
