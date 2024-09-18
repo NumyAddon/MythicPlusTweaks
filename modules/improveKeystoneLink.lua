@@ -27,7 +27,7 @@ local events = {
     CHAT_MSG_LOOT = true,
 };
 
-local function Filter(...) return Module:Filter(...) end
+local function Filter(_, _, message, ...) return false, Module:ReplaceChatMessage(message), ... end
 
 
 function Module:OnEnable()
@@ -63,7 +63,7 @@ end
 local KEYSTONE_ITEM_LINK_PATTERN = '|Hitem:180653:.-|h%[.-%]|h';
 -- mapID, level, affix1, affix2, affix3, affix4
 local KEYSTONE_LINK_FORMAT = '|Hkeystone:180653:%d:%d:%d:%d:%d:%d|h['.. CHALLENGE_MODE_KEYSTONE_HYPERLINK ..']|h';
-function Module:Filter(_, _, message, ...)
+function Module:ReplaceChatMessage(message)
     local original = message;
     for link in original:gmatch(KEYSTONE_ITEM_LINK_PATTERN) do
         local parts = strsplittable(':', (link:gsub('|Hitem:', '')));
@@ -100,5 +100,5 @@ function Module:Filter(_, _, message, ...)
         end
     end
 
-    return false, message, ...
+    return message
 end
