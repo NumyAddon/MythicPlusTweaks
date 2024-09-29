@@ -1,4 +1,5 @@
-local _, MPT = ...
+--- @class MPT_NS
+local MPT = select(2, ...);
 --- @class MPT_Util
 local Util = {};
 MPT.Util = Util;
@@ -177,4 +178,37 @@ function Util:GetAffixInfoByMapId(mapId)
         end
     end
     return nil;
+end
+
+function Util:CopyText(text, optionalTitleSuffix)
+    if not self.dialogName then
+        --- @private
+        self.dialogName = 'MythicPlusTweaksCopyTextDialog';
+        StaticPopupDialogs[self.dialogName] = {
+            text = 'CTRL-C to copy %s',
+            button1 = CLOSE,
+            OnShow = function(dialog, data)
+                local function HidePopup()
+                    dialog:Hide();
+                end
+                dialog.editBox:SetScript('OnEscapePressed', HidePopup);
+                dialog.editBox:SetScript('OnEnterPressed', HidePopup);
+                dialog.editBox:SetScript('OnKeyUp', function(_, key)
+                    if IsControlKeyDown() and (key == 'C' or key == 'X') then
+                        HidePopup();
+                    end
+                end);
+                dialog.editBox:SetMaxLetters(0);
+                dialog.editBox:SetText(data);
+                dialog.editBox:HighlightText();
+            end,
+            hasEditBox = true,
+            editBoxWidth = 240,
+            timeout = 0,
+            whileDead = true,
+            hideOnEscape = true,
+            preferredIndex = 3,
+        };
+    end
+    StaticPopup_Show(self.dialogName, optionalTitleSuffix or '', nil, text);
 end

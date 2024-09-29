@@ -23,4 +23,5 @@ modules\showScoreOnKeystoneTooltip.lua
 modules\improveKeystoneLink.lua
 modules\sortDungeonIcons.lua
 
+modules\MistHelperSync\MistHelperSync.xml
 modules\keystoneSharingAddons\keystoneSharing.xml

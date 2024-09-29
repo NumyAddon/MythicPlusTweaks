@@ -1,4 +1,6 @@
-local name, MPT = ...;
+local name = ...;
+--- @class MPT_NS
+local MPT = select(2, ...);
 
 --@debug@
 _G.MythicPlusTweaks = MPT;
