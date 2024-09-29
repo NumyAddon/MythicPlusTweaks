@@ -56,7 +56,7 @@ end
 
 --- @param implementation MPT_MistHelperSyncImplementation
 function Module:InitializeImplementation(implementation)
-    implementation:ListenToComms(
+    implementation:Init(
         function(buttonID, active, sender, senderIsMe)
             self:OnButtonComms(implementation, buttonID, active, sender, senderIsMe);
         end,

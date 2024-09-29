@@ -15,8 +15,7 @@ local MH = {
     type = 'WeakAura',
     url = 'https://wago.io/hVLym_eLv',
 };
-local playerName, playerShortenedRealm = UnitFullName('player');
-local playerNameWithRealm = playerName .. '-' .. playerShortenedRealm;
+local playerNameWithRealm;
 
 --- @type MPT_MistHelperSyncImplementation[]
 ns.MistHelperSyncImplementations = ns.MistHelperSyncImplementations or {};
@@ -56,7 +55,9 @@ function MH:OnResetComms(sender)
     -- do nohting, the WA reacts to messages sent by yourself anyway
 end
 
-function MH:ListenToComms(buttonCallback, resetCallback)
+function MH:Init(buttonCallback, resetCallback)
+    local playerName, playerShortenedRealm = UnitFullName('player');
+    playerNameWithRealm = playerName .. '-' .. playerShortenedRealm;
     self.enabled = true;
     local pattern = '(%d %d %d %d) (.*)';
     hooksecurefunc(C_ChatInfo, 'SendAddonMessageLogged', function(...)

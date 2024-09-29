@@ -19,8 +19,7 @@ local MH = {
     type = 'Addon',
     url = 'https://www.curseforge.com/wow/addons/maze-helper-mists-of-tirna-scithe',
 };
-local playerName, playerShortenedRealm = UnitFullName('player');
-local playerNameWithRealm = playerName .. '-' .. playerShortenedRealm;
+local playerNameWithRealm;
 
 --- @type MPT_MistHelperSyncImplementation[]
 ns.MistHelperSyncImplementations = ns.MistHelperSyncImplementations or {};
@@ -61,7 +60,9 @@ function MH:OnResetComms(sender)
     ST_Maze_Helper:CHAT_MSG_ADDON(prefix, 'SendReset', nil, sender);
 end
 
-function MH:ListenToComms(buttonCallback, resetCallback)
+function MH:Init(buttonCallback, resetCallback)
+    local playerName, playerShortenedRealm = UnitFullName('player');
+    playerNameWithRealm = playerName .. '-' .. playerShortenedRealm;
     self.enabled = true;
     hooksecurefunc(C_ChatInfo, 'SendAddonMessage', function(...)
         if not self.enabled then return; end

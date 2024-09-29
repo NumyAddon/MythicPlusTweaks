@@ -29,7 +29,7 @@ function MPT_MistHelperSyncImplementation:OnResetComms(sender) end
 --- @param buttonCallback fun(buttonID: number, active: boolean, sender: string, senderIsMe: boolean): nil
 --- @param resetCallback fun(sender: string, senderIsMe: boolean): nil
 --- @return nil
-function MPT_MistHelperSyncImplementation:ListenToComms(buttonCallback, resetCallback) end
+function MPT_MistHelperSyncImplementation:Init(buttonCallback, resetCallback) end
 
 --- has no effect unless ListenToComms is called first
 --- @return nil
