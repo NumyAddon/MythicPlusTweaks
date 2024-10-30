@@ -2,6 +2,7 @@ local _, MPT = ...;
 --- @type MPT_Main
 local Main = MPT.Main;
 
+--- @class MPT_ImproveKeystoneLink: AceModule
 local Module = Main:NewModule('ImproveKeystoneLink');
 
 local events = {

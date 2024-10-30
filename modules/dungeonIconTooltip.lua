@@ -30,7 +30,9 @@ function Module:GetName()
 end
 
 function Module:GetDescription()
-    return 'Adds individual affix rating information to the dungeon icon tooltip in the LFG frame.';
+    return Util.AFFIX_SPECIFIC_SCORES
+        and 'Adds individual affix rating information to the dungeon icon tooltip in the LFG frame.'
+        or 'Adds the dungeon mapID to the dungeon icon tooltip. Affix rating information is not relevant this season.';
 end
 
 function Module:GetOptions(defaultOptionsTable)
@@ -46,15 +48,19 @@ function Module:GetOptions(defaultOptionsTable)
     return defaultOptionsTable;
 end
 
+---@param tooltip GameTooltip
+---@param icon ChallengesDungeonIconFrameTemplate
 function Module:OnTooltipShow(tooltip, icon)
     if not icon.mapID then return; end
 
     local mapId = icon.mapID;
-    local affixScores, _ = C_MythicPlus.GetSeasonBestAffixScoreInfoForMap(mapId);
-
     local linesLeft, linesRight = Util:ExtractTooltipLines(tooltip);
-    if(affixScores and #affixScores > 0) then
-        self:ProcessAffixScores(linesLeft, linesRight, affixScores);
+
+    if Util.AFFIX_SPECIFIC_SCORES then
+        local affixScores, _ = C_MythicPlus.GetSeasonBestAffixScoreInfoForMap(mapId);
+        if(affixScores and #affixScores > 0) then
+            self:ProcessAffixScores(linesLeft, linesRight, affixScores);
+        end
     end
 
     if(not self:MapIdIsAddedToTooltip(linesLeft, mapId)) then
@@ -65,6 +71,9 @@ function Module:OnTooltipShow(tooltip, icon)
     Util:ReplaceTooltipLines(tooltip, linesLeft, linesRight);
 end
 
+---@param linesLeft table[]
+---@param linesRight table[]
+---@param affixScores MythicPlusAffixScoreInfo[]
 function Module:ProcessAffixScores(linesLeft, linesRight, affixScores)
     local higherScore, higherAffix = 0, nil;
     for _, affixInfo in ipairs(affixScores) do
@@ -87,6 +96,8 @@ function Module:ProcessAffixScores(linesLeft, linesRight, affixScores)
     end
 end
 
+---@param linesLeft table[]
+---@param mapId number
 function Module:MapIdIsAddedToTooltip(linesLeft, mapId)
     for _, line in ipairs(linesLeft) do
         if string.find(line.text, mapId) and string.find(line.text:lower(), 'id') then

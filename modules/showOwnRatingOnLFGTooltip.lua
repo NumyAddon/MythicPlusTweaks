@@ -4,6 +4,7 @@ local Main = MPT.Main;
 --- @type MPT_Util
 local Util = MPT.Util;
 
+--- @class MPT_ShowOwnRatingOnLFGTooltip: AceModule,AceHook-3.0
 local Module = Main:NewModule('ShowOwnRatingOnLFGTooltip', 'AceHook-3.0');
 
 -- there is currently no in-game way to get the ChallengeModeMapId from the ActivityID, so we have to resort to a hardcoded map
@@ -90,6 +91,8 @@ function Module:GetName()
     return 'Show Own Rating On LFG Tooltip';
 end
 
+--- @param tooltip GameTooltip
+--- @param resultId number
 function Module:OnTooltipShow(tooltip, resultId)
     local searchResultInfo = C_LFGList.GetSearchResultInfo(resultId);
     local activityInfo = C_LFGList.GetActivityInfoTable(searchResultInfo.activityID, nil, searchResultInfo.isWarMode);
@@ -104,13 +107,13 @@ function Module:OnTooltipShow(tooltip, resultId)
         return;
     end
     local overallInfo = Util:GetOverallInfoByMapId(mapId);
-    local affixInfo = Util:GetAffixInfoByMapId(mapId);
+    local affixInfo = Util.AFFIX_SPECIFIC_SCORES and Util:GetAffixInfoByMapId(mapId) or nil;
 
     local linesLeft, linesRight = Util:ExtractTooltipLines(tooltip);
 
-    local createdAtLine = string.sub(LFG_LIST_TOOLTIP_AGE, 1, string.find(LFG_LIST_TOOLTIP_AGE, ':'));
     for i, line in ipairs(linesLeft) do
-        if string.find(line.text, createdAtLine) then
+        if string.find(line.text, MEMBERS_COLON) then
+            i = i - 1; -- insert 2 lines before the "Members:" line
             if (overallInfo and overallInfo.score > 0) then
                 table.insert(linesLeft, i, {
                     text = 'Your Overall: |cffffffff'

@@ -4,6 +4,7 @@ local Main = MPT.Main;
 --- @type MPT_Util
 local Util = MPT.Util;
 
+--- @class MPT_DungeonIconText: AceModule, AceHook-3.0, AceEvent-3.0
 local Module = Main:NewModule('DungeonIconText', 'AceHook-3.0', 'AceEvent-3.0');
 
 local OPTION_FULL_NAME = 'full';
@@ -124,7 +125,9 @@ function Module:GetName()
 end
 
 function Module:GetDescription()
-    return 'Changes the text on the dungeon icons, to show "{level} - {score}" on top (level is grey if out of time). And {affix level} - {affix score} on bottom for the current week\'s affix.';
+    return Util.AFFIX_SPECIFIC_SCORES
+        and 'Changes the text on the dungeon icons, to show "{level} - {score}" on top (level is grey if out of time). And {affix level} - {affix score} on bottom for the current week\'s affix.'
+        or 'Changes the text on the dungeon icons, to show "{level} - {score}" on the icon (level is grey if out of time). Affix-specific scores are not relevant this season.';
 end
 
 function Module:GetOptions(defaultOptionsTable, db)
@@ -209,6 +212,7 @@ function Module:SetupHook()
     end
 end
 
+--- @param frame ChallengesFrame
 function Module:RepositionFrameElements(frame, forceReset)
     local seasonBestOffsetY = 35;
     local weeklyChestOffsetY = 20;
@@ -217,7 +221,7 @@ function Module:RepositionFrameElements(frame, forceReset)
         weeklyChestOffsetY = 0;
     end
     if C_AddOns.IsAddOnLoaded('AngryKeystones') then
-        -- AngryKeystones shifts the weekly chest to the left, adds a text underneath it, which would badly overlap with the SeasonBest text.
+        -- AngryKeystones shifts the weekly chest to the left and adds a text underneath it, which would badly overlap with the SeasonBest text.
         GetFrameMetatable().__index.ClearAllPoints(frame.WeeklyInfo.Child.WeeklyChest);
         GetFrameMetatable().__index.SetPoint(frame.WeeklyInfo.Child.WeeklyChest, 'LEFT', 100, weeklyChestOffsetY);
 
@@ -278,12 +282,14 @@ function Module:GetShortName(name, mapID)
     return shortName;
 end
 
+--- @param challengesFrame ChallengesFrame
 function Module:AddScoresToAllIcons(challengesFrame)
     for i = 1, #challengesFrame.DungeonIcons do
         Module:AddScoresToIcon(challengesFrame.DungeonIcons[i]);
     end
 end
 
+--- @param icon ChallengesDungeonIconFrameTemplate
 function Module:AddScoresToIcon(icon)
     if icon.CurrentLevel then icon.CurrentLevel:Hide(); end
     local mapId = icon.mapID;
@@ -299,6 +305,8 @@ function Module:AddScoresToIcon(icon)
         self:AutoFitText(icon.HighestLevel);
     end
 
+    if not Util.AFFIX_SPECIFIC_SCORES then return; end
+
     local affixInfo = Util:GetAffixInfoByMapId(mapId);
     if (not affixInfo or affixInfo.score == 0) then return; end
 
@@ -311,6 +319,7 @@ function Module:AddScoresToIcon(icon)
     self:AutoFitText(icon.CurrentLevel);
 end
 
+--- @param icon ChallengesDungeonIconFrameTemplate
 function Module:InitCurrentLevelText(icon)
     icon.CurrentLevel = icon:CreateFontString(nil, 'BORDER', 'SystemFont_Huge1_Outline');
     icon.CurrentLevel:SetPoint('BOTTOM', 0, 4);
@@ -319,6 +328,7 @@ function Module:InitCurrentLevelText(icon)
     icon.CurrentLevel:SetShadowColor(0, 0, 0);
 end
 
+--- @param text FontString
 function Module:AutoFitText(text)
     text:SetFontObject(self.font);
 

@@ -4,6 +4,9 @@ local MPT = select(2, ...);
 local Util = {};
 MPT.Util = Util;
 
+-- whether to support affix-specific scores
+Util.AFFIX_SPECIFIC_SCORES = false;
+
 local scoreRarityColors = {
     colors = {ITEM_STANDARD_COLOR, ITEM_GOOD_COLOR, ITEM_SUPERIOR_COLOR, ITEM_EPIC_COLOR, ITEM_LEGENDARY_COLOR},
     overallScore = {0, 1000, 1500, 1800, 2200},

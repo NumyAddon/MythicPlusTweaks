@@ -4,6 +4,7 @@ local Main = MPT.Main;
 --- @type MPT_Util
 local Util = MPT.Util;
 
+--- @class MPT_ShowScoreOnKeystoneTooltip: AceModule, AceHook-3.0
 local Module = Main:NewModule('ShowScoreOnKeystoneTooltip', 'AceHook-3.0');
 
 function Module:OnEnable()
@@ -64,7 +65,7 @@ function Module:HandleHyperlink(tooltip, itemLink)
     if not mapId then return end
 
     local overallInfo = Util:GetOverallInfoByMapId(mapId);
-    local affixInfo = Util:GetAffixInfoByMapId(mapId);
+    local affixInfo = Util.AFFIX_SPECIFIC_SCORES and Util:GetAffixInfoByMapId(mapId) or nil;
 
     if (overallInfo and overallInfo.score > 0) then
         tooltip:AddLine(HIGHLIGHT_FONT_COLOR:WrapTextInColorCode(
@@ -78,7 +79,7 @@ function Module:HandleHyperlink(tooltip, itemLink)
                 .. affixInfo.scoreColor:WrapTextInColorCode(affixInfo.score)
                 .. ' (' .. affixInfo.levelColor:WrapTextInColorCode(affixInfo.level) .. ')'
             ));
-        else
+        elseif Util.AFFIX_SPECIFIC_SCORES then
             tooltip:AddLine(HIGHLIGHT_FONT_COLOR:WrapTextInColorCode(
                 'Your Affix score: ' .. GRAY_FONT_COLOR:WrapTextInColorCode('-never completed-')
             ));

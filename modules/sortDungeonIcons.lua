@@ -4,6 +4,7 @@ local Main = MPT.Main;
 --- @type MPT_Util
 local Util = MPT.Util;
 
+--- @class MPT_SortDungeonIcons: AceModule, AceHook-3.0, AceEvent-3.0
 local Module = Main:NewModule('SortDungeonIcons', 'AceHook-3.0', 'AceEvent-3.0');
 
 function Module:OnEnable()
@@ -80,8 +81,8 @@ function Module:GetOptions(defaultOptionsTable, db)
             [SORT_OPTION_OVERALL_SCORE] = 'Overall Dungeon Score',
             [SORT_OPTION_BEST_RUN_LEVEL] = 'Level from your best run',
             [SORT_OPTION_OVERALL_LEVEL_TIMED] = 'Highest Level (Timed)',
-            [SORT_CURRENT_AFFIX_SCORE] = 'Current Affix Score',
-            [SORT_CURRENT_AFFIX_LEVEL] = 'Current Affix Level',
+            [SORT_CURRENT_AFFIX_SCORE] = 'Current Affix Score' .. (Util.AFFIX_SPECIFIC_SCORES and '' or ' (this season will use Overall Score instead)'),
+            [SORT_CURRENT_AFFIX_LEVEL] = 'Current Affix Level' .. (Util.AFFIX_SPECIFIC_SCORES and '' or ' (this season will use Level from your best run instead)'),
             [SORT_OPTION_NAME] = 'Sorted by Name',
             [SORT_OPTION_ID] = 'Sorted by M+ MapID',
         },
@@ -143,6 +144,7 @@ function Module:SetupHook()
     end
 end
 
+--- @param frame ChallengesFrame
 function Module:PreventIconSetUpFromOthers(frame)
     for i = 1, #frame.DungeonIcons do
         local icon = frame.DungeonIcons[i];
@@ -165,7 +167,7 @@ local CreateFrames, LineUpFrames;
 do
     function CreateFrames(self, array, num, template)
         while (#self[array] < num) do
-            local frame = CreateFrame("Frame", nil, self, template);
+            CreateFrame("Frame", nil, self, template);
         end
 
         for i = num + 1, #self[array] do
@@ -173,6 +175,7 @@ do
         end
     end
 
+    --- @param frames ChallengesDungeonIconFrameTemplate[]
     function LineUpFrames(frames, anchorPoint, anchor, relativePoint, width)
         local num = #frames;
 
@@ -253,6 +256,10 @@ local sortFunctions = {
         return a.id > b.id;
     end,
 };
+if not Util.AFFIX_SPECIFIC_SCORES then
+    sortFunctions[SORT_CURRENT_AFFIX_SCORE] = sortFunctions[SORT_OPTION_OVERALL_SCORE];
+    sortFunctions[SORT_CURRENT_AFFIX_LEVEL] = sortFunctions[SORT_OPTION_BEST_RUN_LEVEL];
+end
 
 function Module:GetSortFunction()
     local sortFunction = sortFunctions[self.db.sortStyle] or sortFunctions[SORT_OPTION_OVERALL_SCORE];
@@ -265,6 +272,7 @@ function Module:GetSortFunction()
     return sortFunction;
 end
 
+--- @param frame ChallengesFrame
 function Module:SortIcons(frame)
     local sortedMaps = {};
 
