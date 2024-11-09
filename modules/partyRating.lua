@@ -1,0 +1,286 @@
+local _, MPT = ...;
+--- @type MPT_Main
+local Main = MPT.Main;
+--- @type MPT_Util
+local Util = MPT.Util;
+
+--- @class MPT_PartyRating: AceModule,AceHook-3.0,AceEvent-3.0
+local Module = Main:NewModule('PartyRating', 'AceHook-3.0', 'AceEvent-3.0');
+
+function Module:OnEnable()
+    EventUtil.ContinueOnAddOnLoaded('Blizzard_ChallengesUI', function()
+        RunNextFrame(function() self:SetupUI(); end);
+    end);
+end
+
+function Module:OnDisable()
+    self:UnhookAll();
+    self:UnregisterAllEvents();
+end
+
+function Module:GetName()
+    return 'Party Rating';
+end
+
+function Module:GetDescription()
+    return 'Adds a list of party members to the Mythic+ UI, which show their mythic+ scores in a tooltip.';
+end
+
+local SORT_MODE_MAP_ID = 'mapID';
+local SORT_MODE_SCORE = 'score';
+local SORT_MODE_NAME = 'name';
+
+function Module:GetOptions(defaultOptionsTable, db, increment)
+    self.db = db;
+    local defaults = {
+        sortMode = SORT_MODE_SCORE,
+        showZeroScoreDungeons = true,
+    };
+    for k, v in pairs(defaults) do
+        if db[k] == nil then
+            db[k] = v;
+        end
+    end
+
+    local function get(info) return db[info[#info]]; end
+    local function set(info, value) db[info[#info]] = value; end
+
+    defaultOptionsTable.args.sortMode = {
+        type = 'select',
+        order = increment(),
+        name = 'Sort mode',
+        desc = 'Select how dungeon scores should be sorted',
+        values = {
+            [SORT_MODE_MAP_ID] = 'By Dungeon ID',
+            [SORT_MODE_SCORE] = 'By Score',
+            [SORT_MODE_NAME] = 'By Dungeon name',
+        },
+        get = get,
+        set = set,
+        width = 'double',
+        style = 'radio',
+    };
+    defaultOptionsTable.args.showZeroScoreDungeons = {
+        type = 'toggle',
+        order = increment(),
+        name = 'Show dungeons without any rating',
+        desc = 'Always show all dungeons in the tooltip, even if no rating has been earned.',
+        get = get,
+        set = set,
+        width = 'double',
+    };
+    defaultOptionsTable.args.showExample = {
+        type = 'execute',
+        order = increment(),
+        name = 'Open Mythic+ UI',
+        desc = 'Open the Mythic+ UI and hover over a dungeon icon to see an example.',
+        func = function()
+            PVEFrame_ToggleFrame('ChallengesFrame');
+        end,
+    };
+
+    return defaultOptionsTable;
+end
+
+
+function Module:SetupUI()
+    Util:RepositionWeeklyChestFrame();
+
+    self:CreatePartyFrame();
+
+    self:RegisterEvent('GROUP_ROSTER_UPDATE');
+end
+
+function Module:CreatePartyFrame()
+    if self.PartyFrame then return; end
+
+    local textWidth = 110;
+    local containerFrame = CreateFrame('Frame', nil, ChallengesFrame.WeeklyInfo.Child);
+    containerFrame:SetSize(textWidth + 24, 110);
+    if C_AddOns.IsAddOnLoaded('AngryKeystones') then
+        containerFrame:SetPoint('LEFT', ChallengesFrame.WeeklyInfo.Child.WeeklyChest, 'RIGHT', 40, -50);
+    else
+        containerFrame:SetPoint('RIGHT', ChallengesFrame.WeeklyInfo.Child, 'RIGHT', -10, 10);
+    end
+    self.PartyFrame = containerFrame;
+
+    local bg = containerFrame:CreateTexture(nil, 'BACKGROUND');
+    bg:SetAllPoints();
+    bg:SetAtlas('ChallengeMode-guild-background');
+    bg:SetAlpha(0.4);
+
+    local title = containerFrame:CreateFontString(nil, 'ARTWORK', 'GameFontNormalMed2');
+    title:SetText('Party Rating');
+    title:SetPoint('TOP', 0, -7);
+
+    local line = containerFrame:CreateTexture(nil, 'ARTWORK');
+    line:SetSize(textWidth + 10, 9);
+    line:SetAtlas('ChallengeMode-RankLineDivider', false);
+    line:SetPoint('TOP', 0, -20);
+
+    local entries = {}
+    local anchor = line;
+    for i = 1, 4 do
+        --- @class MPT_PartyRatingEntry: Frame
+        local entry = CreateFrame('Frame', nil, containerFrame);
+        entry:SetSize(textWidth, 18);
+        entry:SetScript('OnEnter', function() self:OnEnter(entry, 'party' .. i); end);
+        entry:SetScript('OnLeave', function() self:OnLeave(); end);
+        entry.Update = function() self:UpdateEntry(entry, 'party' .. i); end;
+        local timeElapsed = 0;
+        entry:SetScript('OnUpdate', function(_, elapsed)
+            timeElapsed = timeElapsed + elapsed;
+            if timeElapsed < 1 then return; end
+            timeElapsed = 0;
+            entry:Update();
+        end);
+
+        local score = entry:CreateFontString(nil, 'ARTWORK', 'GameFontNormal');
+        score:SetHeight(18);
+        score:SetJustifyH('RIGHT');
+        score:SetWordWrap(false);
+        score:SetTextToFit('');
+        score:SetPoint('RIGHT');
+        entry.Score = score;
+
+        local name = entry:CreateFontString(nil, 'ARTWORK', 'GameFontNormal');
+        name:SetHeight(18);
+        name:SetJustifyH('LEFT');
+        name:SetWordWrap(false);
+        name:SetText();
+        name:SetPoint('LEFT');
+        name:SetPoint('RIGHT', score, 'LEFT', -1, 0);
+        entry.Name = name;
+
+        entry:SetPoint('TOP', anchor, 'BOTTOM');
+        anchor = entry;
+        entries[i] = entry;
+    end
+    containerFrame:SetScript('OnShow', function()
+        for _, entry in pairs(entries) do
+            entry:Update();
+            RunNextFrame(function() entry:Update(); end);
+            C_Timer.After(0.1, function() entry:Update(); end);
+        end
+    end);
+
+    containerFrame.Entries = entries;
+end
+
+function Module:GROUP_ROSTER_UPDATE()
+    if not self.PartyFrame then return; end
+
+    self.PartyFrame:SetShown(IsInGroup());
+
+    local entries = self.PartyFrame.Entries;
+    for _, entry in pairs(entries) do
+        entry:Update();
+        RunNextFrame(function() entry:Update(); end);
+        C_Timer.After(0.1, function() entry:Update(); end);
+    end
+end
+
+--- @param entry MPT_PartyRatingEntry
+--- @param unit UnitToken.group
+function Module:UpdateEntry(entry, unit)
+    local unitName = UnitNameUnmodified(unit);
+    if unitName then
+        local classColor = C_ClassColor.GetClassColor(select(2, UnitClass(unit)));
+        local scoreInfo = Util:GetUnitScores(unit);
+        local score = scoreInfo and scoreInfo.overall or 0;
+        local color = Util:GetRarityColorOverallScore(score);
+        entry.Name:SetText(classColor:WrapTextInColorCode(unitName));
+        entry.Score:SetTextToFit(color:WrapTextInColorCode(score));
+        entry:Show();
+    else
+        entry:Hide();
+    end
+end
+
+function Module:OnLeave()
+    GameTooltip:Hide();
+end
+
+--- @param frame Frame
+--- @param unit UnitToken.group
+function Module:OnEnter(frame, unit)
+    local scoreInfo = Util:GetUnitScores(unit);
+    if not scoreInfo then return; end
+
+    local unitName = UnitNameUnmodified(unit);
+    local classColor = C_ClassColor.GetClassColor(select(2, UnitClass(unit)));
+
+    local overallScore = scoreInfo.overall;
+    local overallColor = Util:GetRarityColorOverallScore(overallScore);
+
+    local tooltip = GameTooltip;
+    tooltip:SetOwner(frame, 'ANCHOR_RIGHT');
+    tooltip:SetText(classColor:WrapTextInColorCode(unitName));
+
+    tooltip:AddDoubleLine(HIGHLIGHT_FONT_COLOR:WrapTextInColorCode(DUNGEON_SCORE), overallColor:WrapTextInColorCode(overallScore));
+
+    if 0 == overallScore then
+        tooltip:Show();
+        return;
+    end
+
+    tooltip:AddLine(' ');
+    tooltip:AddLine(DUNGEONS);
+
+    local mapIDs = C_ChallengeMode.GetMapTable();
+    if not mapIDs or 0 == #mapIDs then
+        tooltip:AddLine('No dungeons found. There might not be any active season.');
+        tooltip:Show();
+
+        return;
+    end
+
+    local unsorted = {};
+    for _, mapID in ipairs(mapIDs) do
+        local info = scoreInfo.runs[mapID];
+        local dungeonScore = info and info.score or 0;
+        if self.db.showZeroScoreDungeons or dungeonScore > 0 then
+            local level = info and info.level or 0;
+            local inTime = info and info.inTime or false;
+            local color = Util:GetRarityColorDungeonOverallScore(dungeonScore);
+            local timeColor = inTime and HIGHLIGHT_FONT_COLOR or GRAY_FONT_COLOR;
+
+            local name = C_ChallengeMode.GetMapUIInfo(mapID);
+
+            table.insert(
+                unsorted,
+                {
+                    left = HIGHLIGHT_FONT_COLOR:WrapTextInColorCode(name),
+                    right = color:WrapTextInColorCode(dungeonScore) .. ' ' .. timeColor:WrapTextInColorCode('+' .. level),
+                    score = dungeonScore,
+                    name = name,
+                    mapID = mapID,
+                }
+            );
+        end
+    end
+
+    local sortMode = self.db.sortMode;
+    table.sort(
+        unsorted,
+        function(a, b)
+            if
+                (sortMode == SORT_MODE_SCORE and a.score == b.score)
+                or (sortMode == SORT_MODE_NAME and a.name == b.name)
+                or sortMode == SORT_MODE_MAP_ID
+            then
+                return a.mapID < b.mapID;
+            end
+
+            return
+                (sortMode == SORT_MODE_MAP_ID and a.mapID < b.mapID)
+                or (sortMode == SORT_MODE_SCORE and a.score > b.score)
+                or (sortMode == SORT_MODE_NAME and a.name < b.name);
+        end
+    );
+    for _, line in ipairs(unsorted) do
+        tooltip:AddDoubleLine(line.left, line.right);
+    end
+
+    tooltip:Show();
+end

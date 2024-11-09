@@ -215,3 +215,81 @@ function Util:CopyText(text, optionalTitleSuffix)
     end
     StaticPopup_Show(self.dialogName, optionalTitleSuffix or '', nil, text);
 end
+
+--- @param unit UnitToken
+--- @return MPT_UnitScores?
+function Util:GetUnitScores(unit)
+    local summary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary(unit);
+    if not summary or 0 == summary.currentSeasonScore then return nil; end
+
+    --- @type MPT_UnitScores
+    local result = {
+        overall = summary.currentSeasonScore,
+        runs = {},
+    };
+    for _, run in ipairs(summary.runs) do
+        result.runs[run.challengeModeID] = {
+            score = run.mapScore,
+            level = run.bestRunLevel,
+            inTime = run.finishedSuccess,
+        };
+    end
+
+    return result;
+end
+
+--- reposition the weekly chest frame to make room for other UI elements
+--- no revert logic has been implemented for now, will require reloading the UI
+--- compatible with AngryKeystones
+function Util:RepositionWeeklyChestFrame()
+    local angryKeystonesLoaded = C_AddOns.IsAddOnLoaded('AngryKeystones');
+
+    GetFrameMetatable().__index.ClearAllPoints(ChallengesFrame.WeeklyInfo.Child.WeeklyChest);
+    GetFrameMetatable().__index.SetPoint(
+        ChallengesFrame.WeeklyInfo.Child.WeeklyChest,
+        'LEFT',
+        angryKeystonesLoaded and 50 or 230,
+        20
+    );
+
+    -- Wordwrap and size of the original frame
+    local description = ChallengesFrame.WeeklyInfo.Child.WeeklyChest.RunStatus;
+    description:SetWordWrap(true);
+    description:SetSize(
+        angryKeystonesLoaded and 200 or 500,
+        90
+    );
+
+    if C_AddOns.IsAddOnLoaded('AngryKeystones') then
+        ChallengesFrame.WeeklyInfo.Child.WeeklyChest.ClearAllPoints = nop;
+        ChallengesFrame.WeeklyInfo.Child.WeeklyChest.SetPoint = nop;
+
+        -- AngryKeystones anchors itself to the WeeklyChest frame, so we need to move their elements as well
+        local scheduleModule = AngryKeystones
+            and AngryKeystones.Modules
+            and AngryKeystones.Modules.Schedule;
+
+        local scheduleFrame = scheduleModule and scheduleModule.AffixFrame;
+        if scheduleFrame then
+            scheduleFrame.SetPoint = nop;
+            local function positionScheduleFrame(_, point)
+                local offsetY;
+                if point == 'LEFT' then -- schedule should be centered
+                    offsetY = -160;
+                else -- schedule should be shifted upwards, to make room for the party keystones frame
+                    offsetY = -110;
+                end
+                scheduleFrame:ClearAllPoints();
+                GetFrameMetatable().__index.SetPoint(scheduleFrame, 'TOPRIGHT', ChallengesFrame.WeeklyInfo.Child, 'TOPRIGHT', -5, offsetY);
+            end
+            hooksecurefunc(scheduleFrame, 'SetPoint', positionScheduleFrame);
+            positionScheduleFrame(nil, scheduleFrame:GetPoint());
+        end
+
+        local keystoneText = scheduleModule and scheduleModule.KeystoneText;
+        if keystoneText then
+            keystoneText:ClearAllPoints();
+            keystoneText:SetPoint('BOTTOMLEFT', ChallengesFrame.WeeklyInfo.Child.SeasonBest, 'TOPLEFT', 0, 5);
+        end
+    end
+end

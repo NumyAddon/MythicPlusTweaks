@@ -37,3 +37,12 @@ function MPT_MistHelperSyncImplementation:Enable() end
 
 --- @return nil
 function MPT_MistHelperSyncImplementation:Disable() end
+
+--- @class MPT_UnitScores
+--- @field overall number
+--- @field runs table<number, MPT_UnitScore> # [challengeModeID] = MPT_UnitScore
+
+--- @class MPT_UnitScore
+--- @field score number
+--- @field level number
+--- @field inTime boolean

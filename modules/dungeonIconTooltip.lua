@@ -35,9 +35,40 @@ function Module:GetDescription()
         or 'Adds the dungeon mapID to the dungeon icon tooltip. Affix rating information is not relevant this season.';
 end
 
-function Module:GetOptions(defaultOptionsTable)
+function Module:GetOptions(defaultOptionsTable, db, increment)
+    self.db = db;
+    local defaults = {
+        showPartyScore = true,
+        showMapID = true,
+    };
+    for k, v in pairs(defaults) do
+        if db[k] == nil then
+            db[k] = v;
+        end
+    end
+
+    local function get(info) return db[info[#info]]; end
+    local function set(info, value) db[info[#info]] = value; end
+
+    defaultOptionsTable.args.showPartyScore = {
+        type = 'toggle',
+        order = increment(),
+        name = 'Show party score',
+        desc = 'Show the party score in the dungeon tooltip.',
+        get = get,
+        set = set,
+    };
+    defaultOptionsTable.args.showMapID = {
+        type = 'toggle',
+        order = increment(),
+        name = 'Show map ID',
+        desc = 'Show the map ID in the dungeon tooltip.',
+        get = get,
+        set = set,
+    };
     defaultOptionsTable.args.showExample = {
         type = 'execute',
+        order = increment(),
         name = 'Open Mythic+ UI',
         desc = 'Open the Mythic+ UI and hover over a dungeon icon to see an example.',
         func = function()
@@ -63,7 +94,11 @@ function Module:OnTooltipShow(tooltip, icon)
         end
     end
 
-    if(not self:MapIdIsAddedToTooltip(linesLeft, mapId)) then
+    if self.db.showPartyScore and IsInGroup() then
+        self:AddGroupScoreToTooltip(linesLeft, linesRight, mapId);
+    end
+
+    if(self.db.showMapID and not self:MapIdIsAddedToTooltip(linesLeft, mapId)) then
         table.insert(linesLeft, {text='|cFFEE6161ID|r ' .. mapId});
         table.insert(linesRight, {text=''});
     end
@@ -92,6 +127,34 @@ function Module:ProcessAffixScores(linesLeft, linesRight, affixScores)
                 table.insert(linesRight, i+3, {text=''});
                 break
             end
+        end
+    end
+end
+
+function Module:AddGroupScoreToTooltip(linesLeft, linesRight, mapId)
+    local addedHeader = false;
+    for i = 1, (GetNumGroupMembers() - 1) do
+        local unit = 'party' .. i;
+        local scoreInfo = Util:GetUnitScores(unit);
+        local dungeonScore = scoreInfo and scoreInfo.runs[mapId] and scoreInfo.runs[mapId].score or 0;
+        if scoreInfo and (dungeonScore > 0) then
+            if not addedHeader then
+                table.insert(linesLeft, { text = ' '} );
+                table.insert(linesRight, { text = ' '} );
+                table.insert(linesLeft, { text = 'Party Rating:'} );
+                table.insert(linesRight, { text = ''} );
+                addedHeader = true;
+            end
+
+            local unitName = UnitNameUnmodified(unit);
+            local classColor = C_ClassColor.GetClassColor(select(2, UnitClass(unit)));
+            local level = scoreInfo.runs[mapId] and scoreInfo.runs[mapId].level or 0;
+            local inTime = scoreInfo.runs[mapId] and scoreInfo.runs[mapId].inTime or false;
+            local color = Util:GetRarityColorDungeonOverallScore(dungeonScore);
+            local timeColor = inTime and HIGHLIGHT_FONT_COLOR or GRAY_FONT_COLOR;
+
+            table.insert(linesLeft, {text = classColor:WrapTextInColorCode(unitName)});
+            table.insert(linesRight, {text = color:WrapTextInColorCode(dungeonScore) .. ' ' .. timeColor:WrapTextInColorCode('+' .. level)});
         end
     end
 end

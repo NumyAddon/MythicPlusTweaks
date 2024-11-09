@@ -162,15 +162,16 @@ function Module:OnChallengesFrameUpdate()
     end
 end
 
+--- @param tooltip GameTooltip
 function Module:AddInfoToTooltip(tooltip, spellID)
-    tooltip:AddLine(GREEN_FONT_COLOR:WrapTextInColorCode('Click to teleport to the dungeon entrance.'));
+    GameTooltip_AddInstructionLine(tooltip, 'Click to teleport to the dungeon entrance.', true);
     local cooldownInfo = C_Spell.GetSpellCooldown(spellID);
     local duration = cooldownInfo and cooldownInfo.duration;
     if(duration and duration > 3) then -- global cooldown is counted here as well, so lets just ignore anything below 3 seconds
         local minutes = math.floor(duration / 60);
-        tooltip:AddLine(string.format('%sDungeon teleport is on cooldown.|r (%02d:%02d)', ERROR_COLOR_CODE, math.floor(minutes / 60), minutes % 60));
+        tooltip:AddLine(string.format('%sDungeon teleport is on cooldown.|r (%02d:%02d)', ERROR_COLOR_CODE, math.floor(minutes / 60), minutes % 60), 1, 1, 1, true);
     elseif InCombatLockdown() then
-        tooltip:AddLine(ERROR_COLOR:WrapTextInColorCode('Cannot be done in combat.'));
+        tooltip:AddLine(ERROR_COLOR:WrapTextInColorCode('Cannot be done in combat.'), 1, 1, 1, true);
     end
     tooltip:Show();
 end

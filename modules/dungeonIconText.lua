@@ -214,19 +214,11 @@ end
 
 --- @param frame ChallengesFrame
 function Module:RepositionFrameElements(frame, forceReset)
+    Util:RepositionWeeklyChestFrame();
+
     local seasonBestOffsetY = 35;
-    local weeklyChestOffsetY = 20;
     if self.db.name == OPTION_NO_NAME or forceReset then
         seasonBestOffsetY = 15;
-        weeklyChestOffsetY = 0;
-    end
-    if C_AddOns.IsAddOnLoaded('AngryKeystones') then
-        -- AngryKeystones shifts the weekly chest to the left and adds a text underneath it, which would badly overlap with the SeasonBest text.
-        GetFrameMetatable().__index.ClearAllPoints(frame.WeeklyInfo.Child.WeeklyChest);
-        GetFrameMetatable().__index.SetPoint(frame.WeeklyInfo.Child.WeeklyChest, 'LEFT', 100, weeklyChestOffsetY);
-
-        frame.WeeklyInfo.Child.WeeklyChest.ClearAllPoints = nop;
-        frame.WeeklyInfo.Child.WeeklyChest.SetPoint = nop;
     end
     frame.WeeklyInfo.Child.SeasonBest:ClearAllPoints();
     frame.WeeklyInfo.Child.SeasonBest:SetPoint('TOPLEFT', frame.DungeonIcons[1], 'TOPLEFT', 5, seasonBestOffsetY);
