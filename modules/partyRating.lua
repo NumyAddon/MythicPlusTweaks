@@ -6,16 +6,21 @@ local Util = MPT.Util;
 
 --- @class MPT_PartyRating: AceModule,AceHook-3.0,AceEvent-3.0
 local Module = Main:NewModule('PartyRating', 'AceHook-3.0', 'AceEvent-3.0');
+local updateFrame = CreateFrame('Frame');
 
 function Module:OnEnable()
     EventUtil.ContinueOnAddOnLoaded('Blizzard_ChallengesUI', function()
         RunNextFrame(function() self:SetupUI(); end);
     end);
+
+    self:RegisterEvent('GROUP_ROSTER_UPDATE');
+    updateFrame:SetScript('OnUpdate', function(_, elapsed) self:OnUpdate(elapsed); end);
 end
 
 function Module:OnDisable()
     self:UnhookAll();
     self:UnregisterAllEvents();
+    updateFrame:SetScript('OnUpdate', nil);
 end
 
 function Module:GetName()
@@ -87,8 +92,6 @@ function Module:SetupUI()
     Util:RepositionWeeklyChestFrame();
 
     self:CreatePartyFrame();
-
-    self:RegisterEvent('GROUP_ROSTER_UPDATE');
 end
 
 function Module:CreatePartyFrame()
@@ -167,6 +170,21 @@ function Module:CreatePartyFrame()
     containerFrame.Entries = entries;
 end
 
+function Module:OnUpdate(elapsed)
+    if not IsInGroup() then return; end
+
+    self.elapsed = (self.elapsed or 0) + elapsed;
+    if self.elapsed < 1 then return; end
+    self.elapsed = 0;
+
+    for i = 1, 4 do
+        local unit = 'party' .. i;
+        Util:GetUnitScores(unit); -- trigger a cache update
+        RunNextFrame(function() Util:GetUnitScores(unit); end);
+        C_Timer.After(0.1, function() Util:GetUnitScores(unit); end);
+    end
+end
+
 function Module:GROUP_ROSTER_UPDATE()
     if not self.PartyFrame then return; end
 
@@ -190,7 +208,7 @@ function Module:UpdateEntry(entry, unit)
         local score = scoreInfo and scoreInfo.overall or 0;
         local color = Util:GetRarityColorOverallScore(score);
         entry.Name:SetText(classColor:WrapTextInColorCode(unitName));
-        entry.Score:SetTextToFit(color:WrapTextInColorCode(score));
+        entry.Score:SetTextToFit(color:WrapTextInColorCode(scoreInfo and score or '?'));
         entry:Show();
     else
         entry:Hide();
@@ -204,23 +222,30 @@ end
 --- @param frame Frame
 --- @param unit UnitToken.group
 function Module:OnEnter(frame, unit)
-    local scoreInfo = Util:GetUnitScores(unit);
-    if not scoreInfo then return; end
-
     local unitName = UnitNameUnmodified(unit);
     local classColor = C_ClassColor.GetClassColor(select(2, UnitClass(unit)));
-
-    local overallScore = scoreInfo.overall;
-    local overallColor = Util:GetRarityColorOverallScore(overallScore);
 
     local tooltip = GameTooltip;
     tooltip:SetOwner(frame, 'ANCHOR_RIGHT');
     tooltip:SetText(classColor:WrapTextInColorCode(unitName));
 
+    local scoreInfo = Util:GetUnitScores(unit);
+    if not scoreInfo then
+        tooltip:AddLine('No data available.', 1, 0, 0);
+        tooltip:AddLine('The player is too far away, has not completed any m+ dungeon, or no m+ season is currently active.', 1, 1, 1, true);
+        tooltip:Show();
+
+        return;
+    end
+
+    local overallScore = scoreInfo.overall;
+    local overallColor = Util:GetRarityColorOverallScore(overallScore);
+
     tooltip:AddDoubleLine(HIGHLIGHT_FONT_COLOR:WrapTextInColorCode(DUNGEON_SCORE), overallColor:WrapTextInColorCode(overallScore));
 
     if 0 == overallScore then
         tooltip:Show();
+
         return;
     end
 

@@ -216,11 +216,18 @@ function Util:CopyText(text, optionalTitleSuffix)
     StaticPopup_Show(self.dialogName, optionalTitleSuffix or '', nil, text);
 end
 
+--- @type table<string, MPT_UnitScores> # [playerGUID] = MPT_UnitScores
+local scoreCache = {};
+
 --- @param unit UnitToken
 --- @return MPT_UnitScores?
 function Util:GetUnitScores(unit)
     local summary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary(unit);
-    if not summary or 0 == summary.currentSeasonScore then return nil; end
+    local guid = UnitGUID(unit);
+    if not summary then
+        -- data is only available when you're somewhat close to the player, so cache it so it stays available when moving further away
+        return guid and scoreCache[guid] or nil;
+    end
 
     --- @type MPT_UnitScores
     local result = {
@@ -234,6 +241,7 @@ function Util:GetUnitScores(unit)
             inTime = run.finishedSuccess,
         };
     end
+    scoreCache[guid] = result;
 
     return result;
 end
