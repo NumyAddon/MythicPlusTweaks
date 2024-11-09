@@ -22,6 +22,17 @@ local Module = Main:NewModule('DungeonTeleports', 'AceHook-3.0', 'AceEvent-3.0')
 
 local frameSetAttribute = GetFrameMetatable().__index.SetAttribute;
 
+--- returns the remaining cooldown of a spell
+--- @param spellID number
+--- @return number
+local function GetSpellCooldown(spellID)
+    local cooldownInfo = C_Spell.GetSpellCooldown(spellID);
+    if not cooldownInfo then return 0; end
+    local start, duration = cooldownInfo.startTime, cooldownInfo.duration;
+
+    return start + duration - GetTime();
+end
+
 --- @type table<Frame, MPT_DTP_Button>
 Module.buttons = {};
 function Module:OnEnable()
@@ -165,11 +176,10 @@ end
 --- @param tooltip GameTooltip
 function Module:AddInfoToTooltip(tooltip, spellID)
     GameTooltip_AddInstructionLine(tooltip, 'Click to teleport to the dungeon entrance.', true);
-    local cooldownInfo = C_Spell.GetSpellCooldown(spellID);
-    local duration = cooldownInfo and cooldownInfo.duration;
-    if(duration and duration > 3) then -- global cooldown is counted here as well, so lets just ignore anything below 3 seconds
+    local duration = GetSpellCooldown(spellID);
+    if duration > 3 then -- global cooldown is counted here as well, so lets just ignore anything below 3 seconds
         local minutes = math.floor(duration / 60);
-        tooltip:AddLine(string.format('%sDungeon teleport is on cooldown.|r (%02d:%02d)', ERROR_COLOR_CODE, math.floor(minutes / 60), minutes % 60), 1, 1, 1, true);
+        tooltip:AddLine(string.format('%sDungeon teleport is on cooldown.|r (%02d:%02d)', ERROR_COLOR_CODE, math.floor(minutes / 60), minutes % 60));
     elseif InCombatLockdown() then
         tooltip:AddLine(ERROR_COLOR:WrapTextInColorCode('Cannot be done in combat.'), 1, 1, 1, true);
     end
@@ -202,13 +212,40 @@ function Module:MakeButton(parent)
     highlight:SetTexture('Interface\\EncounterJournal\\UI-EncounterJournalTextures');
     highlight:SetTexCoord(0.34570313, 0.68554688, 0.33300781, 0.42675781);
     highlight:SetAllPoints();
-    highlight:SetAlpha(0);
+    highlight:Hide();
+    highlight.elapsed = 0;
+    highlight.OnUpdate = nop;
+    local function OnUpdate(_, elapsed)
+       highlight.elapsed = highlight.elapsed + elapsed;
+       if highlight.elapsed < 1 then return; end
+       highlight.elapsed = 0;
+
+       local spellID = button:GetRegisteredSpell();
+       if not spellID then return; end
+       local duration = GetSpellCooldown(spellID);
+       if duration > 3 then -- global cooldown is counted here as well, so lets just ignore anything below 3 seconds
+           highlight:SetVertexColor(1, 0, 0);
+       else
+           highlight:SetVertexColor(1, 1, 1);
+       end
+    end
+    highlight:SetScript('OnShow', function()
+        highlight.elapsed = 10;
+        highlight.OnUpdate = OnUpdate;
+    end);
+    highlight:SetScript('OnHide', function()
+        highlight.OnUpdate = nop;
+    end);
     button.highlight = highlight;
+
+    button:SetScript('OnUpdate', function(_, elapsed)
+        highlight:OnUpdate(elapsed);
+    end);
 
     function button:RegisterSpell(spellID)
         self.spellID = spellID;
         frameSetAttribute(self, 'spell', spellID);
-        self.highlight:SetAlpha(spellID and IsSpellKnown(spellID) and 1 or 0);
+        self.highlight:SetShown(spellID and IsSpellKnown(spellID));
     end
 
     function button:GetRegisteredSpell()
@@ -273,9 +310,8 @@ function Module:AttachAlternates(button, mapID, mainKnown, mainSpellID)
 
     local onCooldown = false;
     if mainKnown then
-        local cooldownInfo = C_Spell.GetSpellCooldown(mainSpellID);
-        local duration = cooldownInfo and cooldownInfo.duration;
-        if (duration and duration > 3) then -- global cooldown is counted here as well, so lets just ignore anything below 3 seconds
+        local duration = GetSpellCooldown(mainSpellID);
+        if duration > 3 then -- global cooldown is counted here as well, so lets just ignore anything below 3 seconds
             onCooldown = true;
         end
     end
