@@ -99,6 +99,7 @@ function Module:CreatePartyFrame()
 
     local textWidth = 110;
     local containerFrame = CreateFrame('Frame', nil, ChallengesFrame.WeeklyInfo.Child);
+    containerFrame:Hide();
     containerFrame:SetSize(textWidth + 24, 110);
     if C_AddOns.IsAddOnLoaded('AngryKeystones') then
         containerFrame:SetPoint('LEFT', ChallengesFrame.WeeklyInfo.Child.WeeklyChest, 'RIGHT', 40, -50);
@@ -168,6 +169,8 @@ function Module:CreatePartyFrame()
     end);
 
     containerFrame.Entries = entries;
+
+    self:GROUP_ROSTER_UPDATE();
 end
 
 function Module:OnUpdate(elapsed)
