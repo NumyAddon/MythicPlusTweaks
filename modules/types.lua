@@ -46,3 +46,15 @@ function MPT_MistHelperSyncImplementation:Disable() end
 --- @field score number
 --- @field level number
 --- @field inTime boolean
+
+--- @class MPT_DTP_AlternatesContainer_buttonPool
+--- @field Acquire fun(self: MPT_DTP_AlternatesContainer_buttonPool): MPT_DTP_AlternatesContainer_button
+--- @field Release fun(self: MPT_DTP_AlternatesContainer_buttonPool, button: MPT_DTP_AlternatesContainer_button): nil
+--- @field ReleaseAll fun(self: MPT_DTP_AlternatesContainer_buttonPool): nil
+
+--- @class MPT_DTP_ButtonPool
+--- @field Acquire fun(self: MPT_DTP_ButtonPool): MPT_DTP_Button
+--- @field Release fun(self: MPT_DTP_ButtonPool, button: MPT_DTP_Button): nil
+--- @field ReleaseAll fun(self: MPT_DTP_ButtonPool): nil
+
+

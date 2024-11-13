@@ -33,6 +33,71 @@ local function GetSpellCooldown(spellID)
     return start + duration - GetTime();
 end
 
+function Module:OnInitialize()
+    --- @class MPT_DTP_AlternatesContainer : Frame
+    container = CreateFrame('Frame');
+    self.alternatesContainer = container;
+    container:SetFrameLevel(10);
+
+    local function alternateInitFunc(alternateButton)
+        --- @class MPT_DTP_AlternatesContainer_button : Button, InsecureActionButtonTemplate
+        local alternateButton = alternateButton;
+        alternateButton:RegisterForClicks('AnyUp', 'AnyDown');
+
+        local cooldownFrame = CreateFrame('Cooldown', nil, alternateButton, 'CooldownFrameTemplate');
+        cooldownFrame:SetAllPoints();
+        cooldownFrame:SetDrawEdge(false);
+        cooldownFrame:Show();
+        alternateButton.cooldownFrame = cooldownFrame;
+
+        alternateButton:SetHighlightTexture("Interface\\Buttons\\CheckButtonHighlight", "ADD");
+
+        function alternateButton:SetData(data)
+            self.data = data;
+        end
+        alternateButton:SetScript('OnEnter', function()
+            GameTooltip:SetOwner(alternateButton, 'ANCHOR_TOPRIGHT');
+            if alternateButton.data.type == TYPE_TOY then
+                GameTooltip:SetToyByItemID(alternateButton.data.itemID);
+            elseif alternateButton.data.type == TYPE_ITEM then
+                GameTooltip:SetItemByID(alternateButton.data.itemID);
+            else
+                GameTooltip:SetSpellByID(alternateButton.data.spellID);
+            end
+            GameTooltip:Show();
+        end);
+        alternateButton:SetScript('OnLeave', function()
+            GameTooltip:Hide();
+            if not container:IsMouseOver() and not container:GetParent():IsMouseOver() then
+                container:Hide();
+            end
+        end);
+        alternateButton:SetScript('OnHide', function()
+            container:Hide();
+        end);
+        function alternateButton:SetScript(script, func)
+            error('unexpected SetScript call on alternateButton');
+        end
+        function alternateButton:SetAttribute(attribute, value)
+            error('unexpected SetAttribute call on alternateButton');
+        end
+    end
+    --- @class MPT_DTP_AlternatesContainer_buttonPool
+    container.buttonPool = CreateFramePool('Button', container, 'InsecureActionButtonTemplate', nil, nil, alternateInitFunc);
+
+    --- @class MPT_DTP_ButtonPool
+    self.buttonPool = CreateFramePool('Button', UIParent, 'InsecureActionButtonTemplate', nil, nil, function(button)
+        self:InitButton(button);
+    end);
+
+    for _ = 1, 20 do -- prepare a few buttons, to avoid issues if they're created while in combat
+        container.buttonPool:Acquire();
+        self.buttonPool:Acquire();
+    end
+    container.buttonPool:ReleaseAll();
+    self.buttonPool:ReleaseAll();
+end
+
 --- @type table<Frame, MPT_DTP_Button>
 Module.buttons = {};
 function Module:OnEnable()
@@ -186,8 +251,8 @@ function Module:AddInfoToTooltip(tooltip, spellID)
     tooltip:Show();
 end
 
-function Module:ProcessIcon(icon)
-    self.buttons[icon] = self.buttons[icon] or self:MakeButton(icon);
+function Module:ProcessIcon(icon, index)
+    self.buttons[icon] = self.buttons[icon] or self:GetButton(icon);
 
     local mapId = icon.mapID;
     local mapName = self.maps[mapId];
@@ -199,11 +264,20 @@ function Module:ProcessIcon(icon)
 end
 
 --- @return MPT_DTP_Button
-function Module:MakeButton(parent)
-    --- @class MPT_DTP_Button : Button|InsecureActionButtonTemplate
-    local button = CreateFrame('Button', nil, parent, 'InsecureActionButtonTemplate');
-    button:Show()
+function Module:GetButton(parent)
+    local button = self.buttonPool:Acquire();
+    button:SetParent(parent);
     button:SetAllPoints();
+    button:Show();
+
+    return button;
+end
+
+--- @param button MPT_DTP_Button
+function Module:InitButton(button)
+    --- @class MPT_DTP_Button : Button, InsecureActionButtonTemplate
+    local button = button;
+    button:Hide();
     frameSetAttribute(button, 'type', 'spell');
     button:SetFrameLevel(999);
     button:RegisterForClicks('AnyUp', 'AnyDown');
@@ -253,19 +327,20 @@ function Module:MakeButton(parent)
     end
 
     button:SetScript("OnEnter", function(button, ...)
+        local parent = button:GetParent();
         parent:GetScript("OnEnter")(parent, ...);
         local spellID = button:GetRegisteredSpell();
         local spellKnown = spellID and IsSpellKnown(spellID);
         if spellID and GameTooltip:IsShown() and spellKnown then
             self:AddInfoToTooltip(GameTooltip, spellID);
         end
-        local containerShown = self.alternatesContainer and self.alternatesContainer:IsShown();
+        local containerShown = self.alternatesContainer:IsShown();
         if self.db.showAlternates and not containerShown then
             self:AttachAlternates(button, parent.mapID, spellKnown, spellID);
             C_Timer.NewTicker(0.2, function(ticker) -- refresh a few times, cause I'm too lazy to properly wait for toy info to be loaded :P
                 if
                     button:IsMouseOver()
-                    or (self.alternatesContainer and self.alternatesContainer:IsMouseOver() and self.alternatesContainer:GetParent() == button)
+                    or (self.alternatesContainer:IsMouseOver() and self.alternatesContainer:GetParent() == button)
                 then
                     self:AttachAlternates(button, parent.mapID, spellKnown, spellID);
                 else
@@ -276,8 +351,9 @@ function Module:MakeButton(parent)
     end)
 
     button:SetScript("OnLeave", function(button, ...)
-        button:GetParent():GetScript("OnLeave")(button:GetParent(), ...);
-        if self.alternatesContainer and not self.alternatesContainer:IsMouseOver() then
+        local parent = button:GetParent();
+        parent:GetScript("OnLeave")(parent, ...);
+        if not self.alternatesContainer:IsMouseOver() then
             self.alternatesContainer:Hide();
         end
     end)
@@ -288,8 +364,6 @@ function Module:MakeButton(parent)
     function button:SetAttribute(attribute, value)
         error('unexpected SetAttribute call on button');
     end
-
-    return button;
 end
 
 local function getShuffledList(tbl)
@@ -350,9 +424,11 @@ function Module:AttachAlternates(button, mapID, mainKnown, mainSpellID)
 
     local container = self:GetAlternatesContainer(button, #alternatatesToShow);
     local buttonPool = container.buttonPool;
+    local alternateButtonSize = button:GetWidth() / 2;
     for i, alternate in ipairs(alternatatesToShow) do
         local alternateButton = buttonPool:Acquire();
-        alternateButton.data = alternate;
+        alternateButton:SetSize(alternateButtonSize, alternateButtonSize);
+        alternateButton:SetData(alternate);
         if alternate.type == TYPE_TOY then
             frameSetAttribute(alternateButton, 'type', 'toy');
             frameSetAttribute(alternateButton, 'toy', alternate.itemID);
@@ -375,54 +451,7 @@ end
 function Module:GetAlternatesContainer(button, numberOfAlternates)
     local alternateButtonSize = button:GetWidth() / 2;
 
-    --- @class MPT_DTP_AlternatesContainer : Frame
     local container = self.alternatesContainer;
-    if not container then
-        --- @class MPT_DTP_AlternatesContainer : Frame
-        container = CreateFrame('Frame', nil, button);
-        self.alternatesContainer = container;
-        container:SetFrameLevel(10);
-
-        local function initFunc(alternateButton)
-            alternateButton:SetSize(alternateButtonSize, alternateButtonSize);
-            alternateButton:RegisterForClicks('AnyUp', 'AnyDown');
-
-            local cooldownFrame = CreateFrame('Cooldown', nil, alternateButton, 'CooldownFrameTemplate');
-            cooldownFrame:SetAllPoints();
-            cooldownFrame:SetDrawEdge(false);
-            cooldownFrame:Show();
-            alternateButton.cooldownFrame = cooldownFrame;
-
-            alternateButton:SetHighlightTexture("Interface\\Buttons\\CheckButtonHighlight", "ADD")
-            alternateButton:SetScript('OnEnter', function()
-                GameTooltip:SetOwner(alternateButton, 'ANCHOR_TOPRIGHT');
-                if alternateButton.data.type == TYPE_TOY then
-                    GameTooltip:SetToyByItemID(alternateButton.data.itemID);
-                elseif alternateButton.data.type == TYPE_ITEM then
-                    GameTooltip:SetItemByID(alternateButton.data.itemID);
-                else
-                    GameTooltip:SetSpellByID(alternateButton.data.spellID);
-                end
-                GameTooltip:Show();
-            end);
-            alternateButton:SetScript('OnLeave', function()
-                GameTooltip:Hide();
-                if not container:IsMouseOver() and not container:GetParent():IsMouseOver() then
-                    container:Hide();
-                end
-            end);
-            alternateButton:SetScript('OnHide', function()
-                container:Hide();
-            end);
-            function alternateButton:SetScript(script, func)
-                error('unexpected SetScript call on alternateButton');
-            end
-            function alternateButton:SetAttribute(attribute, value)
-                error('unexpected SetAttribute call on alternateButton');
-            end
-        end
-        container.buttonPool = CreateFramePool('Button', container, 'InsecureActionButtonTemplate', nil, nil, initFunc);
-    end
     container:SetParent(button);
     container:ClearAllPoints();
     container:SetPoint('BOTTOM', button, 'TOP');
