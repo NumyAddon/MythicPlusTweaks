@@ -188,7 +188,7 @@ end
 function Module:GROUP_ROSTER_UPDATE()
     if not self.PartyFrame then return; end
 
-    self.PartyFrame:SetShown(IsInGroup());
+    self.PartyFrame:SetShown(IsInGroup() and GetNumGroupMembers() > 1);
 
     local entries = self.PartyFrame.Entries;
     for _, entry in pairs(entries) do
@@ -202,8 +202,9 @@ end
 --- @param unit UnitToken.group
 function Module:UpdateEntry(entry, unit)
     local unitName = UnitNameUnmodified(unit);
-    if unitName then
-        local classColor = C_ClassColor.GetClassColor(select(2, UnitClass(unit)));
+    local class = unitName and select(2, UnitClass(unit));
+    if unitName and class then
+        local classColor = C_ClassColor.GetClassColor(class);
         local scoreInfo = Util:GetUnitScores(unit);
         local score = scoreInfo and scoreInfo.overall or 0;
         local color = Util:GetRarityColorOverallScore(score);
