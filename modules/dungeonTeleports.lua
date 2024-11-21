@@ -82,10 +82,10 @@ function Module:OnInitialize()
             error('unexpected SetAttribute call on alternateButton');
         end
     end
-    --- @class MPT_DTP_AlternatesContainer_buttonPool
+    --- @type FramePool<MPT_DTP_AlternatesContainer_button>
     container.buttonPool = CreateFramePool('Button', container, 'InsecureActionButtonTemplate', nil, nil, alternateInitFunc);
 
-    --- @class MPT_DTP_ButtonPool
+    --- @type FramePool<MPT_DTP_Button>
     self.buttonPool = CreateFramePool('Button', UIParent, 'InsecureActionButtonTemplate', nil, nil, function(button)
         self:InitButton(button);
     end);
