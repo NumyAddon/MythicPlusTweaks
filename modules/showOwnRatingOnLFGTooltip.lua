@@ -95,14 +95,15 @@ end
 --- @param resultId number
 function Module:OnTooltipShow(tooltip, resultId)
     local searchResultInfo = C_LFGList.GetSearchResultInfo(resultId);
-    local activityInfo = C_LFGList.GetActivityInfoTable(searchResultInfo.activityID, nil, searchResultInfo.isWarMode);
+    local activityID = searchResultInfo.activityID or searchResultInfo.activityIDs[1];
+    local activityInfo = C_LFGList.GetActivityInfoTable(activityID, nil, searchResultInfo.isWarMode);
     if not activityInfo.isMythicPlusActivity then return; end
 
-    local mapId = self.ActivityIdToChallengeMapIdMap[searchResultInfo.activityID];
+    local mapId = self.ActivityIdToChallengeMapIdMap[activityID];
     if not mapId then
-        if not missingActivityIds[searchResultInfo.activityID] then
-            missingActivityIds[searchResultInfo.activityID] = true;
-            Main:Print('LFG Module: no mapId found for activityID', searchResultInfo.activityID, 'please report this on curse or github');
+        if not missingActivityIds[activityID] then
+            missingActivityIds[activityID] = true;
+            Main:Print('LFG Module: no mapId found for activityID', activityID, 'please report this on curse or github');
         end
         return;
     end
