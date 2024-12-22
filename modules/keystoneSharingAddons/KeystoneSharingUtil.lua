@@ -197,7 +197,7 @@ do
         end
     end
 
-    function frame:BAG_UPDATE()
+    function frame:BAG_UPDATE_DELAYED()
         self.updatePending = true;
     end
 
@@ -259,13 +259,13 @@ do
     end
 
     function startListeningForKeystoneUpdates()
-        frame:RegisterEvent('BAG_UPDATE')
+        frame:RegisterEvent('BAG_UPDATE_DELAYED')
         frame:RegisterEvent('ITEM_CHANGED')
         frame:SetScript('OnUpdate', frame.OnUpdate);
     end
 
     function stopListeningForKeystoneUpdates()
-        frame:UnregisterEvent('BAG_UPDATE')
+        frame:UnregisterEvent('BAG_UPDATE_DELAYED')
         frame:UnregisterEvent('ITEM_CHANGED')
         frame:SetScript('OnUpdate', nil);
     end
