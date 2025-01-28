@@ -585,6 +585,8 @@ Module.portals = {
     ReturntoKarazhan = dungeonPortal(373262),
     AtalDazar = dungeonPortal(424187),
     Freehold = dungeonPortal(410071),
+    TheMOTHERLODE = dungeonPortal(467553), -- TODO: Figure out which is the correct one
+    TheMOTHERLODE2 = dungeonPortal(467555), -- TODO: Figure out which is the correct one
     WaycrestManor = dungeonPortal(424167),
     TheUnderrot = dungeonPortal(410074),
     OperationMechagon = dungeonPortal(373274),
@@ -617,6 +619,7 @@ Module.portals = {
     TheDawnbreaker = dungeonPortal(445414),
     CinderbrewMeadery = dungeonPortal(445440),
     GrimBatol = dungeonPortal(445424),
+    OperationFloodgate = dungeonPortal(1216786),
     SiegeofBoralus = dungeonPortal(464256), -- HORDE
 }
 if UnitFactionGroup("player") == 'Alliance' then
@@ -753,6 +756,7 @@ Module.maps = {
     [505] = 'TheDawnbreaker',
     [506] = 'CinderbrewMeadery',
     [507] = 'GrimBatol',
+    [525] = 'OperationFloodgate',
 };
 
 Module.alternates = {
@@ -775,6 +779,8 @@ Module.alternates = {
         portals.GrimrailDepot,
         portals.IronDocks,
         toys.EngiWormholeDraenor,
+        mage.CurrentHub,
+        hearthstones.CurrentHub,
     },
     IronDocks = {},
     EyeofAzshara = {},
@@ -785,6 +791,8 @@ Module.alternates = {
         portals.CourtofStars,
         toys.DalaranHearthstone,
         mage.LegionOrderHall,
+        mage.CurrentHub,
+        hearthstones.CurrentHub,
     },
     BlackRookHold = {
         portals.DarkheartThicket,
@@ -793,6 +801,8 @@ Module.alternates = {
         portals.CourtofStars,
         mage.LegionOrderHall,
         toys.DalaranHearthstone,
+        mage.CurrentHub,
+        hearthstones.CurrentHub,
     },
     HallsofValor = {},
     NeltharionsLair = {},
@@ -805,17 +815,29 @@ Module.alternates = {
     SeatoftheTriumvirate = {},
     AtalDazar = {
         mage.Dazaralor,
+        portals.TheMOTHERLODE,
         toys.EngiWormholeZandalar,
         portals.TheUnderrot,
+        mage.CurrentHub,
+        hearthstones.CurrentHub,
     },
     Freehold = {},
     TolDagor = {},
-    TheMOTHERLODE = {},
+    TheMOTHERLODE = {
+        mage.Dazaralor,
+        portals.AtalDazar,
+        toys.EngiWormholeZandalar,
+        portals.TheUnderrot,
+        mage.CurrentHub,
+        hearthstones.CurrentHub,
+    },
     WaycrestManor = {
         portals.OperationMechagon,
         portals.Freehold,
         toys.EngiWormholeKulTiras,
         mage.Boralus,
+        mage.CurrentHub,
+        hearthstones.CurrentHub,
     },
     KingsRest = {},
     TempleofSethraliss = {},
@@ -857,6 +879,8 @@ Module.alternates = {
         portals.TheNecroticWake,
         mage.Oribos,
         toys.EngiWormholeShadowlands,
+        mage.CurrentHub,
+        hearthstones.CurrentHub,
     },
     TheaterofPain = {},
     Tazavesh = {},
@@ -866,6 +890,8 @@ Module.alternates = {
         toys.EngiWormholeDragonIsles,
         portals.Neltharus, -- not so great options frankly
         portals.AlgetharAcademy,
+        mage.CurrentHub,
+        hearthstones.CurrentHub,
     },
     TheNokhudOffensive = {
         toys.EngiWormholeDragonIsles,
@@ -873,10 +899,14 @@ Module.alternates = {
         hearthstones.Valdrakken,
         portals.RubyLifePools, -- not great
         portals.Neltharus,
+        mage.CurrentHub,
+        hearthstones.CurrentHub,
     },
     TheAzureVault = {
         portals.BrackenhideHollow,
         toys.EngiWormholeDragonIsles,
+        mage.CurrentHub,
+        hearthstones.CurrentHub,
     },
     AlgetharAcademy = {
         portals.HallsofInfusion,
@@ -884,11 +914,15 @@ Module.alternates = {
         mage.Valdrakken,
         hearthstones.Valdrakken,
         portals.RubyLifePools,
+        mage.CurrentHub,
+        hearthstones.CurrentHub,
     },
     UldamanLegacyofTyr = {
         mage.Valdrakken, -- tbh, there isn't really any 'good' alternative for this one
         hearthstones.Valdrakken,
         portals.GrimBatol,
+        mage.CurrentHub,
+        hearthstones.CurrentHub,
     },
     Neltharus = {
         portals.RubyLifePools,
@@ -896,10 +930,14 @@ Module.alternates = {
         toys.EngiWormholeDragonIsles,
         mage.Valdrakken,
         hearthstones.Valdrakken,
+        mage.CurrentHub,
+        hearthstones.CurrentHub,
     },
     BrackenhideHollow = {
         portals.TheAzureVault,
         toys.EngiWormholeDragonIsles,
+        mage.CurrentHub,
+        hearthstones.CurrentHub,
     },
     HallsofInfusion = {
         portals.DawnoftheInfinite,
@@ -907,6 +945,8 @@ Module.alternates = {
         toys.EngiWormholeDragonIsles,
         mage.Valdrakken,
         hearthstones.Valdrakken,
+        mage.CurrentHub,
+        hearthstones.CurrentHub,
     },
     TheVortexPinnacle = {},
     ThroneoftheTides = {
@@ -920,10 +960,14 @@ Module.alternates = {
         mage.Valdrakken,
         hearthstones.Valdrakken,
         portals.RubyLifePools,
+        mage.CurrentHub,
+        hearthstones.CurrentHub,
     },
     PrioryoftheSacredFlame = {
         portals.TheDawnbreaker,
         toys.EngiWormholeKhazAlgar,
+        mage.Dornogal,
+        hearthstones.Dornogal,
     },
     TheRookery = {
         mage.Dornogal,
@@ -933,6 +977,7 @@ Module.alternates = {
     },
     TheStonevault = {
         portals.DarkflameCleft,
+        portals.OperationFloodgate,
         mage.Dornogal,
         hearthstones.Dornogal,
         toys.EngiWormholeKhazAlgar,
@@ -951,6 +996,7 @@ Module.alternates = {
     },
     DarkflameCleft = {
         portals.TheStonevault,
+        portals.OperationFloodgate,
         mage.Dornogal,
         hearthstones.Dornogal,
         toys.EngiWormholeKhazAlgar,
@@ -958,6 +1004,8 @@ Module.alternates = {
     TheDawnbreaker = {
         portals.PrioryoftheSacredFlame,
         toys.EngiWormholeKhazAlgar,
+        mage.Dornogal,
+        hearthstones.Dornogal,
     },
     CinderbrewMeadery = {
         mage.Dornogal,
@@ -969,5 +1017,12 @@ Module.alternates = {
         portals.UldamanLegacyofTyr, -- not great still :/
         mage.CurrentHub,
         hearthstones.CurrentHub,
+    },
+    OperationFloodgate = {
+        portals.TheStonevault,
+        portals.DarkflameCleft,
+        mage.Dornogal,
+        hearthstones.Dornogal,
+        toys.EngiWormholeKhazAlgar,
     },
 };

@@ -72,6 +72,8 @@ Module.ActivityIdToChallengeMapIdMap = {
     [1287] = 501, -- The Stonevault
     [1288] = 502, -- City of Threads
     [1290] = 507, -- Grim Batol
+    [1550] = 525, -- Operation: Floodgate
+    [1616] = 370, -- Operation: Mechagon - Workshop
 };
 local missingActivityIds = {};
 

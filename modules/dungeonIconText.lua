@@ -87,6 +87,7 @@ Module.shortNames = {
     [505] = {"DB", "Dawnbreaker"}, -- The Dawnbreaker
     [506] = {"CM", "Cinderbrew"}, -- Cinderbrew Meadery
     [507] = {"GB", "Grim Batol"}, -- Grim Batol
+    [525] = {"OF", "Floodgate"}, -- Operation: Floodgate
 };
 
 function Module:OnInitialize()
