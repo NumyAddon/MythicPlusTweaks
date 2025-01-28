@@ -10,3 +10,4 @@ externals:
     libs/AceComm-3.0: https://repos.wowace.com/wow/ace3/trunk/AceComm-3.0
     libs/AceSerializer-3.0: https://repos.wowace.com/wow/ace3/trunk/AceSerializer-3.0
     libs/LibOpenRaid: https://github.com/Tercioo/Open-Raid-Library.git
+    libs/LibVersionCheck-1.0: https://github.com/NumyAddon/LibVersionCheck-1.0.git

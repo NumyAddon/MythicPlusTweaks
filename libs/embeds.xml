@@ -11,4 +11,5 @@
 	<Include file="AceSerializer-3.0\AceSerializer-3.0.xml"/>
 	<Script file="LibDeflate\LibDeflate.lua"/>
 	<Include file="LibOpenRaid\lib.xml"/>
+	<Include file="LibVersionCheck-1.0\LibVersionCheck-1.0.xml"/>
 </Ui>
