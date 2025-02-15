@@ -62,7 +62,7 @@ function Module:OnInitialize()
             elseif alternateButton.data.type == TYPE_ITEM then
                 GameTooltip:SetItemByID(alternateButton.data.itemID);
             else
-                GameTooltip:SetSpellByID(alternateButton.data.spellID);
+                GameTooltip:SetSpellByID(alternateButton.data.spellID());
             end
             GameTooltip:Show();
         end);
@@ -256,7 +256,7 @@ function Module:ProcessIcon(icon, index)
 
     local mapId = icon.mapID;
     local mapName = self.maps[mapId];
-    local spellID = self.portals[mapName] and self.portals[mapName].spellID or nil;
+    local spellID = self.portals[mapName] and self.portals[mapName].spellID() or nil;
     self.buttons[icon]:RegisterSpell(spellID); -- nil will unregister the spell
 
     if not spellID then return; end
@@ -437,7 +437,7 @@ function Module:AttachAlternates(button, mapID, mainKnown, mainSpellID)
             frameSetAttribute(alternateButton, 'item', alternate.itemID);
         else
             frameSetAttribute(alternateButton, 'type', 'spell');
-            frameSetAttribute(alternateButton, 'spell', alternate.spellID);
+            frameSetAttribute(alternateButton, 'spell', alternate.spellID());
         end
 
         alternateButton:SetNormalTexture(alternate.icon);
@@ -478,15 +478,25 @@ local function toy(itemID)
         type = TYPE_TOY,
     };
 end
-local function spell(spellID, type)
+local function spell(spellIDs, type)
+    local function getSpellID()
+        for _, spellID in ipairs(spellIDs) do
+            if IsSpellKnown(spellID) then
+                return spellID;
+            end
+        end
+
+        return nil;
+    end
+
     return {
-        icon = C_Spell.GetSpellTexture(spellID),
-        spellID = spellID,
+        icon = C_Spell.GetSpellTexture(getSpellID() or spellIDs[1]),
+        spellID = function() return getSpellID() or spellIDs[1] end,
         available = function()
-            return IsSpellKnown(spellID);
+            return nil ~= getSpellID();
         end,
         cooldown = function()
-            local spellCooldownInfo = C_Spell.GetSpellCooldown(spellID);
+            local spellCooldownInfo = C_Spell.GetSpellCooldown(getSpellID() or spellIDs[1]);
             if spellCooldownInfo then
                 return spellCooldownInfo.startTime, spellCooldownInfo.duration, spellCooldownInfo.isEnabled;
             end
@@ -494,11 +504,11 @@ local function spell(spellID, type)
         type = type,
     };
 end
-local function dungeonPortal(spellID)
-    return spell(spellID, TYPE_DUNGEON_PORTAL);
+local function dungeonPortal(spellID, ...)
+    return spell({ spellID, ... }, TYPE_DUNGEON_PORTAL);
 end
 local function classTeleport(spellID)
-    return spell(spellID, TYPE_CLASS_TELEPORT);
+    return spell({ spellID }, TYPE_CLASS_TELEPORT);
 end
 local hearthstoneImplementations = { -- implementations that share a cooldown, go into the same subtable
     {
@@ -585,8 +595,7 @@ Module.portals = {
     ReturntoKarazhan = dungeonPortal(373262),
     AtalDazar = dungeonPortal(424187),
     Freehold = dungeonPortal(410071),
-    TheMOTHERLODE = dungeonPortal(467553), -- TODO: Figure out which is the correct one
-    TheMOTHERLODE2 = dungeonPortal(467555), -- TODO: Figure out which is the correct one
+    TheMOTHERLODE = dungeonPortal(467553, 467555),
     WaycrestManor = dungeonPortal(424167),
     TheUnderrot = dungeonPortal(410074),
     OperationMechagon = dungeonPortal(373274),
@@ -620,15 +629,8 @@ Module.portals = {
     CinderbrewMeadery = dungeonPortal(445440),
     GrimBatol = dungeonPortal(445424),
     OperationFloodgate = dungeonPortal(1216786),
-    SiegeofBoralus = dungeonPortal(464256), -- HORDE
-}
-if UnitFactionGroup("player") == 'Alliance' then
-    for k, v in pairs({
-        SiegeofBoralus = dungeonPortal(445418), -- ALLIANCE
-    }) do
-        Module.portals[k] = v;
-    end
-end
+    SiegeofBoralus = dungeonPortal(445418, 464256),
+};
 Module.toys = {
     GarrisonHearthstone = toy(110560),
     DalaranHearthstone = toy(140192),
@@ -645,7 +647,7 @@ Module.toys = {
     EngiGadgetzan = toy(18986), -- Gnomish Engineering, Tanaris, north-east of Uldum
     EngiArea52 = toy(30542), -- Goblin Engineering, Netherstorm, northern Outland
     EngiEverlook = toy(18984), -- Goblin Engineering, Winterspring, north of Mount Hyjal, probably kinda useless for this ;)
-}
+};
 Module.mage = {
    Dazaralor = classTeleport(281404),
    Stormshield = classTeleport(176248),
@@ -675,10 +677,10 @@ Module.mage = {
    Valdrakken = classTeleport(395277),
    Dornogal = classTeleport(446540),
    CurrentHub = classTeleport(446540), -- the current hub generally has a portal to seasonal dungeons from older expansions
-}
+};
 Module.others = {
     DruidDreamwalk = classTeleport(193753),
-}
+};
 
 local portals, toys, mage, others, hearthstones = Module.portals, Module.toys, Module.mage, Module.others, Module.hearthstoneLocations;
 
