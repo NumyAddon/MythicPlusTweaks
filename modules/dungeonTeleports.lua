@@ -531,8 +531,11 @@ local hearthstoneImplementations = { -- implementations that share a cooldown, g
         toy(93672), -- Dark Portal
         toy(208704), -- Deepdweller's Earthen Hearthstone
         toy(188952), -- Dominated Hearthstone
+        toy(210455), -- Draenic Hologem
         toy(190196), -- Enlightened Hearthstone
+        toy(172179), -- Eternal Traveler's Hearthstone
         toy(54452), -- Ethereal Portal
+        toy(236687), -- Explosive Hearthstone
         toy(166746), -- Fire Eater's Hearthstone
         toy(162973), -- Greatfather Winter's Hearthstone
         toy(163045), -- Headless Horseman's Hearthstone
@@ -543,11 +546,14 @@ local hearthstoneImplementations = { -- implementations that share a cooldown, g
         toy(182773), -- Necrolord Hearthstone
         toy(180290), -- Night Fae Hearthstone
         toy(165802), -- Noble Gardener's Hearthstone
+        toy(228940), -- Notorious Thread's Hearthstone
         toy(200630), -- Ohn'ir Windsage's Hearthstone
         toy(206195), -- Path of the Naaru
         toy(165670), -- Peddlefeet's Lovely Hearthstone
+        toy(212337), -- Stone of the Hearth
         toy(64488), -- The Innkeeper's Daughter
         toy(193588), -- Timewalker's Hearthstone
+        toy(142542), -- Tome of Town Portal
         toy(183716), -- Venthyr Sinstone
     }
 };
