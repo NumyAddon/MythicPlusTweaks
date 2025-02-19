@@ -5,6 +5,7 @@
 ## Notes: Various improvements for m+
 ## Version: @project-version@
 ## X-Curse-Project-ID: 646999
+## X-Wago-ID: O67j7jN3
 ## SavedVariables: MythicPlusTweaksDB
 ## OptionalDeps: AngryKeystones, AstralKeys
 ## Category-enUS: Dungeons & Raids
