@@ -858,7 +858,10 @@ Module.alternates = {
         mage.CurrentHub,
         hearthstones.CurrentHub,
     },
-    OperationMechagon = {},
+    OperationMechagon = {
+        mage.CurrentHub,
+        hearthstones.CurrentHub,
+    },
     MistsofTirnaScithe = {
         portals.DeOtherSide,
         mage.Oribos,
@@ -890,7 +893,11 @@ Module.alternates = {
         mage.CurrentHub,
         hearthstones.CurrentHub,
     },
-    TheaterofPain = {},
+    TheaterofPain = {
+        portals.Plaguefall,
+        mage.CurrentHub,
+        hearthstones.CurrentHub,
+    },
     Tazavesh = {},
     RubyLifePools = {
         mage.Valdrakken,

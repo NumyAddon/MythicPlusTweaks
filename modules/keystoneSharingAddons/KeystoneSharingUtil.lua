@@ -13,6 +13,8 @@ Util.lockedAt = nil;
 Util.lockedKeystoneMapID = nil;
 Util.lockedKeystoneLevel = nil;
 
+--- @return number? keystoneChallengeMapID
+--- @return number? keystoneLevel
 function Util:GetOwnedKeystone()
     if self.lockedAt then
         local timeSinceLocked = GetTime() - self.lockedAt;
@@ -174,7 +176,6 @@ do
     --- @class KeystoneSharingUtilEventFrame: Frame
     local frame = CreateFrame('Frame');
     frame.lastUpdate = 0;
-    frame.updatePending = true;
     frame.lastKnownKeystoneMapID = 0;
     frame.lastKnownKeystoneLevel = 0;
 
@@ -198,7 +199,7 @@ do
     end
 
     function frame:BAG_UPDATE_DELAYED()
-        self.updatePending = true;
+        self:Show()
     end
 
     function frame:ITEM_CHANGED(fromItem, toItem)
@@ -219,7 +220,7 @@ do
             end
 
             if mapID ~= self.lastKnownKeystoneMapID or level ~= self.lastKnownKeystoneLevel then
-                self.updatePending = false;
+                self:Hide()
                 self.lastUpdate = GetTime();
                 self.lastKnownKeystoneMapID = mapID;
                 self.lastKnownKeystoneLevel = level;
@@ -236,14 +237,13 @@ do
     end
 
     function frame:OnUpdate()
-        if not self.updatePending then return; end
         if (GetTime() - self.lastUpdate) < 2 then return; end
 
         self:CheckKeystones();
     end
 
     function frame:CheckKeystones()
-        self.updatePending = false;
+        self:Hide()
         self.lastUpdate = GetTime();
 
         local keystoneMapID, keystoneLevel = Util:GetOwnedKeystone();
