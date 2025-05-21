@@ -23,6 +23,7 @@
 libs\embeds.xml
 
 SharedUtil.lua
+KeystoneUtil.lua
 core.lua
 
 modules\dungeonScoreTooltipFix.lua
@@ -35,6 +36,7 @@ modules\showScoreOnKeystoneTooltip.lua
 modules\improveKeystoneLink.lua
 modules\sortDungeonIcons.lua
 modules\partyRating.lua
+modules\miscQoL.lua
 
 modules\MistHelperSync\MistHelperSync.xml
 modules\keystoneSharingAddons\keystoneSharing.xml

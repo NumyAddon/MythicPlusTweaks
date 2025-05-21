@@ -1,6 +1,8 @@
 local _, MPT = ...;
 --- @type MPT_Main
 local Main = MPT.Main;
+--- @type KeystoneSharingUtil
+local KSUtil = MPT.KeystoneSharingUtil;
 
 --- @class MPT_ImproveKeystoneLink: AceModule
 local Module = Main:NewModule('ImproveKeystoneLink');
@@ -62,42 +64,13 @@ local function string_replace(text, search, replace)
 end
 
 local KEYSTONE_ITEM_LINK_PATTERN = '|Hitem:180653:.-|h%[.-%]|h';
--- mapID, level, affix1, affix2, affix3, affix4
-local KEYSTONE_LINK_FORMAT = '|Hkeystone:180653:%d:%d:%d:%d:%d:%d|h['.. CHALLENGE_MODE_KEYSTONE_HYPERLINK ..']|h';
 function Module:ReplaceChatMessage(message)
     local original = message;
     for link in original:gmatch(KEYSTONE_ITEM_LINK_PATTERN) do
-        local parts = strsplittable(':', (link:gsub('|Hitem:', '')));
-        local numBonusIDs = tonumber(parts[13]) or 0;
-        local offset = 14 + numBonusIDs;
-        local numModifiers = tonumber(parts[offset]) or 0;
-        local mapID, level;
-        local affix1, affix2, affix3, affix4 = 0, 0, 0, 0;
-        for i = (offset + 1), (offset + numModifiers * 2), 2 do
-            local modifierID = tonumber(parts[i]) or 0;
-            local modifierValue = tonumber(parts[i + 1]) or 0;
-            if modifierID == Enum.ItemModification.KeystonePowerLevel then
-                level = modifierValue;
-            elseif modifierID == Enum.ItemModification.KeystoneMapChallengeModeID then
-                mapID = modifierValue;
-            elseif modifierID == Enum.ItemModification.KeystoneAffix0 then
-                affix1 = modifierValue;
-            elseif modifierID == Enum.ItemModification.KeystoneAffix01 then
-                affix2 = modifierValue;
-            elseif modifierID == Enum.ItemModification.KeystoneAffix02 then
-                affix3 = modifierValue;
-            elseif modifierID == Enum.ItemModification.KeystoneAffix03 then
-                affix4 = modifierValue;
-            end
-        end
+        local keystoneLink = KSUtil:ConvertKeystoneItemLinkToKeystoneLink(link);
 
-        if level and mapID then
-            local mapName = C_ChallengeMode.GetMapUIInfo(mapID);
-            message = string_replace(
-                message,
-                link,
-                KEYSTONE_LINK_FORMAT:format(mapID, level, affix1, affix2, affix3, affix4, mapName, level)
-            );
+        if keystoneLink then
+            message = string_replace(message, link, keystoneLink);
         end
     end
 

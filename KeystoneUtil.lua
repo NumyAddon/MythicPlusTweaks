@@ -2,6 +2,7 @@ local _, MPT = ...
 --- @class KeystoneSharingUtil
 local Util = {};
 MPT.KeystoneSharingUtil = Util;
+KSUtil = Util;
 
 local CTL = ChatThrottleLib;
 
@@ -12,6 +13,8 @@ Util.CHARACTER_LIMIT_BNET = 4000; -- the real limit is documented to be 4078, bu
 Util.lockedAt = nil;
 Util.lockedKeystoneMapID = nil;
 Util.lockedKeystoneLevel = nil;
+--- @type table<number, table<number, string>> [mapID] = { [keystoneLevel] = keystoneLink }
+Util.keystoneLinkCache = {};
 
 --- @return number? keystoneChallengeMapID
 --- @return number? keystoneLevel
@@ -26,53 +29,147 @@ function Util:GetOwnedKeystone()
             self.lockedKeystoneLevel = nil;
         end
     end
-    local keystoneMapID = C_MythicPlus.GetOwnedKeystoneChallengeMapID()
-    local keystoneLevel = C_MythicPlus.GetOwnedKeystoneLevel()
+    local keystoneMapID = C_MythicPlus.GetOwnedKeystoneChallengeMapID();
+    local keystoneLevel = C_MythicPlus.GetOwnedKeystoneLevel();
 
     if keystoneMapID and keystoneLevel then
-        return keystoneMapID, keystoneLevel
+        return keystoneMapID, keystoneLevel;
+    end
+end
+
+function Util:GetKeystoneLink()
+    local mapID, level = self:GetOwnedKeystone();
+    if not mapID or not level then
+        return nil;
+    end
+    if self.keystoneLinkCache[mapID] and self.keystoneLinkCache[mapID][level] then
+        return self.keystoneLinkCache[mapID][level];
+    end
+
+    local keyLink;
+
+    for bag = BACKPACK_CONTAINER, NUM_BAG_SLOTS do
+        for slot = 1, C_Container.GetContainerNumSlots(bag) do
+            local info = C_Container.GetContainerItemInfo(bag, slot);
+            local itemID = info and info.itemID;
+            local hyperlink = info and info.hyperlink;
+            if itemID and hyperlink and C_Item.IsItemKeystoneByID(itemID) then
+                keyLink = hyperlink;
+                local keyMapID, keyLevel = self:GetMapIDAndLevelFromKeystoneLink(hyperlink);
+                if keyMapID and keyLevel then
+                    self.keystoneLinkCache[keyMapID] = self.keystoneLinkCache[keyMapID] or {};
+                    self.keystoneLinkCache[keyMapID][keyLevel] = hyperlink;
+                end
+                break;
+            end
+        end
+    end
+
+    return keyLink;
+end
+
+---@param link string either an item link or a keystone link
+---@return number|nil mapID
+---@return number|nil level
+function Util:GetMapIDAndLevelFromKeystoneLink(link)
+    local linkType, data = LinkUtil.ExtractLink(link)
+    local mapID, level;
+    local parts = strsplittable(':', data);
+    if linkType == 'item' then
+        local numBonusIDs = tonumber(parts[13]) or 0;
+        local offset = 14 + numBonusIDs;
+        local numModifiers = tonumber(parts[offset]) or 0;
+        for i = (offset + 1), (offset + numModifiers * 2), 2 do
+            local modifierID = tonumber(parts[i]) or 0;
+            local modifierValue = tonumber(parts[i + 1]) or 0;
+            if modifierID == Enum.ItemModification.KeystonePowerLevel then
+                level = modifierValue;
+            elseif modifierID == Enum.ItemModification.KeystoneMapChallengeModeID then
+                mapID = modifierValue;
+            end
+        end
+    elseif linkType == 'keystone' then
+        mapID = tonumber(parts[2]) or 0;
+        level = tonumber(parts[3]) or 0;
+    end
+
+    return mapID, level;
+end
+
+-- mapID, level, affix1, affix2, affix3, affix4
+local KEYSTONE_LINK_FORMAT = '|Hkeystone:180653:%d:%d:%d:%d:%d:%d:0|h[' .. CHALLENGE_MODE_KEYSTONE_HYPERLINK .. ']|h';
+--- @param itemLink string keystone item link
+--- @return string|nil keystoneLink
+function Util:ConvertKeystoneItemLinkToKeystoneLink(itemLink)
+    local parts = strsplittable(':', (itemLink:gsub('|Hitem:', '')));
+    local numBonusIDs = tonumber(parts[13]) or 0;
+    local offset = 14 + numBonusIDs;
+    local numModifiers = tonumber(parts[offset]) or 0;
+    local mapID, level;
+    local affix1, affix2, affix3, affix4 = 0, 0, 0, 0;
+    for i = (offset + 1), (offset + numModifiers * 2), 2 do
+        local modifierID = tonumber(parts[i]) or 0;
+        local modifierValue = tonumber(parts[i + 1]) or 0;
+        if modifierID == Enum.ItemModification.KeystonePowerLevel then
+            level = modifierValue;
+        elseif modifierID == Enum.ItemModification.KeystoneMapChallengeModeID then
+            mapID = modifierValue;
+        elseif modifierID == Enum.ItemModification.KeystoneAffix0 then
+            affix1 = modifierValue;
+        elseif modifierID == Enum.ItemModification.KeystoneAffix01 then
+            affix2 = modifierValue;
+        elseif modifierID == Enum.ItemModification.KeystoneAffix02 then
+            affix3 = modifierValue;
+        elseif modifierID == Enum.ItemModification.KeystoneAffix03 then
+            affix4 = modifierValue;
+        end
+    end
+
+    if level and mapID then
+        local mapName = C_ChallengeMode.GetMapUIInfo(mapID);
+        return KEYSTONE_LINK_FORMAT:format(mapID, level, affix1, affix2, affix3, affix4, mapName, level)
     end
 end
 
 function Util:GetWeeklyBest()
-    local weeklyBest = 0
-    local runHistory = C_MythicPlus.GetRunHistory(false, true)
+    local weeklyBest = 0;
+    local runHistory = C_MythicPlus.GetRunHistory(false, true);
 
     for _, entry in ipairs(runHistory) do
         if entry.thisWeek and entry.level > weeklyBest then
-            weeklyBest = entry.level
+            weeklyBest = entry.level;
         end
     end
 
-    return weeklyBest
+    return weeklyBest;
 end
 
 --- @return FriendInfo[]
 function Util:GetFriendList()
-    local friendList = {}
-    local numFriends = C_FriendList.GetNumFriends()
+    local friendList = {};
+    local numFriends = C_FriendList.GetNumFriends();
 
     for i = 1, numFriends do
-        local friendInfo = C_FriendList.GetFriendInfoByIndex(i)
+        local friendInfo = C_FriendList.GetFriendInfoByIndex(i);
         if friendInfo.connected then
-            tinsert(friendList, friendInfo)
+            tinsert(friendList, friendInfo);
         end
     end
 
-    return friendList
+    return friendList;
 end
 
 function Util:GetBNetFriendList()
-    local friendList = {}
-    local numFriends = BNGetNumFriends()
+    local friendList = {};
+    local numFriends = BNGetNumFriends();
 
     for i = 1, numFriends do
         for gameIndex = 1, C_BattleNet.GetFriendNumGameAccounts(i) do
-            local gameAccountInfo = C_BattleNet.GetFriendGameAccountInfo(i, gameIndex)
+            local gameAccountInfo = C_BattleNet.GetFriendGameAccountInfo(i, gameIndex);
             if gameAccountInfo and gameAccountInfo.clientProgram == BNET_CLIENT_WOW and gameAccountInfo.wowProjectID == WOW_PROJECT_MAINLINE then
                 tinsert(friendList, {
                     gameAccountID = gameAccountInfo.gameAccountID,
-                })
+                });
             end
         end
     end
@@ -199,27 +296,14 @@ do
     end
 
     function frame:BAG_UPDATE_DELAYED()
-        self:Show()
+        self:Show();
     end
 
     function frame:ITEM_CHANGED(fromItem, toItem)
         if string.match(toItem, '|Hitem:180653') then
-            local parts = strsplittable(':', (toItem:gsub('|Hitem:', '')));
-            local numBonusIDs = tonumber(parts[13]) or 0;
-            local offset = 14 + numBonusIDs;
-            local numModifiers = tonumber(parts[offset]) or 0;
-            local mapID, level;
-            for i = (offset + 1), (offset + numModifiers * 2), 2 do
-                local modifierID = tonumber(parts[i]) or 0;
-                local modifierValue = tonumber(parts[i + 1]) or 0;
-                if modifierID == Enum.ItemModification.KeystonePowerLevel then
-                    level = modifierValue;
-                elseif modifierID == Enum.ItemModification.KeystoneMapChallengeModeID then
-                    mapID = modifierValue;
-                end
-            end
+            local mapID, level = Util:GetMapIDAndLevelFromKeystoneLink(toItem);
 
-            if mapID ~= self.lastKnownKeystoneMapID or level ~= self.lastKnownKeystoneLevel then
+            if mapID and level and (mapID ~= self.lastKnownKeystoneMapID or level ~= self.lastKnownKeystoneLevel) then
                 self:Hide()
                 self.lastUpdate = GetTime();
                 self.lastKnownKeystoneMapID = mapID;
@@ -227,6 +311,8 @@ do
                 Util.lockedKeystoneMapID = mapID;
                 Util.lockedKeystoneLevel = level;
                 Util.lockedAt = GetTime();
+                Util.keystoneLinkCache[mapID] = Util.keystoneLinkCache[mapID] or {};
+                Util.keystoneLinkCache[mapID][level] = Util:ConvertKeystoneItemLinkToKeystoneLink(toItem);
                 RunNextFrame(function()
                     for owner, callback in pairs(keystoneUpdate.registry) do
                         securecallfunction(callback, owner, mapID, level);
@@ -243,7 +329,7 @@ do
     end
 
     function frame:CheckKeystones()
-        self:Hide()
+        self:Hide();
         self.lastUpdate = GetTime();
 
         local keystoneMapID, keystoneLevel = Util:GetOwnedKeystone();
@@ -259,14 +345,14 @@ do
     end
 
     function startListeningForKeystoneUpdates()
-        frame:RegisterEvent('BAG_UPDATE_DELAYED')
-        frame:RegisterEvent('ITEM_CHANGED')
+        frame:RegisterEvent('BAG_UPDATE_DELAYED');
+        frame:RegisterEvent('ITEM_CHANGED');
         frame:SetScript('OnUpdate', frame.OnUpdate);
     end
 
     function stopListeningForKeystoneUpdates()
-        frame:UnregisterEvent('BAG_UPDATE_DELAYED')
-        frame:UnregisterEvent('ITEM_CHANGED')
+        frame:UnregisterEvent('BAG_UPDATE_DELAYED');
+        frame:UnregisterEvent('ITEM_CHANGED');
         frame:SetScript('OnUpdate', nil);
     end
 end
