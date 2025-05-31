@@ -11,6 +11,7 @@ local Module = Main:NewModule('miscQoL', 'AceEvent-3.0', 'AceHook-3.0');
 
 local PREFIX = '<M+ Tweaks> ';
 local QUERY = '!keys';
+local HOVER_BLOCK_SETTING = 'removeHoverBlockFromLFGApplicationViewer';
 
 function Module:OnEnable()
     self.keysCooldown = {};
@@ -25,11 +26,15 @@ function Module:OnEnable()
     EventUtil.ContinueOnAddOnLoaded('Blizzard_ChallengesUI', function()
         self:SecureHookScript(ChallengesKeystoneFrame, 'OnShow', 'OnShowKeystoneFrame');
     end);
+    RunNextFrame(function()
+        self:OnSettingChange(HOVER_BLOCK_SETTING, self.db[HOVER_BLOCK_SETTING]);
+    end);
 end
 
 function Module:OnDisable()
     self:UnregisterAllEvents();
     self:UnhookAll();
+    self:OnSettingChange(HOVER_BLOCK_SETTING, false);
 end
 
 function Module:GetName()
@@ -47,6 +52,7 @@ function Module:GetOptions(defaultOptionsTable, db, increment)
         respondToRaid = true,
         respondToGuild = true,
         autoSlotKeystone = true,
+        [HOVER_BLOCK_SETTING] = true,
     };
     for k, v in pairs(defaults) do
         if db[k] == nil then
@@ -55,7 +61,10 @@ function Module:GetOptions(defaultOptionsTable, db, increment)
     end
 
     local function get(info) return db[info[#info]]; end
-    local function set(info, value) db[info[#info]] = value; end
+    local function set(info, value)
+        db[info[#info]] = value;
+        self:OnSettingChange(info[#info], value);
+    end
 
     defaultOptionsTable.args.keyResponder = {
         type = 'description',
@@ -95,12 +104,30 @@ function Module:GetOptions(defaultOptionsTable, db, increment)
         type = 'toggle',
         name = 'Auto slot keystone',
         desc = 'Automatically slot the keystone when clicking the Font of Power.',
-        get = function() return db.autoSlotKeystone; end,
-        set = function(_, value) db.autoSlotKeystone = value; end,
+        get = get,
+        set = set,
+        order = increment(),
+    };
+    defaultOptionsTable.args[HOVER_BLOCK_SETTING] = {
+        type = 'toggle',
+        name = 'View LFG Applicant info as non-leader',
+        desc = 'Lets you see LFG Applicant info that is normally only visible to the group leader, by stopping blizzard from blocking the tooltip.',
+        get = get,
+        set = set,
+        width = 'double',
         order = increment(),
     };
 
     return defaultOptionsTable;
+end
+
+--- @param setting string
+---@param value any
+function Module:OnSettingChange(setting, value)
+    if setting == HOVER_BLOCK_SETTING then
+        LFGListFrame.ApplicationViewer.UnempoweredCover:EnableMouse(not value)
+        LFGListFrame.ApplicationViewer.UnempoweredCover:SetAlpha(value and 0.4 or 1)
+    end
 end
 
 function Module:OnPartyMessage(_, msg)
