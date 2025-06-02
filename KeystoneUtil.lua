@@ -72,7 +72,7 @@ end
 ---@return number|nil mapID
 ---@return number|nil level
 function Util:GetMapIDAndLevelFromKeystoneLink(link)
-    local linkType, data = LinkUtil.ExtractLink(link)
+    local linkType, data = LinkUtil.ExtractLink(link);
     local mapID, level;
     local parts = strsplittable(':', data);
     if linkType == 'item' then
@@ -101,7 +101,8 @@ local KEYSTONE_LINK_FORMAT = '|Hkeystone:180653:%d:%d:%d:%d:%d:%d:0|h[' .. CHALL
 --- @param itemLink string keystone item link
 --- @return string|nil keystoneLink
 function Util:ConvertKeystoneItemLinkToKeystoneLink(itemLink)
-    local parts = strsplittable(':', (itemLink:gsub('|Hitem:', '')));
+    local _, data = LinkUtil.ExtractLink(itemLink);
+    local parts = strsplittable(':', data);
     local numBonusIDs = tonumber(parts[13]) or 0;
     local offset = 14 + numBonusIDs;
     local numModifiers = tonumber(parts[offset]) or 0;
