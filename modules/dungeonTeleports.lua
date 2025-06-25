@@ -687,6 +687,7 @@ Module.mage = {
 };
 Module.others = {
     DruidDreamwalk = classTeleport(193753),
+    CastleNathria = dungeonPortal(373190), -- requires clearing on mythic in SL S4
 };
 
 local portals, toys, mage, others, hearthstones = Module.portals, Module.toys, Module.mage, Module.others, Module.hearthstoneLocations;
@@ -884,9 +885,21 @@ Module.alternates = {
         mage.CurrentHub,
         hearthstones.CurrentHub,
     },
-    HallsofAtonement = {},
+    HallsofAtonement = {
+        portals.SanguineDepths,
+        others.CastleNathria,
+        mage.CurrentHub,
+        hearthstones.CurrentHub,
+        toys.EngiWormholeShadowlands,
+    },
     Plaguefall = {},
-    SanguineDepths = {},
+    SanguineDepths = {
+        others.CastleNathria,
+        portals.HallsofAtonement,
+        mage.CurrentHub,
+        hearthstones.CurrentHub,
+        toys.EngiWormholeShadowlands,
+    },
     SpiresofAscension = {
         portals.TheNecroticWake,
         mage.Oribos,
@@ -899,7 +912,12 @@ Module.alternates = {
         mage.CurrentHub,
         hearthstones.CurrentHub,
     },
-    Tazavesh = {},
+    Tazavesh = {
+        mage.Oribos,
+        toys.EngiWormholeShadowlands,
+        mage.CurrentHub,
+        hearthstones.CurrentHub,
+    },
     RubyLifePools = {
         mage.Valdrakken,
         hearthstones.Valdrakken,
