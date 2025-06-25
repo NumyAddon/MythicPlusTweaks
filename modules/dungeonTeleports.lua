@@ -550,6 +550,7 @@ local hearthstoneImplementations = { -- implementations that share a cooldown, g
         toy(200630), -- Ohn'ir Windsage's Hearthstone
         toy(206195), -- Path of the Naaru
         toy(165670), -- Peddlefeet's Lovely Hearthstone
+        toy(235016), -- Redeployment Module
         toy(212337), -- Stone of the Hearth
         toy(64488), -- The Innkeeper's Daughter
         toy(193588), -- Timewalker's Hearthstone
@@ -604,6 +605,7 @@ Module.portals = {
     TheMOTHERLODE = dungeonPortal(467553, 467555),
     WaycrestManor = dungeonPortal(424167),
     TheUnderrot = dungeonPortal(410074),
+    SiegeofBoralus = dungeonPortal(445418, 464256),
     OperationMechagon = dungeonPortal(373274),
     MistsofTirnaScithe = dungeonPortal(354464),
     TheNecroticWake = dungeonPortal(354462),
@@ -635,7 +637,6 @@ Module.portals = {
     CinderbrewMeadery = dungeonPortal(445440),
     GrimBatol = dungeonPortal(445424),
     OperationFloodgate = dungeonPortal(1216786),
-    SiegeofBoralus = dungeonPortal(445418, 464256),
 };
 Module.toys = {
     GarrisonHearthstone = toy(110560),
@@ -655,34 +656,34 @@ Module.toys = {
     EngiEverlook = toy(18984), -- Goblin Engineering, Winterspring, north of Mount Hyjal, probably kinda useless for this ;)
 };
 Module.mage = {
-   Dazaralor = classTeleport(281404),
-   Stormshield = classTeleport(176248),
-   ValeofEternalBlossoms1 = classTeleport(132621),
-   ValeofEternalBlossoms2 = classTeleport(132627),
-   Warspear = classTeleport(176242),
-   LegionOrderHall = classTeleport(193759), -- Hall of the Guardian, useful for all legion locations
-   Boralus = classTeleport(281403),
-   DalaranBrokenIsles = classTeleport(224869),
-   DalaranNorthrend = classTeleport(53140),
-   Darnassus = classTeleport(3565),
-   Exodar = classTeleport(32271),
-   Ironforge = classTeleport(3562),
-   Orgrimmar = classTeleport(3567),
-   Shattrath1 = classTeleport(33690),
-   Shattrath2 = classTeleport(35715),
-   Silvermoon = classTeleport(32272),
-   Stonard = classTeleport(49358),
-   Stormwind = classTeleport(3561),
-   Theramore = classTeleport(49359),
-   ThunderBluff = classTeleport(3566),
-   TolBarad1 = classTeleport(88342),
-   TolBarad2 = classTeleport(88344),
-   Undercity = classTeleport(3563),
-   DalaranCrater = classTeleport(120145),
-   Oribos = classTeleport(344587),
-   Valdrakken = classTeleport(395277),
-   Dornogal = classTeleport(446540),
-   CurrentHub = classTeleport(446540), -- the current hub generally has a portal to seasonal dungeons from older expansions
+    Dazaralor = classTeleport(281404),
+    Stormshield = classTeleport(176248),
+    ValeofEternalBlossoms1 = classTeleport(132621),
+    ValeofEternalBlossoms2 = classTeleport(132627),
+    Warspear = classTeleport(176242),
+    LegionOrderHall = classTeleport(193759), -- Hall of the Guardian, useful for all legion locations
+    Boralus = classTeleport(281403),
+    DalaranBrokenIsles = classTeleport(224869),
+    DalaranNorthrend = classTeleport(53140),
+    Darnassus = classTeleport(3565),
+    Exodar = classTeleport(32271),
+    Ironforge = classTeleport(3562),
+    Orgrimmar = classTeleport(3567),
+    Shattrath1 = classTeleport(33690),
+    Shattrath2 = classTeleport(35715),
+    Silvermoon = classTeleport(32272),
+    Stonard = classTeleport(49358),
+    Stormwind = classTeleport(3561),
+    Theramore = classTeleport(49359),
+    ThunderBluff = classTeleport(3566),
+    TolBarad1 = classTeleport(88342),
+    TolBarad2 = classTeleport(88344),
+    Undercity = classTeleport(3563),
+    DalaranCrater = classTeleport(120145),
+    Oribos = classTeleport(344587),
+    Valdrakken = classTeleport(395277),
+    Dornogal = classTeleport(446540),
+    CurrentHub = classTeleport(446540), -- the current hub generally has a portal to seasonal dungeons from older expansions
 };
 Module.others = {
     DruidDreamwalk = classTeleport(193753),
