@@ -637,6 +637,8 @@ Module.portals = {
     CinderbrewMeadery = dungeonPortal(445440),
     GrimBatol = dungeonPortal(445424),
     OperationFloodgate = dungeonPortal(1216786),
+    -- TheStonecore = dungeonPortal(), -- not implemented yet
+    -- EcoDomeAldani = dungeonPortal(), -- not implemented yet
 };
 Module.toys = {
     GarrisonHearthstone = toy(110560),
@@ -767,6 +769,8 @@ Module.maps = {
     [506] = 'CinderbrewMeadery',
     [507] = 'GrimBatol',
     [525] = 'OperationFloodgate',
+    [541] = 'TheStonecore',
+    [542] = 'EcoDomeAldani',
 };
 
 Module.alternates = {
@@ -1058,5 +1062,10 @@ Module.alternates = {
         mage.Dornogal,
         hearthstones.Dornogal,
         toys.EngiWormholeKhazAlgar,
+    },
+    TheStonecore = {},
+    EcoDomeAldani = { -- not sure where it actually is on the map, will check later
+        mage.CurrentHub,
+        hearthstones.CurrentHub,
     },
 };
