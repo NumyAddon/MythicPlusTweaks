@@ -74,6 +74,9 @@ Module.ActivityIdToChallengeMapIdMap = {
     [1290] = 507, -- Grim Batol
     [1550] = 525, -- Operation: Floodgate
     [1616] = 370, -- Operation: Mechagon - Workshop
+    [1694] = 542, -- Eco-Dome Al'dani
+    [1695] = 163, -- Bloodmaul Slag Mines
+    [1702] = 541, -- The Stonecore
 };
 local missingActivityIds = {};
 
