@@ -528,6 +528,7 @@ local hearthstoneImplementations = { -- implementations that share a cooldown, g
         },
         toy(166747), -- Brewfest Reveler's Hearthstone
         toy(190237), -- Broker Translocation Matrix
+        toy(246565), -- Cosmic Hearthstone
         toy(93672), -- Dark Portal
         toy(208704), -- Deepdweller's Earthen Hearthstone
         toy(188952), -- Dominated Hearthstone
@@ -548,6 +549,7 @@ local hearthstoneImplementations = { -- implementations that share a cooldown, g
         toy(165802), -- Noble Gardener's Hearthstone
         toy(228940), -- Notorious Thread's Hearthstone
         toy(200630), -- Ohn'ir Windsage's Hearthstone
+        toy(245970), -- P.O.S.T. Master's Express Hearthstone
         toy(206195), -- Path of the Naaru
         toy(165670), -- Peddlefeet's Lovely Hearthstone
         toy(235016), -- Redeployment Module
@@ -571,9 +573,10 @@ local function hearthstone(areaID)
 end
 
 Module.hearthstoneLocations = {
-    Valdrakken = hearthstone(13862),
-    Dornogal = hearthstone(14771),
     CurrentHub = hearthstone(14771), -- the current hub generally has a portal to seasonal dungeons from older expansions
+    Tazavesh = hearthstone(15781),
+    Dornogal = hearthstone(14771),
+    Valdrakken = hearthstone(13862),
 }
 
 Module.portals = {
@@ -634,11 +637,11 @@ Module.portals = {
     AraKaraCityofEchoes = dungeonPortal(445417),
     DarkflameCleft = dungeonPortal(445441),
     TheDawnbreaker = dungeonPortal(445414),
-    CinderbrewMeadery = dungeonPortal(445440),
+    CinderbrewMeadery = dungeonPortal(445440, 467546),
     GrimBatol = dungeonPortal(445424),
     OperationFloodgate = dungeonPortal(1216786),
-    -- TheStonecore = dungeonPortal(), -- not implemented yet
-    -- EcoDomeAldani = dungeonPortal(), -- not implemented yet
+    TheStonecore = dungeonPortal(0), -- not implemented yet
+    EcoDomeAldani = dungeonPortal(1237215),
 };
 Module.toys = {
     GarrisonHearthstone = toy(110560),
@@ -917,10 +920,12 @@ Module.alternates = {
         hearthstones.CurrentHub,
     },
     Tazavesh = {
-        mage.Oribos,
-        toys.EngiWormholeShadowlands,
+        portals.EcoDomeAldani,
+        hearthstones.Tazavesh,
         mage.CurrentHub,
         hearthstones.CurrentHub,
+        mage.Oribos,
+        toys.EngiWormholeShadowlands,
     },
     RubyLifePools = {
         mage.Valdrakken,
@@ -1064,8 +1069,12 @@ Module.alternates = {
         toys.EngiWormholeKhazAlgar,
     },
     TheStonecore = {},
-    EcoDomeAldani = { -- not sure where it actually is on the map, will check later
+    EcoDomeAldani = {
+        portals.Tazavesh,
+        hearthstones.Tazavesh,
         mage.CurrentHub,
         hearthstones.CurrentHub,
+        mage.Oribos, -- assuming you can still get to this tazavesh zone from Oribos
+        toys.EngiWormholeShadowlands,
     },
 };
