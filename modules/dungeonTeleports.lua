@@ -640,7 +640,7 @@ Module.portals = {
     CinderbrewMeadery = dungeonPortal(445440, 467546),
     GrimBatol = dungeonPortal(445424),
     OperationFloodgate = dungeonPortal(1216786),
-    TheStonecore = dungeonPortal(0), -- not implemented yet
+    --TheStonecore = dungeonPortal(2), -- not implemented yet
     EcoDomeAldani = dungeonPortal(1237215),
 };
 Module.toys = {
