@@ -152,7 +152,7 @@ end
 function Module:ParseChat(msg, channel)
     if not self.keysCooldown[channel] and strlower(msg) == QUERY then
         local link = KSUtil:GetKeystoneLink();
-        if not link then return;  end
+        if not link then return; end
         self.keysCooldown[channel] = true
         C_Timer.After(10, function() self.keysCooldown[channel] = false end);
 

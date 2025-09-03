@@ -97,7 +97,7 @@ function Util:GetMapIDAndLevelFromKeystoneLink(link)
 end
 
 -- mapID, level, affix1, affix2, affix3, affix4
-local KEYSTONE_LINK_FORMAT = '|Hkeystone:180653:%d:%d:%d:%d:%d:%d:0|h[' .. CHALLENGE_MODE_KEYSTONE_HYPERLINK .. ']|h';
+local KEYSTONE_LINK_FORMAT = '|cnIQ4:|Hkeystone:180653:%d:%d:%d:%d:%d:%d:0|h[' .. CHALLENGE_MODE_KEYSTONE_HYPERLINK .. ']|h|r';
 --- @param itemLink string keystone item link
 --- @return string|nil keystoneLink
 function Util:ConvertKeystoneItemLinkToKeystoneLink(itemLink)
@@ -313,7 +313,7 @@ do
                 Util.lockedKeystoneLevel = level;
                 Util.lockedAt = GetTime();
                 Util.keystoneLinkCache[mapID] = Util.keystoneLinkCache[mapID] or {};
-                Util.keystoneLinkCache[mapID][level] = Util:ConvertKeystoneItemLinkToKeystoneLink(toItem);
+                Util.keystoneLinkCache[mapID][level] = Util.keystoneLinkCache[mapID][level] or Util:ConvertKeystoneItemLinkToKeystoneLink(toItem);
                 RunNextFrame(function()
                     for owner, callback in pairs(keystoneUpdate.registry) do
                         securecallfunction(callback, owner, mapID, level);
