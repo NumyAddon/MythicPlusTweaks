@@ -4,6 +4,8 @@ local Util = {};
 MPT.KeystoneSharingUtil = Util;
 KSUtil = Util;
 
+local BNSendGameData = C_BattleNet and C_BattleNet.SendGameData or BNSendGameData
+
 local CTL = ChatThrottleLib;
 
 Util.BNET_WHISPER_CHANNEL = 'BNET_WHISPER';

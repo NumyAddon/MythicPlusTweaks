@@ -319,7 +319,7 @@ function Module:InitButton(button)
     function button:RegisterSpell(spellID)
         self.spellID = spellID;
         frameSetAttribute(self, 'spell', spellID);
-        self.highlight:SetShown(spellID and IsSpellKnown(spellID));
+        self.highlight:SetShown(spellID and C_SpellBook.IsSpellInSpellBook(spellID, Enum.SpellBookSpellBank.Player, false));
     end
 
     function button:GetRegisteredSpell()
@@ -330,7 +330,7 @@ function Module:InitButton(button)
         local parent = button:GetParent();
         parent:GetScript("OnEnter")(parent, ...);
         local spellID = button:GetRegisteredSpell();
-        local spellKnown = spellID and IsSpellKnown(spellID);
+        local spellKnown = spellID and C_SpellBook.IsSpellInSpellBook(spellID, Enum.SpellBookSpellBank.Player, false);
         if spellID and GameTooltip:IsShown() and spellKnown then
             self:AddInfoToTooltip(GameTooltip, spellID);
         end
@@ -481,7 +481,7 @@ end
 local function spell(spellIDs, type)
     local function getSpellID()
         for _, spellID in ipairs(spellIDs) do
-            if IsSpellKnown(spellID) then
+            if C_SpellBook.IsSpellInSpellBook(spellID, Enum.SpellBookSpellBank.Player, false) then
                 return spellID;
             end
         end

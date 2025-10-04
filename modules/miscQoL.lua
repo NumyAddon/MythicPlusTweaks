@@ -6,6 +6,8 @@ local Util = MPT.Util;
 --- @type KeystoneSharingUtil
 local KSUtil = MPT.KeystoneSharingUtil;
 
+local SendChatMessage = C_ChatInfo and C_ChatInfo.SendChatMessage or SendChatMessage
+
 --- @class MPT_MiscQoL: AceModule,AceEvent-3.0,AceHook-3.0
 local Module = Main:NewModule('miscQoL', 'AceEvent-3.0', 'AceHook-3.0');
 
