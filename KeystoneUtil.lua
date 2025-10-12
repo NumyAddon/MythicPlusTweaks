@@ -6,7 +6,7 @@ KSUtil = Util;
 
 local BNSendGameData = C_BattleNet and C_BattleNet.SendGameData or BNSendGameData
 
-local IS_LEMIX = C_TimerunningUI.GetActiveTimerunningSeasonID() == 2;
+local LEMIX_SEASON_ID = 2;
 
 local CTL = ChatThrottleLib;
 
@@ -42,7 +42,7 @@ function Util:GetOwnedKeystone()
 end
 
 function Util:GetKeystoneLink()
-    if not IS_LEMIX then
+    if PlayerGetTimerunningSeasonID() ~= LEMIX_SEASON_ID then
         local mapID, level = self:GetOwnedKeystone();
         if not mapID or not level then
             return nil;
