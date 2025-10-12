@@ -6,7 +6,7 @@ KSUtil = Util;
 
 local BNSendGameData = C_BattleNet and C_BattleNet.SendGameData or BNSendGameData
 
-local IS_LEMIX = PlayerGetTimerunningSeasonID() == 2;
+local IS_LEMIX = C_TimerunningUI.GetActiveTimerunningSeasonID() == 2;
 
 local CTL = ChatThrottleLib;
 
