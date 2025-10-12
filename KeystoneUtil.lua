@@ -6,6 +6,8 @@ KSUtil = Util;
 
 local BNSendGameData = C_BattleNet and C_BattleNet.SendGameData or BNSendGameData
 
+local IS_LEMIX = PlayerGetTimerunningSeasonID() == 2;
+
 local CTL = ChatThrottleLib;
 
 Util.BNET_WHISPER_CHANNEL = 'BNET_WHISPER';
@@ -40,12 +42,14 @@ function Util:GetOwnedKeystone()
 end
 
 function Util:GetKeystoneLink()
-    local mapID, level = self:GetOwnedKeystone();
-    if not mapID or not level then
-        return nil;
-    end
-    if self.keystoneLinkCache[mapID] and self.keystoneLinkCache[mapID][level] then
-        return self.keystoneLinkCache[mapID][level];
+    if not IS_LEMIX then
+        local mapID, level = self:GetOwnedKeystone();
+        if not mapID or not level then
+            return nil;
+        end
+        if self.keystoneLinkCache[mapID] and self.keystoneLinkCache[mapID][level] then
+            return self.keystoneLinkCache[mapID][level];
+        end
     end
 
     local keyLink;
@@ -303,7 +307,8 @@ do
     end
 
     function frame:ITEM_CHANGED(fromItem, toItem)
-        if string.match(toItem, '|Hitem:180653') then
+        local itemID = C_Item.GetItemIDForItemInfo(toItem);
+        if C_Item.IsItemKeystoneByID(itemID) then
             local mapID, level = Util:GetMapIDAndLevelFromKeystoneLink(toItem);
 
             if mapID and level and (mapID ~= self.lastKnownKeystoneMapID or level ~= self.lastKnownKeystoneLevel) then
