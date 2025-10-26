@@ -1,8 +1,8 @@
-local _, MPT = ...
+--- @class MPT_NS
+local MPT = select(2, ...);
 --- @class KeystoneSharingUtil
 local Util = {};
 MPT.KeystoneSharingUtil = Util;
-KSUtil = Util;
 
 local BNSendGameData = C_BattleNet and C_BattleNet.SendGameData or BNSendGameData
 

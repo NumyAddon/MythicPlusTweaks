@@ -8,7 +8,7 @@ if not _G.MPT then _G.MPT = MPT; end
 --@end-debug@
 
 --- @class MPT_Main: AceAddon,AceHook-3.0,AceEvent-3.0,AceConsole-3.0
-local Main = LibStub('AceAddon-3.0'):NewAddon(name, 'AceConsole-3.0', 'AceHook-3.0', 'AceEvent-3.0');
+local Main = LibStub('AceAddon-3.0'):NewAddon('Mythic Plus Tweaks', 'AceConsole-3.0', 'AceHook-3.0', 'AceEvent-3.0');
 if not Main then return; end
 MPT.Main = Main;
 
@@ -62,8 +62,7 @@ function Main:InitConfig()
 
     self.options = {
         type = 'group',
-        name = 'Mythic+ Tweaks',
-        desc = 'Various tweaks related to mythic+',
+        name = 'Mythic Plus Tweaks',
         childGroups = 'tab',
         args = {
             version = {
@@ -184,7 +183,7 @@ function Main:InitConfig()
         self.options.args.modules.args[moduleName] = moduleOptions;
     end
 
-    self.configCategory = 'Mythic+ Tweaks';
+    self.configCategory = 'Mythic Plus Tweaks';
     registerOptions();
     LibStub('AceConfigDialog-3.0'):AddToBlizOptions(self.configCategory);
 end

@@ -22,6 +22,7 @@
 
 libs\embeds.xml
 
+data.lua
 SharedUtil.lua
 KeystoneUtil.lua
 core.lua

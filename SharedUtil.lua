@@ -3,16 +3,17 @@ local MPT = select(2, ...);
 --- @class MPT_Util
 local Util = {};
 MPT.Util = Util;
+local Data = MPT.Data;
 
 -- whether to support affix-specific scores
 Util.AFFIX_SPECIFIC_SCORES = false;
 
 local scoreRarityColors = {
-    colors = {ITEM_STANDARD_COLOR, ITEM_GOOD_COLOR, ITEM_SUPERIOR_COLOR, ITEM_EPIC_COLOR, ITEM_LEGENDARY_COLOR},
-    overallScore = {0, 1000, 1500, 1800, 2200},
-    level = {0, 4, 7, 10, 15},
-    dungeonAffixScore = {0, 63, 94, 113, 138},
-    dungeonOverallScore = {0, 125, 188, 225, 275},
+    colors = { ITEM_STANDARD_COLOR, ITEM_GOOD_COLOR, ITEM_SUPERIOR_COLOR, ITEM_EPIC_COLOR, ITEM_LEGENDARY_COLOR },
+    overallScore = { 0, 1000, 1500, 1800, 2200 },
+    level = { 0, 4, 7, 10, 15 },
+    dungeonAffixScore = { 0, 63, 94, 113, 138 },
+    dungeonOverallScore = { 0, 125, 188, 225, 275 },
 };
 
 --- @return ColorMixin
@@ -49,6 +50,16 @@ function Util:GetRarityColor(score, scoreType)
     return colors[#colors];
 end
 
+--- @param activityID number
+--- @return number|nil challengeMapID
+--- @return string fullName
+--- @return boolean isMythicPlusActivity
+function Util:GetMapInfoByLfgActivityID(activityID)
+    local activityInfo = C_LFGList.GetActivityInfoTable(activityID);
+
+    return Data.ActivityIdToChallengeMapIdMap[activityID], activityInfo.fullName, activityInfo.isMythicPlusActivity;
+end
+
 function Util:ExtractTooltipLines(tooltip)
     local linesLeft, linesRight = {}, {};
     local i = 0;
@@ -67,9 +78,10 @@ function Util:ExtractTooltipLines(tooltip)
         if not left and not right then break; end
         local leftR, leftG, leftB, _ = lineLeft:GetTextColor();
         local rightR, rightG, rightB, _ = lineRight:GetTextColor();
-        table.insert(linesLeft, {text=left, r=leftR, g=leftG, b=leftB, wrap=leftWrap});
-        table.insert(linesRight, {text=right, r=rightR, g=rightG, b=rightB});
+        table.insert(linesLeft, { text = left, r = leftR, g = leftG, b = leftB, wrap = leftWrap, });
+        table.insert(linesRight, { text = right, r = rightR, g = rightG, b = rightB, });
     end
+
     return linesLeft, linesRight;
 end
 
@@ -111,18 +123,18 @@ function Util:GetOverallInfoByMapId(mapId, includeAffixInfo)
                 local isCurrentAffix = affixInfo.name == localizedAffixName;
                 if isCurrentAffix then
                     currentAffixInfo = {
-                       level = affixInfo.level,
-                       levelColor = affixInfo.overTime and GRAY_FONT_COLOR or HIGHLIGHT_FONT_COLOR,
-                       score = affixInfo.score,
-                       scoreColor = self:GetRarityColorDungeonAffixScore(affixInfo.score or 0),
-                   };
+                        level = affixInfo.level,
+                        levelColor = affixInfo.overTime and GRAY_FONT_COLOR or HIGHLIGHT_FONT_COLOR,
+                        score = affixInfo.score,
+                        scoreColor = self:GetRarityColorDungeonAffixScore(affixInfo.score or 0),
+                    };
                 else
                     secondaryAffixInfo = {
-                       level = affixInfo.level,
-                       levelColor = affixInfo.overTime and GRAY_FONT_COLOR or HIGHLIGHT_FONT_COLOR,
-                       score = affixInfo.score,
-                       scoreColor = self:GetRarityColorDungeonAffixScore(affixInfo.score or 0),
-                   };
+                        level = affixInfo.level,
+                        levelColor = affixInfo.overTime and GRAY_FONT_COLOR or HIGHLIGHT_FONT_COLOR,
+                        score = affixInfo.score,
+                        scoreColor = self:GetRarityColorDungeonAffixScore(affixInfo.score or 0),
+                    };
                 end
             end
         end
@@ -160,16 +172,18 @@ end
 function Util:GetLocalizedAffixName()
     local affixIDs = C_MythicPlus.GetCurrentAffixes();
     if not affixIDs then return nil; end
+
     local tyrannicalOrFortifiedAffix = affixIDs[1];
     if not tyrannicalOrFortifiedAffix or not tyrannicalOrFortifiedAffix.id then return nil; end
-    local name = C_ChallengeMode.GetAffixInfo(tyrannicalOrFortifiedAffix.id);
-    return name;
+
+    return C_ChallengeMode.GetAffixInfo(tyrannicalOrFortifiedAffix.id);
 end
 
 function Util:GetAffixInfoByMapId(mapId)
     local localizedAffixName = self:GetLocalizedAffixName();
     local affixInfos = C_MythicPlus.GetSeasonBestAffixScoreInfoForMap(mapId);
     if not affixInfos then return nil; end
+
     for _, affixInfo in pairs(affixInfos) do
         if affixInfo and affixInfo.name == localizedAffixName then
             return {
@@ -180,6 +194,7 @@ function Util:GetAffixInfoByMapId(mapId)
             };
         end
     end
+
     return nil;
 end
 
@@ -228,7 +243,7 @@ local scoreCache = {};
 function Util:GetUnitScores(unit)
     local summary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary(unit);
     local guid = UnitGUID(unit);
-    if not summary then
+    if not summary or not guid then
         -- data is only available when you're somewhat close to the player, so cache it so it stays available when moving further away
         return guid and scoreCache[guid] or nil;
     end

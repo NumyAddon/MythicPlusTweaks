@@ -1,8 +1,6 @@
-local _, MPT = ...;
---- @type MPT_Main
+--- @class MPT_NS
+local MPT = select(2, ...);
 local Main = MPT.Main;
-
---- @type KeystoneSharingUtil
 local KSUtil = MPT.KeystoneSharingUtil;
 
 --- @class MPT_KeystoneSharing: AceModule, AceEvent-3.0
