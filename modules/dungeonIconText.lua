@@ -134,10 +134,13 @@ function Module:GetDescription()
 end
 
 function Module:GetOptions(defaultOptionsTable, db)
+    --- @type MPT_DungeonIconText_Settings
     self.db = db;
+    --- @class MPT_DungeonIconText_Settings
     local defaults = {
         dash = false,
         name = OPTION_MIDDLE_NAME,
+        hideSeasonBest = false,
     }
     for k, v in pairs(defaults) do
         if db[k] == nil then
@@ -197,6 +200,16 @@ function Module:GetOptions(defaultOptionsTable, db)
         width = 'double',
         style = 'radio'
     };
+    defaultOptionsTable.args.hideSeasonBest = {
+        type = 'toggle',
+        name = ('Hide %s text'):format(MYTHIC_PLUS_SEASON_BEST),
+        desc = ('Hides the %s text above the dungeon icons.'):format(MYTHIC_PLUS_SEASON_BEST),
+        get = get,
+        set = function(info, value)
+            set(info, value);
+        end,
+        order = increment(),
+    };
 
     return defaultOptionsTable;
 end
@@ -223,6 +236,8 @@ function Module:RepositionFrameElements(frame, forceReset)
     if self.db.name == OPTION_NO_NAME or forceReset then
         seasonBestOffsetY = 15;
     end
+    local shown = not self.db.hideSeasonBest or forceRest;
+    frame.WeeklyInfo.Child.SeasonBest:SetShown(shown);
     frame.WeeklyInfo.Child.SeasonBest:ClearAllPoints();
     frame.WeeklyInfo.Child.SeasonBest:SetPoint('TOPLEFT', frame.DungeonIcons[1], 'TOPLEFT', 5, seasonBestOffsetY);
 end
