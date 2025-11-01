@@ -23,7 +23,7 @@ local frameSetAttribute = GetFrameMetatable().__index.SetAttribute;
 --- returns the remaining cooldown of a spell
 --- @param spellID number
 --- @return number
-local function GetSpellCooldown(spellID)
+local function GetRemainingSpellCooldown(spellID)
     local cooldownInfo = C_Spell.GetSpellCooldown(spellID);
     if not cooldownInfo then return 0; end
     local start, duration = cooldownInfo.startTime, cooldownInfo.duration;
@@ -33,11 +33,28 @@ end
 
 function Module:OnInitialize()
     self:InitializeButtonPools();
+    self:InitTeleportOverlayButton();
 end
 
 --- @type table<Frame, MPT_DTP_Button>
 Module.buttons = {};
 function Module:OnEnable()
+    self.enabled = true;
+    self.hookedTooltips = {};
+    TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tooltip) Module:ItemTooltipPostCall(tooltip); end);
+    for _, frameName in pairs(CHAT_FRAMES) do
+        local frame = _G[frameName];
+        self:SecureHookScript(frame, 'OnHyperlinkEnter');
+        self:SecureHookScript(frame, 'OnHyperlinkLeave');
+    end
+    self:SecureHook('FloatingChatFrame_SetupScrolling', function(frame)
+        self:SecureHookScript(frame, 'OnHyperlinkEnter');
+        self:SecureHookScript(frame, 'OnHyperlinkLeave');
+    end);
+    if Chattynator and Chattynator.API and Chattynator.API.GetHyperlinkHandler and Chattynator.API.GetHyperlinkHandler() then
+        self:SecureHookScript(Chattynator.API.GetHyperlinkHandler(), 'OnHyperlinkEnter');
+        self:SecureHookScript(Chattynator.API.GetHyperlinkHandler(), 'OnHyperlinkLeave');
+    end
     EventUtil.ContinueOnAddOnLoaded('Blizzard_ChallengesUI', function()
         for _, button in pairs(self.buttons) do
             button:Show();
@@ -51,6 +68,8 @@ function Module:OnEnable()
 end
 
 function Module:OnDisable()
+    self.enabled = false;
+    self.hookedTooltips = {};
     self:UnhookAll();
     self:UnregisterEvent('ACHIEVEMENT_EARNED');
     for _, button in pairs(self.buttons) do
@@ -67,10 +86,13 @@ function Module:GetDescription()
 end
 
 function Module:GetOptions(defaultOptionsTable, db)
+    --- @type MPT_DungeonTeleportsDB
     self.db = db;
+    --- @class MPT_DungeonTeleportsDB
     local defaults = {
         showAlternates = true,
         shuffleSharedCooldown = true,
+        teleportOnKeystoneCtrlClick = true,
         [TYPE_DUNGEON_PORTAL] = OPTION_MAIN_UNKNOWN,
         [TYPE_TOY] = OPTION_MAIN_ON_COOLDOWN,
         [TYPE_HEARTHSTONE] = OPTION_MAIN_ON_COOLDOWN,
@@ -92,7 +114,15 @@ function Module:GetOptions(defaultOptionsTable, db)
         desc = 'Open the Mythic+ UI and you\'ll be able to click any of the icons to teleport to the dungeons, if you have earned the Hero achievement.',
         func = function() PVEFrame_ToggleFrame('ChallengesFrame'); end,
     };
-
+    defaultOptionsTable.args.teleportOnKeystoneCtrlClick = {
+        type = 'toggle',
+        order = increment(),
+        name = 'Teleport on Keystone CTRL+Click',
+        desc = 'Allows you to teleport to the dungeon entrance by CTRL+Clicking a keystone chat link or in your bags.',
+        get = get,
+        set = set,
+        width = 'double',
+    };
     defaultOptionsTable.args.showAlternates = {
         type = 'toggle',
         order = increment(),
@@ -226,6 +256,109 @@ function Module:InitializeButtonPools()
     self.buttonPool:ReleaseAll();
 end
 
+function Module:InitTeleportOverlayButton()
+    self.overlayTrackerFrame = CreateFrame('Frame');
+    self.overlayTrackerFrame:SetScript('OnUpdate', function()
+        local spellID = self.overlayTrackerFrame.spellID;
+        if not spellID then
+            self.overlayTrackerFrame:Hide();
+            return;
+        end
+
+        self:SetShownTeleportOverlayButton(IsControlKeyDown(), spellID);
+    end);
+
+    self.teleportOverlayButton = CreateFrame('Button', nil, self.overlayTrackerFrame, 'InsecureActionButtonTemplate');
+    local button = self.teleportOverlayButton;
+    button:Hide();
+    button:SetAttribute('type', 'spell');
+    button:SetFrameStrata('TOOLTIP');
+    button:SetAllPoints(nil);
+    button:RegisterForClicks('AnyUp', 'AnyDown');
+    button:SetPropagateMouseMotion(true);
+end
+
+function Module:SetShownTeleportOverlayButton(shown, spellID)
+    local button = self.teleportOverlayButton;
+    button:SetAttribute('spell', spellID);
+    button:SetShown(shown);
+end
+
+function Module:OnHyperlinkEnter(frame, link)
+    if not self.db.teleportOnKeystoneCtrlClick then return; end
+    local mapID = link:match('keystone:%d+:(%d+)');
+    if not mapID then
+        local itemId = link:match('item:(%d+)');
+        if not itemId or not C_Item.IsItemKeystoneByID(itemId) then return end
+        mapID = link:match(string.format(':%s:(%%d+):', Enum.ItemModification.KeystoneMapChallengeModeID));
+    end
+    if not mapID then return end
+    GameTooltip:SetOwner(frame, 'ANCHOR_CURSOR');
+    GameTooltip:SetHyperlink(link);
+    GameTooltip:Show();
+    self.tooltipShown = true;
+end
+
+function Module:OnHyperlinkLeave()
+    if self.tooltipShown then
+        GameTooltip:Hide();
+        self:SetShownTeleportOverlayButton(false);
+    end
+    self.tooltipShown = false;
+end
+
+--- @param tooltip GameTooltip
+function Module:ItemTooltipPostCall(tooltip)
+    if tooltip ~= GameTooltip then return; end
+
+    self.overlayTrackerFrame:Hide();
+    if not self.enabled or not self.db.teleportOnKeystoneCtrlClick then return; end
+    if not tooltip or not tooltip.GetItem then return end
+
+    local _, itemLink = tooltip:GetItem();
+    if not itemLink then return; end
+    local mapID = itemLink:match('keystone:%d+:(%d+)');
+    if not mapID then
+        local itemId = itemLink:match('item:(%d+)');
+        if not itemId or not C_Item.IsItemKeystoneByID(itemId) then return end
+        mapID = itemLink:match(string.format(':%s:(%%d+):', Enum.ItemModification.KeystoneMapChallengeModeID));
+    end
+    if not mapID then return end
+
+    self:OnKeystoneTooltip(tooltip, tonumber(mapID));
+end
+
+---@param tooltip GameTooltip
+---@param mapID number
+function Module:OnKeystoneTooltip(tooltip, mapID)
+    local spellID = self:GetSpellIDForMapID(mapID);
+    if not spellID then return; end
+
+    self.overlayTrackerFrame.spellID = spellID;
+    self.overlayTrackerFrame:Show();
+    GameTooltip_AddInstructionLine(GameTooltip, 'CTRL+Click to teleport to the instance.');
+    GameTooltip:Show();
+
+    if self.hookedTooltips[tooltip] then return; end
+    self.hookedTooltips[tooltip] = true;
+    self:SecureHookScript(tooltip, 'OnHide', function()
+        self.overlayTrackerFrame:Hide();
+    end);
+end
+
+--- @param mapID number
+--- @return number|nil spellID # nil if unknown or on cooldown
+function Module:GetSpellIDForMapID(mapID)
+    local mapKey = Data.Portals.maps[mapID];
+    if not mapKey then return nil; end
+
+    local spell = Data.Portals.dungeonPortals[mapKey];
+    local spellID = spell and spell:spellID();
+    if not spell or not spell:available() or GetRemainingSpellCooldown(spellID) > 3 then return nil; end
+
+    return spellID;
+end
+
 function Module:ACHIEVEMENT_EARNED()
     for _, button in pairs(self.buttons) do
         local spellID = button:GetRegisteredSpell();
@@ -244,7 +377,7 @@ end
 --- @param tooltip GameTooltip
 function Module:AddInfoToTooltip(tooltip, spellID)
     GameTooltip_AddInstructionLine(tooltip, 'Click to teleport to the dungeon entrance.', true);
-    local duration = GetSpellCooldown(spellID);
+    local duration = GetRemainingSpellCooldown(spellID);
     if duration > 3 then -- global cooldown is counted here as well, so lets just ignore anything below 3 seconds
         local minutes = math.floor(duration / 60);
         tooltip:AddLine(string.format('%sDungeon teleport is on cooldown.|r (%02d:%02d)', ERROR_COLOR_CODE, math.floor(minutes / 60), minutes % 60));
@@ -299,7 +432,7 @@ function Module:InitButton(button)
 
         local spellID = button:GetRegisteredSpell();
         if not spellID then return; end
-        local duration = GetSpellCooldown(spellID);
+        local duration = GetRemainingSpellCooldown(spellID);
         if duration > 3 then -- global cooldown is counted here as well, so lets just ignore anything below 3 seconds
             highlight:SetVertexColor(1, 0, 0);
         else
@@ -387,7 +520,7 @@ function Module:AttachAlternates(button, mapID, mainKnown, mainSpellID)
 
     local onCooldown = false;
     if mainKnown then
-        local duration = GetSpellCooldown(mainSpellID);
+        local duration = GetRemainingSpellCooldown(mainSpellID);
         if duration > 3 then -- global cooldown is counted here as well, so lets just ignore anything below 3 seconds
             onCooldown = true;
         end
