@@ -79,9 +79,7 @@ function Module:GetOptions(defaultOptionsTable, db, increment)
         order = increment(),
         name = 'Open Mythic+ UI',
         desc = 'Open the Mythic+ UI and hover over a dungeon icon to see an example.',
-        func = function()
-            PVEFrame_ToggleFrame('ChallengesFrame');
-        end,
+        func = function() Util:ToggleMythicPlusFrame(); end,
     };
 
     return defaultOptionsTable;

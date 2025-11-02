@@ -27,9 +27,7 @@ function Module:GetOptions(defaultOptionsTable)
         type = 'execute',
         name = 'Open Mythic+ UI',
         desc = 'Open the Mythic+ UI and the affixes are on the top of the UI.',
-        func = function()
-            PVEFrame_ToggleFrame('ChallengesFrame');
-        end,
+        func = function() Util:ToggleMythicPlusFrame(); end,
     };
 
     return defaultOptionsTable;

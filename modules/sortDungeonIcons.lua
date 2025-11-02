@@ -67,9 +67,7 @@ function Module:GetOptions(defaultOptionsTable, db)
         type = 'execute',
         name = 'Open Mythic+ UI',
         desc = 'Open the Mythic+ UI and the icons are on the bottom of the UI.',
-        func = function()
-            PVEFrame_ToggleFrame('ChallengesFrame');
-        end,
+        func = function() Util:ToggleMythicPlusFrame(); end,
         order = increment(),
     };
     defaultOptionsTable.args.sortStyle = {

@@ -16,6 +16,20 @@ local scoreRarityColors = {
     dungeonOverallScore = { 0, 125, 188, 225, 275 },
 };
 
+function Util:ToggleMythicPlusFrame()
+    local shouldShow = not (ChallengesFrame and ChallengesFrame:IsVisible());
+    PVEFrame_ToggleFrame('ChallengesFrame');
+    if shouldShow == ChallengesFrame:IsVisible() then return; end
+
+    PVEFrame:SetShown(shouldShow);
+    if PVEFrame:GetNumPoints() == 0 then
+        PVEFrame:SetPoint('TOPLEFT', 16, -116); -- roughly where it would normally open
+    end
+    if not tIndexOf(UISpecialFrames, 'PVEFrame') then
+        table.insert(UISpecialFrames, 'PVEFrame');
+    end
+end
+
 --- @return ColorMixin
 function Util:GetRarityColorOverallScore(score)
     return C_ChallengeMode.GetDungeonScoreRarityColor(score) or self:GetRarityColor(score, 'overallScore');
