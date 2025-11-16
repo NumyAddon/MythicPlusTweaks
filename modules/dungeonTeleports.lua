@@ -15,7 +15,7 @@ local TYPE_CLASS_TELEPORT = Data.Portals.TYPE_CLASS_TELEPORT;
 local TYPE_HEARTHSTONE = Data.Portals.TYPE_HEARTHSTONE;
 local TYPE_ITEM = Data.Portals.TYPE_ITEM;
 
---- @class MPT_DTP_Module : AceModule,AceHook-3.0,AceEvent-3.0
+--- @class MPT_DungeonTeleports : MPT_Module,AceHook-3.0,AceEvent-3.0
 local Module = Main:NewModule('DungeonTeleports', 'AceHook-3.0', 'AceEvent-3.0');
 
 local frameSetAttribute = GetFrameMetatable().__index.SetAttribute;
@@ -55,7 +55,7 @@ function Module:OnEnable()
         self:SecureHookScript(Chattynator.API.GetHyperlinkHandler(), 'OnHyperlinkEnter');
         self:SecureHookScript(Chattynator.API.GetHyperlinkHandler(), 'OnHyperlinkLeave');
     end
-    EventUtil.ContinueOnAddOnLoaded('Blizzard_ChallengesUI', function()
+    Util:OnChallengesUILoad(function()
         for _, button in pairs(self.buttons) do
             button:Show();
         end
@@ -77,16 +77,15 @@ function Module:OnDisable()
     end
 end
 
-function Module:GetName()
-    return 'Dungeon Teleports';
-end
+function Module:GetName() return 'Dungeon Teleports'; end
 
 function Module:GetDescription()
     return 'Turns the dungeon icons in the Mythic+ UI into clickable buttons to teleport to the dungeon entrance.';
 end
 
-function Module:GetOptions(defaultOptionsTable, db)
-    --- @type MPT_DungeonTeleportsDB
+--- @param configBuilder MPT_ConfigBuilder
+--- @param db MPT_DungeonTeleportsDB
+function Module:BuildConfig(configBuilder, db)
     self.db = db;
     --- @class MPT_DungeonTeleportsDB
     local defaults = {
@@ -97,65 +96,36 @@ function Module:GetOptions(defaultOptionsTable, db)
         [TYPE_TOY] = OPTION_MAIN_ON_COOLDOWN,
         [TYPE_HEARTHSTONE] = OPTION_MAIN_ON_COOLDOWN,
         [TYPE_CLASS_TELEPORT] = OPTION_MAIN_ON_COOLDOWN,
-    }
-    for k, v in pairs(defaults) do
-        if db[k] == nil then
-            db[k] = v;
-        end
-    end
-    local function get(info) return db[info[#info]]; end
-    local function set(info, value) db[info[#info]] = value; end
-    local order = 10;
-    local function increment() order = order + 1; return order; end
-    defaultOptionsTable.args.showExample = {
-        type = 'execute',
-        order = increment(),
-        name = 'Open Mythic+ UI',
-        desc = 'Open the Mythic+ UI and you\'ll be able to click any of the icons to teleport to the dungeons, if you have earned the Hero achievement.',
-        func = function() PVEFrame_ToggleFrame('ChallengesFrame'); end,
     };
-    defaultOptionsTable.args.teleportOnKeystoneCtrlClick = {
-        type = 'toggle',
-        order = increment(),
-        name = 'Teleport on Keystone CTRL+Click',
-        desc = 'Allows you to teleport to the dungeon entrance by CTRL+Clicking a keystone chat link or in your bags.',
-        get = get,
-        set = set,
-        width = 'double',
-    };
-    defaultOptionsTable.args.showAlternates = {
-        type = 'toggle',
-        order = increment(),
-        name = 'Show alternative teleports',
-        desc = 'Show alternative teleports, such as mage portals, nearby dungeons, engineering toys, etc.',
-        get = get,
-        set = set,
-        width = 'double',
-    };
-
+    configBuilder:SetDefaults(defaults, true);
+    configBuilder:MakeButton(
+        'Open Mythic+ UI',
+        function() Util:ToggleMythicPlusFrame(); end,
+        'Open the Mythic+ UI and you\'ll be able to click any of the icons to teleport to the dungeons, if you have earned the Hero achievement.'
+    );
+    configBuilder:MakeCheckbox(
+        'Teleport on Keystone CTRL+Click',
+        'teleportOnKeystoneCtrlClick',
+        'Allows you to teleport to the dungeon entrance by CTRL+Clicking a keystone chat link or in your bags.'
+    );
+    configBuilder:MakeCheckbox(
+        'Show alternative teleports',
+        'showAlternates',
+        'Show alternative teleports, such as mage portals, nearby dungeons, engineering toys, etc.'
+    );
     local function addAlternateOption(type, name, desc)
-        defaultOptionsTable.args[type] = {
-            type = 'select',
-            order = increment(),
-            name = name,
-            desc = desc,
-            get = get,
-            set = set,
-            values = {
-                [OPTION_ALWAYS] = 'Always',
-                [OPTION_MAIN_ON_COOLDOWN] = 'When main teleport is on cooldown or unknown',
-                [OPTION_MAIN_UNKNOWN] = 'Only when main teleport is unknown',
-                [OPTION_NEVER] = 'Never',
-            },
-            sorting = {
-                OPTION_ALWAYS,
-                OPTION_MAIN_ON_COOLDOWN,
-                OPTION_MAIN_UNKNOWN,
-                OPTION_NEVER,
-            },
-            width = 'double',
-            disabled = function() return not db.showAlternates; end,
-        };
+        local initializer = configBuilder:MakeDropdown(
+            name,
+            type,
+            desc,
+            {
+                { text = 'Always', value = OPTION_ALWAYS, },
+                { text = 'When Main is on cooldown', label = 'When main teleport is on cooldown or unknown', value = OPTION_MAIN_ON_COOLDOWN, },
+                { text = 'When Main is unknown', label = 'Only when main teleport is unknown', value = OPTION_MAIN_UNKNOWN, },
+                { text = 'Never', value = OPTION_NEVER, },
+            }
+        );
+        initializer:AddModifyPredicate(function() return self.db.showAlternates; end);
     end
     addAlternateOption(
         TYPE_DUNGEON_PORTAL,
@@ -177,18 +147,11 @@ function Module:GetOptions(defaultOptionsTable, db)
         'Hearthstone',
         'Show hearthstone as an alternative teleport. Only some specific locations are supported. Includes Shaman Astral Recall.'
     );
-
-    defaultOptionsTable.args.shuffleSharedCooldown = {
-        type = 'toggle',
-        order = increment(),
-        name = 'Show a random hearthstone',
-        desc = 'Shows a random hearthstone, if a hearthstone would show up, and you have multiple toys',
-        get = get,
-        set = set,
-        width = 'double',
-    };
-
-    return defaultOptionsTable;
+    configBuilder:MakeCheckbox(
+        'Show a random hearthstone',
+        'shuffleSharedCooldown',
+        'Shows a random hearthstone, if a hearthstone would show up, and you have multiple toys'
+    );
 end
 
 function Module:InitializeButtonPools()

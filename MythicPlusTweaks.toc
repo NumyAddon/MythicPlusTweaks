@@ -27,6 +27,9 @@ SharedUtil.lua
 KeystoneUtil.lua
 core.lua
 
+settingsTemplates.xml
+config.lua
+
 modules\dungeonTeleports.lua
 modules\dungeonIconTooltip.lua
 modules\dungeonIconText.lua

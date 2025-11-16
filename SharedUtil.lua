@@ -7,6 +7,7 @@ local Data = MPT.Data;
 
 -- whether to support affix-specific scores
 Util.AFFIX_SPECIFIC_SCORES = false;
+local challengesAddonName = 'Blizzard_ChallengesUI';
 
 local scoreRarityColors = {
     colors = { ITEM_STANDARD_COLOR, ITEM_GOOD_COLOR, ITEM_SUPERIOR_COLOR, ITEM_EPIC_COLOR, ITEM_LEGENDARY_COLOR },
@@ -15,6 +16,72 @@ local scoreRarityColors = {
     dungeonAffixScore = { 0, 63, 94, 113, 138 },
     dungeonOverallScore = { 0, 125, 188, 225, 275 },
 };
+
+Util.addonLoadedRegistry = {};
+
+function Util:Init()
+    self:ResetRegistry();
+
+    local eventFrame = CreateFrame('FRAME');
+    eventFrame:RegisterEvent('ADDON_LOADED');
+    eventFrame:SetScript('OnEvent', function(_, _, addonName)
+        if addonName == challengesAddonName and self.challengesUILoadCallbacks.registered then
+            self:RunOnLoadCallbacks();
+        end
+        if self.addonLoadedRegistry[addonName] then
+            for _, callback in ipairs(self.addonLoadedRegistry[addonName]) do
+                securecallfunction(callback);
+            end
+            self.addonLoadedRegistry[addonName] = nil;
+        end
+    end);
+end
+
+function Util:ContinueOnAddonLoaded(addonName, callback)
+    if C_AddOns.IsAddOnLoaded(addonName) then
+        callback();
+        return;
+    end
+
+    self.addonLoadedRegistry[addonName] = self.addonLoadedRegistry[addonName] or {};
+    table.insert(self.addonLoadedRegistry[addonName], callback);
+end
+
+function Util:ResetRegistry()
+    self.challengesUILoadCallbacks = {
+        minPriority = 1,
+        maxPriority = 1,
+        registered = false,
+    };
+end
+
+function Util:RunOnLoadCallbacks()
+    local registry = self.challengesUILoadCallbacks;
+    for priority = registry.minPriority, registry.maxPriority do
+        if registry[priority] then
+            for _, callback in ipairs(registry[priority]) do
+                securecallfunction(callback);
+            end
+        end
+    end
+    self:ResetRegistry();
+end
+
+--- @param callback function
+--- @param priority ?number - lower numbers are called first
+function Util:OnChallengesUILoad(callback, priority)
+    local actualPriority = priority or 10;
+    local registry = self.challengesUILoadCallbacks;
+    registry[actualPriority] = registry[actualPriority] or {};
+    table.insert(registry[actualPriority], callback);
+    registry.minPriority = math.min(registry.minPriority, actualPriority);
+    registry.maxPriority = math.max(registry.maxPriority, actualPriority);
+    registry.registered = true;
+
+    if C_AddOns.IsAddOnLoaded(challengesAddonName) then
+        self:RunOnLoadCallbacks();
+    end
+end
 
 function Util:ToggleMythicPlusFrame()
     local shouldShow = not (ChallengesFrame and ChallengesFrame:IsVisible());

@@ -3,7 +3,7 @@ local MPT = select(2, ...);
 local Main = MPT.Main;
 local Util = MPT.Util;
 
---- @class MPT_ShowOwnRatingOnLFGTooltip: AceModule,AceHook-3.0
+--- @class MPT_ShowOwnRatingOnLFGTooltip: MPT_Module,AceHook-3.0
 local Module = Main:NewModule('ShowOwnRatingOnLFGTooltip', 'AceHook-3.0');
 
 local missingActivityIds = {};

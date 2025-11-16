@@ -3,7 +3,7 @@ local MPT = select(2, ...);
 local Main = MPT.Main;
 local KSUtil = MPT.KeystoneSharingUtil;
 
---- @class MPT_KeystoneSharing: AceModule, AceEvent-3.0
+--- @class MPT_KeystoneSharing: MPT_Module, AceEvent-3.0
 local Module = Main:NewModule('KeystoneSharing-core', 'AceEvent-3.0');
 
 function Module:OnEnable()
@@ -43,99 +43,45 @@ function Module:GetDescription()
     return 'This module emulates the behavior of other addons that share keystone data. Allowing your party/guild/friends to see your keystone without you needing to install the addon they\'re using.';
 end
 
-function Module:GetOptions(defaultOptionsTable, db, increment)
-    --- @class MPT_KeystoneSharingDB: MPT_KeystoneSharingDB_Defaults
+--- @param configBuilder MPT_ConfigBuilder
+--- @param db MPT_KeystoneSharingDB
+function Module:BuildConfig(configBuilder, db)
     self.db = db;
-    --- @class MPT_KeystoneSharingDB_Defaults
+    --- @class MPT_KeystoneSharingDB
     local defaults = {
         modules = {},
         moduleDB = {},
         shareAlts = true,
         altStore = {},
     };
-    for k, v in pairs(defaults) do
-        if db[k] == nil then
-            db[k] = v;
-        end
-    end
-    defaultOptionsTable.args.disabledWarning = {
-        order = increment(),
-        type = 'description',
-        hidden = function() return self:IsEnabled(); end,
-        name = DULL_RED_FONT_COLOR:WrapTextInColorCode('This module is disabled. All submodules are also disabled.'),
-    };
-    defaultOptionsTable.args.LibOpenRaid = {
-        order = increment(),
-        type = 'description',
-        name = 'LibOpenRaid has been embedded into this addon, which allows various addons to use the same data sharing that Details! includes by default. This makes it a popular choice for fetching keystone information from your party/raid and guild members. Addons making use of this, include REKeys, PortaParty, and others.',
-    };
-    defaultOptionsTable.args.shareAlts = {
-        order = increment(),
-        type = 'toggle',
-        name = 'Share alt keystones',
-        desc = 'Allow submodules to share keystone information from your alts with others. Keystones are automatically forgotten each weekly reset.',
-        get = function() return self.db.shareAlts; end,
-        set = function(_, value) self.db.shareAlts = value; end,
-    };
-    defaultOptionsTable.args.modules = {
-        order = increment(),
-        type = 'group',
-        name = 'Submodules - Each submodule emulates a different addon.',
-        inline = true,
-        args = {},
-    };
+    configBuilder:SetDefaults(defaults, true);
 
-    local defaultSubModuleOptions = {
-        type = 'group',
-        name = function(info)
-            return info[#info - 1];
-        end,
-        args = {
-            description = {
-                order = 1,
-                type = 'description',
-                name = function(info)
-                    local subModule = self:GetModule(info[#info - 1]);
-                    return subModule.GetDescription and subModule:GetDescription() or '';
-                end,
-                hidden = function(info)
-                    return '' == info.option.name(info)
-                end,
-            },
-            disabledDueToAddon = {
-                order = 2,
-                type = 'description',
-                name = function(info)
-                    local subModule = self:GetModule(info[#info - 1]);
-                    return string.format('This module is disabled because %s is loaded.', subModule.emulatedAddonName or '');
-                end,
-                hidden = function(info)
-                    local subModule = self:GetModule(info[#info - 1]);
-                    return not (subModule.emulatedAddonName and C_AddOns.IsAddOnLoaded(subModule.emulatedAddonName))
-                end,
-            },
-            enable = {
-                order = 2,
-                name = 'Enable',
-                desc = 'Enable this module',
-                type = 'toggle',
-                disabled = function(info)
-                    local subModule = self:GetModule(info[#info - 1]);
-                    return subModule.emulatedAddonName and C_AddOns.IsAddOnLoaded(subModule.emulatedAddonName);
-                end,
-                get = function(info) return self:IsSubModuleEnabled(info[#info - 1]); end,
-                set = function(info, enabled) self:SetSubModuleState(info[#info - 1], enabled); end,
-            },
-        },
-    };
-    for subModuleName, subModule in pairs(self.modules) do
-        local copy = CopyTable(defaultSubModuleOptions);
-        self.db.moduleDB[subModuleName] = self.db.moduleDB[subModuleName] or {};
-        local subIncrement = CreateCounter(3);
-        local moduleOptions = subModule.GetOptions and subModule:GetOptions(copy, self.db.moduleDB[subModuleName], subIncrement) or copy;
-        moduleOptions.name = subModule.GetName and subModule:GetName() or subModuleName;
-        moduleOptions.order = increment();
-        defaultOptionsTable.args.modules.args[subModuleName] = moduleOptions;
+    configBuilder:MakeText(
+        DULL_RED_FONT_COLOR:WrapTextInColorCode('This module is disabled. All submodules are also disabled.')
+    ):AddShownPredicate(function() return not self:IsEnabled(); end);
+    configBuilder:MakeText(WHITE_FONT_COLOR:WrapTextInColorCode(
+        'LibOpenRaid has been embedded into this addon, which allows various addons to use the same data sharing that Details! includes by default. This makes it a popular choice for fetching keystone information from your party/raid and guild members. Addons making use of this, include REKeys, PortaParty, and others.'
+    ), 1);
+    configBuilder:MakeCheckbox(
+        'Share alt keystones',
+        'shareAlts',
+        'Allow submodules to share keystone information from your alts with others. Keystones are automatically forgotten each weekly reset.'
+    );
+    local subModules = configBuilder:MakeText('Submodules - Each submodule emulates a different addon.', 1);
+    for subModuleName, subModule in self:IterateModules() do
+        --- @type MPT_KeystoneSharingModule
+        local subModule = subModule;
+        configBuilder:MakeCheckbox(
+            subModule:GetName(),
+            subModuleName,
+            subModule:GetDescription(),
+            function(_, value) self:SetSubModuleState(subModuleName, value); end,
+            true,
+            self.db.modules
+        ):AddModifyPredicate(function() return not C_AddOns.IsAddOnLoaded(subModule.emulatedAddonName); end);
+        configBuilder:MakeText(WHITE_FONT_COLOR:WrapTextInColorCode(
+            string.format('This module is disabled because %s is loaded.', subModule.emulatedAddonName)
+        ), 3):AddShownPredicate(function() return C_AddOns.IsAddOnLoaded(subModule.emulatedAddonName); end);
     end
 end
 

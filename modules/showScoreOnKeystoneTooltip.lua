@@ -1,10 +1,12 @@
-local _, MPT = ...;
+--- @class MPT_NS
+local MPT = select(2, ...);
+
 --- @type MPT_Main
 local Main = MPT.Main;
 --- @type MPT_Util
 local Util = MPT.Util;
 
---- @class MPT_ShowScoreOnKeystoneTooltip: AceModule, AceHook-3.0
+--- @class MPT_ShowScoreOnKeystoneTooltip: MPT_Module, AceHook-3.0
 local Module = Main:NewModule('ShowScoreOnKeystoneTooltip', 'AceHook-3.0');
 
 function Module:OnEnable()
@@ -25,12 +27,11 @@ function Module:GetName()
     return 'Show Score On Keystone Tooltip';
 end
 
-function Module:GetOptions(defaultOptionsTable)
-    defaultOptionsTable.args.showExample = {
-        type = 'execute',
-        name = 'Show Example Tooltip',
-        desc = 'Open an example keystone tooltip.',
-        func = function()
+--- @param configBuilder MPT_ConfigBuilder
+function Module:BuildConfig(configBuilder)
+    configBuilder:MakeButton(
+        'Show Example Tooltip',
+        function()
             local link = string.format(
                 '|cffa335ee|Hkeystone:180653:%d:16:10:1:2:3|h[Keystone]|h|r',
                 C_ChallengeMode.GetMapTable()[1]
@@ -38,9 +39,8 @@ function Module:GetOptions(defaultOptionsTable)
             --local link = string.format('|cFFA335EE|Hitem:180653::::::::60:252::::6:17:%d:18:16:19:10:20:1:21:2:22:3:::::|h[Mythic Keystone]|h|r', C_ChallengeMode.GetMapTable()[1]);
             SetItemRef(link, link, 'LeftButton');
         end,
-    };
-
-    return defaultOptionsTable;
+        'Open an example keystone tooltip.'
+    );
 end
 
 function Module:TooltipLinePostCall(tooltip, lineData)

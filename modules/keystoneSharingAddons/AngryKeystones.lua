@@ -1,4 +1,6 @@
-local _, MPT = ...;
+--- @class MPT_NS
+local MPT = select(2, ...);
+
 --- @type MPT_Main
 local Main = MPT.Main;
 
@@ -6,7 +8,7 @@ local Main = MPT.Main;
 --- @diagnostic disable-next-line: assign-type-mismatch
 local ParentModule = Main:GetModule('KeystoneSharing-core');
 
---- @class MPT_AngryKeystones: AceModule
+--- @class MPT_AngryKeystones: MPT_Module
 local Module = ParentModule:NewModule('KeystoneSharing-AngryKeystones');
 
 --- @type KeystoneSharingUtil
@@ -51,10 +53,6 @@ end
 
 function Module:GetDescription()
     return 'Shares your keystone with partymembers who have the Angry Keystones addon.';
-end
-
-function Module:GetOptions(defaultOptionsTable)
-    return defaultOptionsTable;
 end
 
 function Module:OnAddonMessageReceived(prefix, message, channel, sender)

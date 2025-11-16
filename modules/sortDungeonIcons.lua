@@ -1,14 +1,26 @@
-local _, MPT = ...;
---- @type MPT_Main
+--- @class MPT_NS
+local MPT = select(2, ...);
+
 local Main = MPT.Main;
---- @type MPT_Util
 local Util = MPT.Util;
 
---- @class MPT_SortDungeonIcons: AceModule, AceHook-3.0, AceEvent-3.0
+local SORT_OPTION_BEST_RUN_SCORE = 'best_run_score'; -- default UI uses this style
+local SORT_OPTION_OVERALL_SCORE = 'overall_score';
+local SORT_OPTION_BEST_RUN_LEVEL = 'best_run_level';
+local SORT_OPTION_OVERALL_LEVEL_TIMED = 'overall_level_timed';
+local SORT_CURRENT_AFFIX_SCORE = 'current_affix_score';
+local SORT_CURRENT_AFFIX_LEVEL = 'current_affix_level';
+local SORT_OPTION_NAME = 'name';
+local SORT_OPTION_ID = 'id';
+
+local SORT_DIRECTION_DESC = 'desc'; -- default UI does this
+local SORT_DIRECTION_ASC = 'asc';
+
+--- @class MPT_SortDungeonIcons: MPT_Module, AceHook-3.0, AceEvent-3.0
 local Module = Main:NewModule('SortDungeonIcons', 'AceHook-3.0', 'AceEvent-3.0');
 
 function Module:OnEnable()
-    EventUtil.ContinueOnAddOnLoaded('Blizzard_ChallengesUI', function()
+    Util:OnChallengesUILoad(function()
         self:SetupHook();
     end);
 end
@@ -29,93 +41,53 @@ function Module:GetDescription()
     return 'Allows you to sort the dungeon icons in various different ways.';
 end
 
-local SORT_OPTION_BEST_RUN_SCORE = 'best_run_score'; -- default UI uses this style
-local SORT_OPTION_OVERALL_SCORE = 'overall_score';
-local SORT_OPTION_BEST_RUN_LEVEL = 'best_run_level';
-local SORT_OPTION_OVERALL_LEVEL_TIMED = 'overall_level_timed';
-local SORT_CURRENT_AFFIX_SCORE = 'current_affix_score';
-local SORT_CURRENT_AFFIX_LEVEL = 'current_affix_level';
-local SORT_OPTION_NAME = 'name';
-local SORT_OPTION_ID = 'id';
-
-local SORT_DIRECTION_DESC = 'desc'; -- default UI does this
-local SORT_DIRECTION_ASC = 'asc';
-
-function Module:GetOptions(defaultOptionsTable, db)
+--- @param configBuilder MPT_ConfigBuilder
+--- @param db MPT_SortDungeonIconsDB
+function Module:BuildConfig(configBuilder, db)
     self.db = db;
+    --- @class MPT_SortDungeonIconsDB
     local defaults = {
         sortStyle = SORT_OPTION_OVERALL_SCORE,
         sortDirection = SORT_DIRECTION_DESC,
-    }
-    for k, v in pairs(defaults) do
-        if db[k] == nil then
-            db[k] = v;
-        end
-    end
-    local function get(info)
-        return db[info[#info]];
-    end
-    local function set(info, value)
-        db[info[#info]] = value;
+    };
+    configBuilder:SetDefaults(defaults, true);
+
+    configBuilder:MakeButton(
+        'Open Mythic+ UI',
+        function() Util:ToggleMythicPlusFrame(); end,
+        'Open the Mythic+ UI and the icons are on the bottom of the UI.'
+    );
+    local function updateUI()
         if ChallengesFrame and ChallengesFrame.IsShown and ChallengesFrame:IsShown() then
             ChallengesFrame:Update();
         end
     end
-    local order = 10;
-    local function increment() order = order + 1; return order; end
-    defaultOptionsTable.args.showExample = {
-        type = 'execute',
-        name = 'Open Mythic+ UI',
-        desc = 'Open the Mythic+ UI and the icons are on the bottom of the UI.',
-        func = function() Util:ToggleMythicPlusFrame(); end,
-        order = increment(),
-    };
-    defaultOptionsTable.args.sortStyle = {
-        type = 'select',
-        name = 'Sort Style',
-        desc = 'How to sort the icons.',
-        values = {
-            [SORT_OPTION_BEST_RUN_SCORE] = 'Score from your best run (default UI style)',
-            [SORT_OPTION_OVERALL_SCORE] = 'Overall Dungeon Score',
-            [SORT_OPTION_BEST_RUN_LEVEL] = 'Level from your best run',
-            [SORT_OPTION_OVERALL_LEVEL_TIMED] = 'Highest Level (Timed)',
-            [SORT_CURRENT_AFFIX_SCORE] = 'Current Affix Score' .. (Util.AFFIX_SPECIFIC_SCORES and '' or ' (this season will use Overall Score instead)'),
-            [SORT_CURRENT_AFFIX_LEVEL] = 'Current Affix Level' .. (Util.AFFIX_SPECIFIC_SCORES and '' or ' (this season will use Level from your best run instead)'),
-            [SORT_OPTION_NAME] = 'Sorted by Name',
-            [SORT_OPTION_ID] = 'Sorted by M+ MapID',
+    configBuilder:MakeDropdown(
+        'Sort Style',
+        'sortStyle',
+        'How to sort the icons.',
+        {
+            { text = 'Score from your best run', label = 'Score from your best run (default UI style)', value = SORT_OPTION_BEST_RUN_SCORE },
+            { text = 'Overall Dungeon Score', label = 'Overall Dungeon Score', value = SORT_OPTION_OVERALL_SCORE },
+            { text = 'Level from your best run', label = 'Level from your best run', value = SORT_OPTION_BEST_RUN_LEVEL },
+            { text = 'Highest Level (Timed)', label = 'Highest Level (Timed)', value = SORT_OPTION_OVERALL_LEVEL_TIMED },
+            { text = 'Current Affix Score', label = 'Current Affix Score' .. (Util.AFFIX_SPECIFIC_SCORES and '' or ' (this season will use Overall Score instead)'), value = SORT_CURRENT_AFFIX_SCORE },
+            { text = 'Current Affix Level', label = 'Current Affix Level' .. (Util.AFFIX_SPECIFIC_SCORES and '' or ' (this season will use Level from your best run instead)'), value = SORT_CURRENT_AFFIX_LEVEL },
+            { text = 'Name', label = 'Sorted by Name', value = SORT_OPTION_NAME },
+            { text = 'M+ MapID', label = 'Sorted by M+ MapID', value = SORT_OPTION_ID },
         },
-        sorting = {
-            SORT_OPTION_BEST_RUN_SCORE,
-            SORT_OPTION_OVERALL_SCORE,
-            SORT_OPTION_BEST_RUN_LEVEL,
-            SORT_OPTION_OVERALL_LEVEL_TIMED,
-            SORT_CURRENT_AFFIX_SCORE,
-            SORT_CURRENT_AFFIX_LEVEL,
-            SORT_OPTION_NAME,
-            SORT_OPTION_ID,
+        updateUI
+    );
+    configBuilder:MakeDropdown(
+        'Sort Direction',
+        'sortDirection',
+        'Which direction to sort the icons.',
+        {
+            { text = 'Descending', label = 'Highest left -> lowest right (default UI style)', value = SORT_DIRECTION_DESC },
+            { text = 'Ascending', label = 'Lowest left -> highest right', value = SORT_DIRECTION_ASC },
         },
-        get = get,
-        set = set,
-        order = increment(),
-        width = 'double',
-        style = 'radio'
-    };
-    defaultOptionsTable.args.sortDirection = {
-        type = 'select',
-        name = 'Sort Direction',
-        desc = 'Which direction to sort the icons.',
-        values = {
-            [SORT_DIRECTION_DESC] = 'Highest left -> lowest right (default UI style)',
-            [SORT_DIRECTION_ASC] = 'Lowest left -> highest right',
-        },
-        get = get,
-        set = set,
-        order = increment(),
-        width = 'double',
-        style = 'radio'
-    };
-
-    return defaultOptionsTable;
+        updateUI
+    );
 end
 
 Module.allowIconSetUp = false;
@@ -124,9 +96,9 @@ function Module:SetupHook()
         if not self.oneTimeSetupCompleted then
             self.oneTimeSetupCompleted = true;
 
-        	self:PreventIconSetUpFromOthers(frame);
+            self:PreventIconSetUpFromOthers(frame);
             self.allowIconSetUp = true;
-        	self.hooks[frame].Update(frame);
+            self.hooks[frame].Update(frame);
             self.allowIconSetUp = false;
 
             frame:Update();
@@ -187,19 +159,19 @@ do
 
         -- First frame
         frames[1]:ClearAllPoints();
-        if(frames[1].Icon) then
+        if (frames[1].Icon) then
             frames[1].Icon:SetSize(calculateWidth, calculateWidth);
         end
         frames[1]:SetSize(calculateWidth, calculateWidth);
         frames[1]:SetPoint(anchorPoint, anchor, relativePoint, -halfWidth, 5);
 
         for i = 2, #frames do
-            if(frames[i].Icon) then
+            if (frames[i].Icon) then
                 frames[i].Icon:SetSize(calculateWidth, calculateWidth);
             end
             frames[i].Icon:SetSize(calculateWidth, calculateWidth);
             frames[i]:SetSize(calculateWidth, calculateWidth);
-            frames[i]:SetPoint("LEFT", frames[i-1], "RIGHT", distanceBetween, 0);
+            frames[i]:SetPoint("LEFT", frames[i - 1], "RIGHT", distanceBetween, 0);
         end
     end
 end
@@ -278,11 +250,11 @@ function Module:SortIcons(frame)
         local inTimeInfo, overtimeInfo = C_MythicPlus.GetSeasonBestForMap(frame.maps[i]);
         local level = 0;
         local dungeonScore = 0;
-        if(inTimeInfo and overtimeInfo) then
+        if (inTimeInfo and overtimeInfo) then
             local inTimeScoreIsBetter = inTimeInfo.dungeonScore > overtimeInfo.dungeonScore;
             level = inTimeScoreIsBetter and inTimeInfo.level or overtimeInfo.level;
             dungeonScore = inTimeScoreIsBetter and inTimeInfo.dungeonScore or overtimeInfo.dungeonScore;
-        elseif(inTimeInfo or overtimeInfo) then
+        elseif (inTimeInfo or overtimeInfo) then
             level = inTimeInfo and inTimeInfo.level or overtimeInfo.level;
             dungeonScore = inTimeInfo and inTimeInfo.dungeonScore or overtimeInfo.dungeonScore;
         end
@@ -312,7 +284,7 @@ function Module:SortIcons(frame)
 end
 
 function Module:SetBackground(frame)
-    local _, _, _, _, backgroundTexture = C_ChallengeMode.GetMapUIInfo(frame.DungeonIcons[1].mapID);
+    local backgroundTexture = select(5, C_ChallengeMode.GetMapUIInfo(frame.DungeonIcons[1].mapID));
     if (backgroundTexture ~= 0) then
         frame.Background:SetTexture(backgroundTexture);
     end

@@ -1,17 +1,15 @@
-local _, MPT = ...;
---- @type MPT_Main
+--- @class MPT_NS
+local MPT = select(2, ...);
+
 local Main = MPT.Main;
---- @type MPT_Util
 local Util = MPT.Util;
 
---- @class MPT_PartyRating: AceModule,AceHook-3.0,AceEvent-3.0
+--- @class MPT_PartyRating: MPT_Module,AceHook-3.0,AceEvent-3.0
 local Module = Main:NewModule('PartyRating', 'AceHook-3.0', 'AceEvent-3.0');
 local updateFrame = CreateFrame('Frame');
 
 function Module:OnEnable()
-    EventUtil.ContinueOnAddOnLoaded('Blizzard_ChallengesUI', function()
-        RunNextFrame(function() self:SetupUI(); end);
-    end);
+    Util:OnChallengesUILoad(function() RunNextFrame(function() self:SetupUI(); end); end);
 
     self:RegisterEvent('GROUP_ROSTER_UPDATE');
     updateFrame:SetScript('OnUpdate', function(_, elapsed) self:OnUpdate(elapsed); end);
@@ -35,56 +33,37 @@ local SORT_MODE_MAP_ID = 'mapID';
 local SORT_MODE_SCORE = 'score';
 local SORT_MODE_NAME = 'name';
 
-function Module:GetOptions(defaultOptionsTable, db, increment)
+--- @param configBuilder MPT_ConfigBuilder
+--- @param db MPT_PartyRatingDB
+function Module:BuildConfig(configBuilder, db)
     self.db = db;
+    --- @class MPT_PartyRatingDB
     local defaults = {
         sortMode = SORT_MODE_SCORE,
         showZeroScoreDungeons = true,
     };
-    for k, v in pairs(defaults) do
-        if db[k] == nil then
-            db[k] = v;
-        end
-    end
-
-    local function get(info) return db[info[#info]]; end
-    local function set(info, value) db[info[#info]] = value; end
-
-    defaultOptionsTable.args.sortMode = {
-        type = 'select',
-        order = increment(),
-        name = 'Sort mode',
-        desc = 'Select how dungeon scores should be sorted',
-        values = {
-            [SORT_MODE_MAP_ID] = 'By Dungeon ID',
-            [SORT_MODE_SCORE] = 'By Score',
-            [SORT_MODE_NAME] = 'By Dungeon name',
-        },
-        get = get,
-        set = set,
-        width = 'double',
-        style = 'radio',
-    };
-    defaultOptionsTable.args.showZeroScoreDungeons = {
-        type = 'toggle',
-        order = increment(),
-        name = 'Show dungeons without any rating',
-        desc = 'Always show all dungeons in the tooltip, even if no rating has been earned.',
-        get = get,
-        set = set,
-        width = 'double',
-    };
-    defaultOptionsTable.args.showExample = {
-        type = 'execute',
-        order = increment(),
-        name = 'Open Mythic+ UI',
-        desc = 'Open the Mythic+ UI and hover over a dungeon icon to see an example.',
-        func = function() Util:ToggleMythicPlusFrame(); end,
-    };
-
-    return defaultOptionsTable;
+    configBuilder:SetDefaults(defaults, true);
+    configBuilder:MakeDropdown(
+        'Sort mode',
+        'sortMode',
+        'Select how dungeon scores should be sorted',
+        {
+            { text = 'By Dungeon ID', value = SORT_MODE_MAP_ID },
+            { text = 'By Score', value = SORT_MODE_SCORE },
+            { text = 'By Dungeon name', value = SORT_MODE_NAME },
+        }
+    );
+    configBuilder:MakeCheckbox(
+        'Show dungeons without any rating',
+        'showZeroScoreDungeons',
+        'Always show all dungeons in the tooltip, even if no rating has been earned.'
+    );
+    configBuilder:MakeButton(
+        'Open Mythic+ UI',
+        function() Util:ToggleMythicPlusFrame(); end,
+        'Open the Mythic+ UI and hover over a dungeon icon to see an example.'
+    );
 end
-
 
 function Module:SetupUI()
     Util:RepositionWeeklyChestFrame();

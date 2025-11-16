@@ -1,10 +1,10 @@
-local _, MPT = ...;
---- @type MPT_Main
+--- @class MPT_NS
+local MPT = select(2, ...);
+
 local Main = MPT.Main;
---- @type MPT_Util
 local Util = MPT.Util;
 
---- @class MPT_DungeonIconText: AceModule, AceHook-3.0, AceEvent-3.0
+--- @class MPT_DungeonIconText: MPT_Module, AceHook-3.0, AceEvent-3.0
 local Module = Main:NewModule('DungeonIconText', 'AceHook-3.0', 'AceEvent-3.0');
 
 local OPTION_FULL_NAME = 'full';
@@ -100,14 +100,12 @@ function Module:OnInitialize()
 end
 
 function Module:OnEnable()
-    EventUtil.ContinueOnAddOnLoaded('Blizzard_ChallengesUI', function()
-        self:SetupHook();
-    end);
+    Util:OnChallengesUILoad(function() self:SetupHook(); end);
 end
 
 function Module:OnDisable()
     self:UnhookAll();
-    if C_AddOns.IsAddOnLoaded('Blizzard_ChallengesUI') then
+    if ChallengesFrame then
         ChallengesFrame:Update();
         self:RepositionFrameElements(ChallengesFrame, true);
         for i = 1, #ChallengesFrame.DungeonIcons do
@@ -123,9 +121,7 @@ function Module:OnDisable()
     end
 end
 
-function Module:GetName()
-    return 'Dungeon Icon Text';
-end
+function Module:GetName() return 'Dungeon Icon Text'; end
 
 function Module:GetDescription()
     return Util.AFFIX_SPECIFIC_SCORES
@@ -133,83 +129,55 @@ function Module:GetDescription()
         or 'Changes the text on the dungeon icons, to show "{level} - {score}" on the icon (level is grey if out of time). Affix-specific scores are not relevant this season.';
 end
 
-function Module:GetOptions(defaultOptionsTable, db)
-    --- @type MPT_DungeonIconText_Settings
+--- @param configBuilder MPT_ConfigBuilder
+--- @param db MPT_DungeonIconText_Settings
+function Module:BuildConfig(configBuilder, db)
     self.db = db;
     --- @class MPT_DungeonIconText_Settings
     local defaults = {
         dash = false,
         name = OPTION_MIDDLE_NAME,
         hideSeasonBest = false,
-    }
-    for k, v in pairs(defaults) do
-        if db[k] == nil then
-            db[k] = v;
-        end
-    end
-    local function get(info)
-        return db[info[#info]];
-    end
-    local function set(info, value)
-        db[info[#info]] = value;
+    };
+    configBuilder:SetDefaults(defaults, true);
+
+    configBuilder:MakeButton(
+        'Open Mythic+ UI',
+        function() Util:ToggleMythicPlusFrame(); end,
+        'Open the Mythic+ UI and the icons are on the bottom of the UI.'
+    );
+    local function refreshUI()
         if ChallengesFrame and ChallengesFrame.IsShown and ChallengesFrame:IsShown() then
             ChallengesFrame:Update();
         end
     end
-    local order = 10;
-    local function increment() order = order + 1; return order; end
-    defaultOptionsTable.args.showExample = {
-        type = 'execute',
-        name = 'Open Mythic+ UI',
-        desc = 'Open the Mythic+ UI and the icons are on the bottom of the UI.',
-        func = function() Util:ToggleMythicPlusFrame(); end,
-        order = increment(),
-    };
-    defaultOptionsTable.args.dash = {
-        type = 'toggle',
-        name = 'Show separator',
-        desc = 'Separate Level and Score with a dash (-). Disabling this might result in a larger font size.',
-        get = get,
-        set = function(info, value)
+    configBuilder:MakeCheckbox(
+        'Show separator',
+        'dash',
+        'Separate Level and Score with a dash (-). Disabling this might result in a larger font size.',
+        function()
             self.font:CopyFontObject(SystemFont_Huge1_Outline);
-            set(info, value);
-        end,
-        order = increment(),
-    };
-    defaultOptionsTable.args.name = {
-        type = 'select',
-        name = 'Show dungeon name above the icon.',
-        desc = 'Full name is in your game\'s language, the others are English only.',
-        values = {
-            [OPTION_FULL_NAME] = 'Long name (e.g. "Brackenhide Hollow")',
-            [OPTION_MIDDLE_NAME] = 'Shortened name (e.g. "Brackenhide")',
-            [OPTION_SHORT_NAME] = 'Abbreviated (e.g. "BH")',
-            [OPTION_NO_NAME] = 'No name',
+            refreshUI();
+        end
+    );
+    configBuilder:MakeDropdown(
+        'Show dungeon name above the icon.',
+        'name',
+        'Full name is in your game\'s language, the others are English only.',
+        {
+            { text = 'Long name', label = 'Long name (e.g. "Brackenhide Hollow")', value = OPTION_FULL_NAME },
+            { text = 'Shortened name', label = 'Shortened name (e.g. "Brackenhide")', value = OPTION_MIDDLE_NAME },
+            { text = 'Abbreviated', label = 'Abbreviated (e.g. "BH")', value = OPTION_SHORT_NAME },
+            { text = 'No name', value = OPTION_NO_NAME },
         },
-        sorting = {
-            OPTION_FULL_NAME,
-            OPTION_MIDDLE_NAME,
-            OPTION_SHORT_NAME,
-            OPTION_NO_NAME,
-        },
-        get = get,
-        set = set,
-        order = increment(),
-        width = 'double',
-        style = 'radio'
-    };
-    defaultOptionsTable.args.hideSeasonBest = {
-        type = 'toggle',
-        name = ('Hide %s text'):format(MYTHIC_PLUS_SEASON_BEST),
-        desc = ('Hides the %s text above the dungeon icons.'):format(MYTHIC_PLUS_SEASON_BEST),
-        get = get,
-        set = function(info, value)
-            set(info, value);
-        end,
-        order = increment(),
-    };
-
-    return defaultOptionsTable;
+        function() refreshUI(); end
+    );
+    configBuilder:MakeCheckbox(
+        ('Hide %s text'):format(MYTHIC_PLUS_SEASON_BEST),
+        'hideSeasonBest',
+        ('Hides the %s text above the dungeon icons.'):format(MYTHIC_PLUS_SEASON_BEST),
+        function() refreshUI(); end
+    );
 end
 
 function Module:SetupHook()

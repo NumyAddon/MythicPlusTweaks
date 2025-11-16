@@ -7,7 +7,7 @@ MPT.MistHelperSyncImplementations = MPT.MistHelperSyncImplementations or {};
 --- @type MPT_MistHelperSyncImplementation[]
 local implementations = MPT.MistHelperSyncImplementations;
 
---- @class MPT_MistHelperSync: AceModule
+--- @class MPT_MistHelperSync: MPT_Module
 local Module = Main:NewModule('MistHelperSync');
 
 Module.initializedImplementations = {};
@@ -36,22 +36,15 @@ function Module:GetName()
     return 'Mist Maze Helper Sync';
 end
 
-function Module:GetOptions(defaultOptionsTable)
-    local increment = CreateCounter(5);
-    for i, implementation in ipairs(implementations) do
-        defaultOptionsTable.args['impl_description_' .. i] = {
-            type = 'execute',
-            name = implementation.name .. ' (' .. implementation.type .. ')',
-            desc = 'Open link for ' .. implementation.name,
-            func = function()
-                Util:CopyText(implementation.url);
-            end,
-            width = 'full',
-            order = increment(),
-        };
+--- @param configBuilder MPT_ConfigBuilder
+function Module:BuildConfig(configBuilder)
+    for _, implementation in ipairs(implementations) do
+        configBuilder:MakeButton(
+            'Copy ' .. implementation.type .. ' Link',
+            function() Util:CopyText(implementation.url); end,
+            'Copy the link for ' .. implementation.name
+        );
     end
-
-    return defaultOptionsTable;
 end
 
 --- @param implementation MPT_MistHelperSyncImplementation
@@ -60,7 +53,7 @@ function Module:InitializeImplementation(implementation)
         function(buttonID, active, sender, senderIsMe)
             self:OnButtonComms(implementation, buttonID, active, sender, senderIsMe);
         end,
-         function(sender, senderIsMe)
+        function(sender, senderIsMe)
             self:OnResetComms(implementation, sender, senderIsMe);
         end
     );

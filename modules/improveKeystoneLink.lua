@@ -1,4 +1,6 @@
-local _, MPT = ...;
+--- @class MPT_NS
+local MPT = select(2, ...);
+
 --- @type MPT_Main
 local Main = MPT.Main;
 --- @type KeystoneSharingUtil
@@ -7,7 +9,7 @@ local KSUtil = MPT.KeystoneSharingUtil;
 local ChatFrame_AddMessageEventFilter = ChatFrameUtil and ChatFrameUtil.AddMessageEventFilter or ChatFrame_AddMessageEventFilter
 local ChatFrame_RemoveMessageEventFilter = ChatFrameUtil and ChatFrameUtil.RemoveMessageEventFilter or ChatFrame_RemoveMessageEventFilter
 
---- @class MPT_ImproveKeystoneLink: AceModule
+--- @class MPT_ImproveKeystoneLink: MPT_Module
 local Module = Main:NewModule('ImproveKeystoneLink');
 
 local events = {

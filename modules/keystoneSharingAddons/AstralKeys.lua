@@ -1,4 +1,6 @@
-local _, MPT = ...;
+--- @class MPT_NS
+local MPT = select(2, ...);
+
 --- @type MPT_Main
 local Main = MPT.Main;
 
@@ -6,7 +8,7 @@ local Main = MPT.Main;
 --- @diagnostic disable-next-line: assign-type-mismatch
 local ParentModule = Main:GetModule('KeystoneSharing-core');
 
---- @class MPT_AstralKeys: AceModule, AceEvent-3.0
+--- @class MPT_AstralKeys: MPT_Module, AceEvent-3.0
 local Module = ParentModule:NewModule('KeystoneSharing-AstralKeys', 'AceEvent-3.0');
 
 --- @type KeystoneSharingUtil
@@ -123,10 +125,6 @@ end
 
 function Module:GetDescription()
     return 'Exposes your keystone to players who have the Astral Keys addon.';
-end
-
-function Module:GetOptions(defaultOptionsTable)
-    return defaultOptionsTable;
 end
 
 local function startsWith(str, start)

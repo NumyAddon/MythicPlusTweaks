@@ -7,7 +7,7 @@ local KSUtil = MPT.KeystoneSharingUtil;
 
 local SendChatMessage = C_ChatInfo and C_ChatInfo.SendChatMessage or SendChatMessage
 
---- @class MPT_MiscQoL: AceModule,AceEvent-3.0,AceHook-3.0
+--- @class MPT_MiscQoL: MPT_Module,AceEvent-3.0,AceHook-3.0
 local Module = Main:NewModule('miscQoL', 'AceEvent-3.0', 'AceHook-3.0');
 
 local PREFIX = '<M+ Tweaks> ';
@@ -58,7 +58,7 @@ function Module:OnEnable()
     self:RegisterEvent('CHAT_MSG_INSTANCE_CHAT', 'OnRaidMessage');
     self:RegisterEvent('CHAT_MSG_INSTANCE_CHAT_LEADER', 'OnRaidMessage');
 
-    EventUtil.ContinueOnAddOnLoaded('Blizzard_ChallengesUI', function()
+    Util:OnChallengesUILoad(function()
         self:SecureHookScript(ChallengesKeystoneFrame, 'OnShow', 'OnShowKeystoneFrame');
     end);
     RunNextFrame(function()
@@ -81,8 +81,9 @@ function Module:GetDescription()
     return 'Miscellaneous QoL Tweaks.';
 end
 
-function Module:GetOptions(defaultOptionsTable, db, increment)
-    --- @type MPT_MiscQoL_Settings
+--- @param configBuilder MPT_ConfigBuilder
+--- @param db MPT_MiscQoL_Settings
+function Module:BuildConfig(configBuilder, db)
     self.db = db;
     --- @class MPT_MiscQoL_Settings
     local defaults = {
@@ -94,97 +95,57 @@ function Module:GetOptions(defaultOptionsTable, db, increment)
         groupFormedMessage = true,
         groupFormedMessageKeystoneOnly = true,
     };
-    for k, v in pairs(defaults) do
-        if db[k] == nil then
-            db[k] = v;
-        end
+    configBuilder:SetDefaults(defaults, true);
+    --- @param setting AddOnSettingMixin
+    local function callback(setting, value)
+        self:OnSettingChange(setting.variableKey, value);
     end
-
-    local function get(info) return db[info[#info]]; end
-    local function set(info, value)
-        db[info[#info]] = value;
-        self:OnSettingChange(info[#info], value);
-    end
-
     -- key responder
     do
-        defaultOptionsTable.args.keyResponder = {
-            type = 'description',
-            name = 'Respond to "!keys" in chat with your current keystone.',
-            order = increment(),
-        };
-        defaultOptionsTable.args.respondToParty = {
-            type = 'toggle',
-            name = 'Respond to party',
-            desc = 'Respond to "!keys" in party chat.',
-            get = get,
-            set = set,
-            order = increment(),
-        };
-        defaultOptionsTable.args.respondToRaid = {
-            type = 'toggle',
-            name = 'Respond to raid',
-            desc = 'Respond to "!keys" in raid chat.',
-            get = get,
-            set = set,
-            order = increment(),
-        };
-        defaultOptionsTable.args.respondToGuild = {
-            type = 'toggle',
-            name = 'Respond to guild',
-            desc = 'Respond to "!keys" in guild chat.',
-            get = get,
-            set = set,
-            order = increment(),
-        };
+        local text = configBuilder:MakeText('Respond to "!keys" in chat with your current keystone.', 2);
+        configBuilder:MakeCheckbox(
+            'Respond to party',
+            'respondToParty',
+            'Respond to "!keys" in party chat.',
+            callback
+        ):SetParentInitializer(text);
+        configBuilder:MakeCheckbox(
+            'Respond to raid',
+            'respondToRaid',
+            'Respond to "!keys" in raid chat.',
+            callback
+        ):SetParentInitializer(text);
+        configBuilder:MakeCheckbox(
+            'Respond to guild',
+            'respondToGuild',
+            'Respond to "!keys" in guild chat.',
+            callback
+        ):SetParentInitializer(text);
     end
-    defaultOptionsTable.args.spacer = {
-        type = 'description',
-        name = '',
-        order = increment(),
-    };
-    defaultOptionsTable.args.autoSlotKeystone = {
-        type = 'toggle',
-        name = 'Auto slot keystone',
-        desc = 'Automatically slot the keystone when clicking the Font of Power.',
-        get = get,
-        set = set,
-        order = increment(),
-    };
-    defaultOptionsTable.args[HOVER_BLOCK_SETTING] = {
-        type = 'toggle',
-        name = 'View LFG Applicant info as non-leader',
-        desc = 'Lets you see LFG Applicant info that is normally only visible to the group leader, by stopping blizzard from blocking the tooltip.',
-        get = get,
-        set = set,
-        width = 'double',
-        order = increment(),
-    };
-    defaultOptionsTable.args.spacer = {
-        type = 'description',
-        name = '',
-        order = increment(),
-    };
-    defaultOptionsTable.args.groupFormedMessage = {
-        type = 'toggle',
-        name = 'LFG group formed/joined message',
-        desc = 'Show a reminder message in chat when you join a group or when the group is full, showing the activity you joined, with a clickable teleport link if available.',
-        get = get,
-        set = set,
-        width = 'double',
-        order = increment(),
-    };
-    defaultOptionsTable.args.groupFormedMessageKeystoneOnly = {
-        type = 'toggle',
-        name = 'Only for Mythic+',
-        desc = 'Only show the reminder for m+ groups.',
-        get = get,
-        set = set,
-        disabled = function() return not db.groupFormedMessage; end,
-        order = increment(),
-    }
-
-    return defaultOptionsTable;
+    configBuilder:MakeCheckbox(
+        'Auto slot keystone',
+        'autoSlotKeystone',
+        'Automatically slot the keystone when clicking the Font of Power.',
+        callback
+    );
+    configBuilder:MakeCheckbox(
+        'View LFG Applicant info as non-leader',
+        HOVER_BLOCK_SETTING,
+        'Lets you see LFG Applicant info that is normally only visible to the group leader, by stopping blizzard from blocking the tooltip.',
+        callback
+    );
+    local groupFormed = configBuilder:MakeCheckbox(
+        'LFG group formed/joined message',
+        'groupFormedMessage',
+        'Show a reminder message in chat when you join a group or when the group is full, showing the activity you joined, with a clickable teleport link if available.',
+        callback
+    );
+    configBuilder:MakeCheckbox(
+        'Only for Mythic+',
+        'groupFormedMessageKeystoneOnly',
+        'Only show the reminder for m+ groups.',
+        callback
+    ):SetParentInitializer(groupFormed, function() return db.groupFormedMessage; end);
 end
 
 function Module:InitTeleportOverlayButton()
@@ -205,7 +166,7 @@ function Module:SetShownTeleportOverlayButton(shown, spellID)
 end
 
 --- @param setting string
----@param value any
+--- @param value any
 function Module:OnSettingChange(setting, value)
     if setting == HOVER_BLOCK_SETTING then
         LFGListFrame.ApplicationViewer.UnempoweredCover:EnableMouse(not value)

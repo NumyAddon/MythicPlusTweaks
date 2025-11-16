@@ -1,14 +1,14 @@
-local _, MPT = ...;
---- @type MPT_Main
+--- @class MPT_NS
+local MPT = select(2, ...);
+
 local Main = MPT.Main;
---- @type MPT_Util
 local Util = MPT.Util;
 
---- @class MPT_DungeonIconTooltip: AceModule,AceHook-3.0
+--- @class MPT_DungeonIconTooltip: MPT_Module,AceHook-3.0
 local Module = Main:NewModule('DungeonIconTooltip', 'AceHook-3.0');
 
 function Module:OnEnable()
-    EventUtil.ContinueOnAddOnLoaded('Blizzard_ChallengesUI', function()
+    Util:OnChallengesUILoad(function()
         self:SecureHook(ChallengesFrame, 'Update', function()
             for _, icon in ipairs(ChallengesFrame.DungeonIcons) do
                 if not self:IsHooked(icon, 'OnEnter') then
@@ -25,9 +25,7 @@ function Module:OnDisable()
     self:UnhookAll();
 end
 
-function Module:GetName()
-    return 'Dungeon Icon Tooltip';
-end
+function Module:GetName() return 'Dungeon Icon Tooltip'; end
 
 function Module:GetDescription()
     return Util.AFFIX_SPECIFIC_SCORES
@@ -35,46 +33,32 @@ function Module:GetDescription()
         or 'Adds the dungeon mapID to the dungeon icon tooltip. Affix rating information is not relevant this season.';
 end
 
-function Module:GetOptions(defaultOptionsTable, db, increment)
+--- @param configBuilder MPT_ConfigBuilder
+--- @param db MPT_DungeonIconTooltipDB
+function Module:BuildConfig(configBuilder, db)
     self.db = db;
+    --- @class MPT_DungeonIconTooltipDB
     local defaults = {
         showPartyScore = true,
         showMapID = true,
     };
-    for k, v in pairs(defaults) do
-        if db[k] == nil then
-            db[k] = v;
-        end
-    end
+    configBuilder:SetDefaults(defaults, true);
 
-    local function get(info) return db[info[#info]]; end
-    local function set(info, value) db[info[#info]] = value; end
-
-    defaultOptionsTable.args.showPartyScore = {
-        type = 'toggle',
-        order = increment(),
-        name = 'Show party score',
-        desc = 'Show the party score in the dungeon tooltip.',
-        get = get,
-        set = set,
-    };
-    defaultOptionsTable.args.showMapID = {
-        type = 'toggle',
-        order = increment(),
-        name = 'Show map ID',
-        desc = 'Show the map ID in the dungeon tooltip.',
-        get = get,
-        set = set,
-    };
-    defaultOptionsTable.args.showExample = {
-        type = 'execute',
-        order = increment(),
-        name = 'Open Mythic+ UI',
-        desc = 'Open the Mythic+ UI and hover over a dungeon icon to see an example.',
-        func = function() Util:ToggleMythicPlusFrame(); end,
-    };
-
-    return defaultOptionsTable;
+    configBuilder:MakeCheckbox(
+        'Show party score',
+        'showPartyScore',
+        'Show the party score in the dungeon tooltip.'
+    );
+    configBuilder:MakeCheckbox(
+        'Show map ID',
+        'showMapID',
+        'Show the map ID in the dungeon tooltip.'
+    );
+    configBuilder:MakeButton(
+        'Open Mythic+ UI',
+        function() Util:ToggleMythicPlusFrame(); end,
+        'Open the Mythic+ UI and hover over a dungeon icon to see an example.'
+    );
 end
 
 ---@param tooltip GameTooltip
