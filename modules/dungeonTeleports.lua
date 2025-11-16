@@ -126,6 +126,8 @@ function Module:BuildConfig(configBuilder, db)
             }
         );
         initializer:AddModifyPredicate(function() return self.db.showAlternates; end);
+
+        return initializer;
     end
     addAlternateOption(
         TYPE_DUNGEON_PORTAL,
@@ -142,7 +144,7 @@ function Module:BuildConfig(configBuilder, db)
         'Class teleports',
         'Show class teleports as an alternative teleport. (Mage portals, Druid Dreamwalk, etc.)'
     );
-    addAlternateOption(
+    local hearthstone = addAlternateOption(
         TYPE_HEARTHSTONE,
         'Hearthstone',
         'Show hearthstone as an alternative teleport. Only some specific locations are supported. Includes Shaman Astral Recall.'
@@ -151,7 +153,7 @@ function Module:BuildConfig(configBuilder, db)
         'Show a random hearthstone',
         'shuffleSharedCooldown',
         'Shows a random hearthstone, if a hearthstone would show up, and you have multiple toys'
-    );
+    ):SetParentInitializer(hearthstone);
 end
 
 function Module:InitializeButtonPools()

@@ -61,7 +61,7 @@ function Module:BuildConfig(configBuilder, db)
     ):AddShownPredicate(function() return not self:IsEnabled(); end);
     configBuilder:MakeText(WHITE_FONT_COLOR:WrapTextInColorCode(
         'LibOpenRaid has been embedded into this addon, which allows various addons to use the same data sharing that Details! includes by default. This makes it a popular choice for fetching keystone information from your party/raid and guild members. Addons making use of this, include REKeys, PortaParty, and others.'
-    ), 1);
+    ), 2);
     configBuilder:MakeCheckbox(
         'Share alt keystones',
         'shareAlts',

@@ -218,9 +218,10 @@ do
 
     --- @param text string
     --- @param tooltip string?
+    --- @param indent number? # default 0
     --- @return SettingsListElementInitializer initializer
-    function ConfigBuilderMixin:MakeHeader(text, tooltip)
-        local initializer = Config:MakeHeader(text, tooltip);
+    function ConfigBuilderMixin:MakeHeader(text, tooltip, indent)
+        local initializer = Config:MakeHeader(text, tooltip, indent);
         initializer:AddShownPredicate(self.isExpanded);
 
         return initializer;
@@ -358,28 +359,53 @@ end
 do
     --- @param text string
     --- @param tooltip string?
+    --- @param indent number? # default 0
     --- @return SettingsListElementInitializer
-    function Config:MakeHeader(text, tooltip)
-        local headerInitializer = CreateSettingsListSectionHeaderInitializer(text, tooltip);
-        self.layout:AddInitializer(headerInitializer);
+    function Config:MakeHeader(text, tooltip, indent)
+        local data = { name = text, tooltip = tooltip, indent = indent or 0 };
+        --- @type SettingsListElementInitializer
+        local headerInitializer = Settings.CreateElementInitializer("MythicPlusTweaks_SettingsHeaderTemplate", data);
 
         return headerInitializer;
     end
 
-    local heightCalculator = UIParent:CreateFontString(nil, "ARTWORK", "GameFontNormal");
+    local calculateHeight;
+    do
+        local heightCalculator = UIParent:CreateFontString(nil, "ARTWORK", "GameFontNormal");
+        local deferrer = CreateFrame("Frame");
+        deferrer:Hide();
+        deferrer.callbacks = {};
+        deferrer:SetScript("OnUpdate", function()
+            for _, callback in pairs(deferrer.callbacks) do
+                securecallfunction(callback);
+            end
+            deferrer.callbacks = {};
+        end);
+        function deferrer:Defer(callback)
+            table.insert(self.callbacks, callback);
+            self:Show();
+        end
+        calculateHeight = function(data, deferred)
+            local text, indent = data.name, data.indent;
+            heightCalculator:SetWidth(635 - (indent * 15));
+            heightCalculator:SetText(text);
+
+            data.extent = heightCalculator:GetStringHeight();
+            if not deferred then
+                deferrer:Defer(function() calculateHeight(data, true); end);
+            end
+        end
+    end
 
     --- @param text string
     --- @param indent number? # default 0
     --- @return SettingsListElementInitializer
     function Config:MakeText(text, indent)
-        heightCalculator:SetWidth(635 - (indent or 0));
-        heightCalculator:SetText(text);
-
         local data = {
             name = text,
-            extent = heightCalculator:GetStringHeight(),
             indent = indent or 0,
         };
+        calculateHeight(data);
         --- @type SettingsListElementInitializer
         local textInitializer = Settings.CreateElementInitializer("MythicPlusTweaks_SettingsTextTemplate", data);
 
@@ -783,6 +809,23 @@ do
             self:SetHeight(data.extent);
             local indent = data.indent or 0;
             self.Text:SetPoint('TOPLEFT', (7 + (indent * 15)), 0);
+        end
+    end
+
+    MythicPlusTweaks_SettingsHeaderMixin = CreateFromMixins(DefaultTooltipMixin);
+    do
+        --- @class MPT_Config_HeaderMixin
+        local mixin = MythicPlusTweaks_SettingsHeaderMixin;
+
+        function mixin:Init(initializer)
+            local data = initializer:GetData();
+            self.Title:SetTextToFit(data.name);
+            local indent = data.indent or 0;
+            self.Title:SetPoint('TOPLEFT', (7 + (indent * 15)), -16);
+
+            self:SetCustomTooltipAnchoring(self.Title, "ANCHOR_RIGHT");
+
+            self:SetTooltipFunc(function() Settings.InitTooltip(initializer:GetName(), initializer:GetTooltip()) end);
         end
     end
 end
