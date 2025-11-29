@@ -27,7 +27,7 @@ function Main:OnInitialize()
     self.version = C_AddOns.GetAddOnMetadata(name, 'Version') or '';
     self:InitDefaults();
     for moduleName, module in self:IterateModules() do
-        --- @type MPT_Module
+        --- @type NumyConfig_Module
         local module = module;
         if self.db.modules[moduleName] == false then
             module:Disable();
@@ -35,7 +35,26 @@ function Main:OnInitialize()
     end
 
     ns.Util:Init();
-    ns.Config:Init();
+    ns.Config:Init("Mythic Plus Tweaks", self.db, nil, nil, self, {
+        'ShowOwnRatingOnLFGTooltip',
+        'ImproveKeystoneLink',
+        'AlwaysShowAffixes',
+
+        'miscQoL',
+        'PartyRating',
+        'DungeonTeleports',
+        'DungeonIconTooltip',
+        'DungeonIconText',
+        'KeystoneSharing-core',
+        'ShowScoreOnKeystoneTooltip',
+        'SortDungeonIcons',
+        'MistHelperSync',
+    }, function(configBuilder)
+        configBuilder:MakeButton(
+            "Open the Mythic+ UI",
+            function() ns.Util:ToggleMythicPlusFrame(); end
+        )
+    end);
 
     SLASH_MYTHIC_PLUS_TWEAKS1 = '/mpt';
     SLASH_MYTHIC_PLUS_TWEAKS2 = '/mythicplustweaks';

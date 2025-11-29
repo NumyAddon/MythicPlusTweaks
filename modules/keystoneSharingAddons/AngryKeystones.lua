@@ -8,7 +8,7 @@ local Main = MPT.Main;
 --- @diagnostic disable-next-line: assign-type-mismatch
 local ParentModule = Main:GetModule('KeystoneSharing-core');
 
---- @class MPT_AngryKeystones: MPT_Module
+--- @class MPT_AngryKeystones: NumyConfig_Module
 local Module = ParentModule:NewModule('KeystoneSharing-AngryKeystones');
 
 --- @type KeystoneSharingUtil

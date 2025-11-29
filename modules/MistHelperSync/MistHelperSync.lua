@@ -7,7 +7,7 @@ MPT.MistHelperSyncImplementations = MPT.MistHelperSyncImplementations or {};
 --- @type MPT_MistHelperSyncImplementation[]
 local implementations = MPT.MistHelperSyncImplementations;
 
---- @class MPT_MistHelperSync: MPT_Module
+--- @class MPT_MistHelperSync: NumyConfig_Module
 local Module = Main:NewModule('MistHelperSync');
 
 Module.initializedImplementations = {};
@@ -36,7 +36,7 @@ function Module:GetName()
     return 'Mist Maze Helper Sync';
 end
 
---- @param configBuilder MPT_ConfigBuilder
+--- @param configBuilder NumyConfigBuilder
 function Module:BuildConfig(configBuilder)
     for _, implementation in ipairs(implementations) do
         configBuilder:MakeButton(

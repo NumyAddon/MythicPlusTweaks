@@ -16,7 +16,7 @@ local SORT_OPTION_ID = 'id';
 local SORT_DIRECTION_DESC = 'desc'; -- default UI does this
 local SORT_DIRECTION_ASC = 'asc';
 
---- @class MPT_SortDungeonIcons: MPT_Module, AceHook-3.0, AceEvent-3.0
+--- @class MPT_SortDungeonIcons: NumyConfig_Module, AceHook-3.0, AceEvent-3.0
 local Module = Main:NewModule('SortDungeonIcons', 'AceHook-3.0', 'AceEvent-3.0');
 
 function Module:OnEnable()
@@ -41,7 +41,7 @@ function Module:GetDescription()
     return 'Allows you to sort the dungeon icons in various different ways.';
 end
 
---- @param configBuilder MPT_ConfigBuilder
+--- @param configBuilder NumyConfigBuilder
 --- @param db MPT_SortDungeonIconsDB
 function Module:BuildConfig(configBuilder, db)
     self.db = db;

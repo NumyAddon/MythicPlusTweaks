@@ -4,7 +4,7 @@ local MPT = select(2, ...);
 local Main = MPT.Main;
 local Util = MPT.Util;
 
---- @class MPT_DungeonIconTooltip: MPT_Module,AceHook-3.0
+--- @class MPT_DungeonIconTooltip: NumyConfig_Module,AceHook-3.0
 local Module = Main:NewModule('DungeonIconTooltip', 'AceHook-3.0');
 
 function Module:OnEnable()
@@ -33,7 +33,7 @@ function Module:GetDescription()
         or 'Adds the dungeon mapID to the dungeon icon tooltip. Affix rating information is not relevant this season.';
 end
 
---- @param configBuilder MPT_ConfigBuilder
+--- @param configBuilder NumyConfigBuilder
 --- @param db MPT_DungeonIconTooltipDB
 function Module:BuildConfig(configBuilder, db)
     self.db = db;

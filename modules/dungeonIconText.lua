@@ -4,7 +4,7 @@ local MPT = select(2, ...);
 local Main = MPT.Main;
 local Util = MPT.Util;
 
---- @class MPT_DungeonIconText: MPT_Module, AceHook-3.0, AceEvent-3.0
+--- @class MPT_DungeonIconText: NumyConfig_Module, AceHook-3.0, AceEvent-3.0
 local Module = Main:NewModule('DungeonIconText', 'AceHook-3.0', 'AceEvent-3.0');
 
 local OPTION_FULL_NAME = 'full';
@@ -129,7 +129,7 @@ function Module:GetDescription()
         or 'Changes the text on the dungeon icons, to show "{level} - {score}" on the icon (level is grey if out of time). Affix-specific scores are not relevant this season.';
 end
 
---- @param configBuilder MPT_ConfigBuilder
+--- @param configBuilder NumyConfigBuilder
 --- @param db MPT_DungeonIconText_Settings
 function Module:BuildConfig(configBuilder, db)
     self.db = db;

@@ -8,7 +8,7 @@ local Main = MPT.Main;
 --- @diagnostic disable-next-line: assign-type-mismatch
 local ParentModule = Main:GetModule('KeystoneSharing-core');
 
---- @class MPT_AstralKeys: MPT_Module, AceEvent-3.0
+--- @class MPT_AstralKeys: NumyConfig_Module, AceEvent-3.0
 local Module = ParentModule:NewModule('KeystoneSharing-AstralKeys', 'AceEvent-3.0');
 
 --- @type KeystoneSharingUtil

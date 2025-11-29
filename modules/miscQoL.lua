@@ -7,7 +7,7 @@ local KSUtil = MPT.KeystoneSharingUtil;
 
 local SendChatMessage = C_ChatInfo and C_ChatInfo.SendChatMessage or SendChatMessage
 
---- @class MPT_MiscQoL: MPT_Module,AceEvent-3.0,AceHook-3.0
+--- @class MPT_MiscQoL: NumyConfig_Module,AceEvent-3.0,AceHook-3.0
 local Module = Main:NewModule('miscQoL', 'AceEvent-3.0', 'AceHook-3.0');
 
 local PREFIX = '<M+ Tweaks> ';
@@ -81,7 +81,7 @@ function Module:GetDescription()
     return 'Miscellaneous QoL Tweaks.';
 end
 
---- @param configBuilder MPT_ConfigBuilder
+--- @param configBuilder NumyConfigBuilder
 --- @param db MPT_MiscQoL_Settings
 function Module:BuildConfig(configBuilder, db)
     self.db = db;

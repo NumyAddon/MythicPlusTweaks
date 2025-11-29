@@ -3,7 +3,7 @@ local MPT = select(2, ...);
 local Main = MPT.Main;
 local KSUtil = MPT.KeystoneSharingUtil;
 
---- @class MPT_KeystoneSharing: MPT_Module, AceEvent-3.0
+--- @class MPT_KeystoneSharing: NumyConfig_Module, AceEvent-3.0
 local Module = Main:NewModule('KeystoneSharing-core', 'AceEvent-3.0');
 
 function Module:OnEnable()
@@ -43,7 +43,7 @@ function Module:GetDescription()
     return 'This module emulates the behavior of other addons that share keystone data. Allowing your party/guild/friends to see your keystone without you needing to install the addon they\'re using.';
 end
 
---- @param configBuilder MPT_ConfigBuilder
+--- @param configBuilder NumyConfigBuilder
 --- @param db MPT_KeystoneSharingDB
 function Module:BuildConfig(configBuilder, db)
     self.db = db;

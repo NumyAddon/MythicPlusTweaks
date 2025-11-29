@@ -1,4 +1,4 @@
-## Interface: @toc-version-retail@,@toc-version-midnight@
+## Interface: @toc-version-retail@,@toc-version-midnight@,120000
 ## Title: Mythic+ Tweaks
 ## Author: Numy
 ## IconTexture: Interface\Addons\MythicPlusTweaks\media\icon
@@ -27,8 +27,7 @@ SharedUtil.lua
 KeystoneUtil.lua
 core.lua
 
-settingsTemplates.xml
-config.lua
+config.xml
 
 modules\dungeonTeleports.lua
 modules\dungeonIconTooltip.lua

@@ -6,7 +6,7 @@ local Main = MPT.Main;
 --- @type MPT_Util
 local Util = MPT.Util;
 
---- @class MPT_ShowScoreOnKeystoneTooltip: MPT_Module, AceHook-3.0
+--- @class MPT_ShowScoreOnKeystoneTooltip: NumyConfig_Module, AceHook-3.0
 local Module = Main:NewModule('ShowScoreOnKeystoneTooltip', 'AceHook-3.0');
 
 function Module:OnEnable()
@@ -27,7 +27,7 @@ function Module:GetName()
     return 'Show Score On Keystone Tooltip';
 end
 
---- @param configBuilder MPT_ConfigBuilder
+--- @param configBuilder NumyConfigBuilder
 function Module:BuildConfig(configBuilder)
     configBuilder:MakeButton(
         'Show Example Tooltip',

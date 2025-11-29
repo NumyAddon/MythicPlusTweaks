@@ -4,7 +4,7 @@ local MPT = select(2, ...);
 local Main = MPT.Main;
 local Util = MPT.Util;
 
---- @class MPT_AlwaysShowAffixes: MPT_Module, AceHook-3.0
+--- @class MPT_AlwaysShowAffixes: NumyConfig_Module, AceHook-3.0
 local Module = Main:NewModule('AlwaysShowAffixes', 'AceHook-3.0');
 
 function Module:OnEnable()
