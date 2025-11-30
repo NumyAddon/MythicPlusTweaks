@@ -35,7 +35,10 @@ function Main:OnInitialize()
     end
 
     ns.Util:Init();
-    ns.Config:Init("Mythic Plus Tweaks", self.db, nil, nil, self, {
+
+    --- @type NumyConfig
+    local Config = ns.Config;
+    Config:Init("Mythic Plus Tweaks", self.db, nil, nil, self, {
         'ShowOwnRatingOnLFGTooltip',
         'ImproveKeystoneLink',
         'AlwaysShowAffixes',
@@ -58,7 +61,7 @@ function Main:OnInitialize()
 
     SLASH_MYTHIC_PLUS_TWEAKS1 = '/mpt';
     SLASH_MYTHIC_PLUS_TWEAKS2 = '/mythicplustweaks';
-    SlashCmdList['MYTHIC_PLUS_TWEAKS'] = function() ns.Config:OpenSettings(); end
+    SlashCmdList['MYTHIC_PLUS_TWEAKS'] = function() Config:OpenSettings(); end
 end
 
 function Main:InitDefaults()
