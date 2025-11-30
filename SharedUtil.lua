@@ -86,7 +86,7 @@ end
 function Util:ToggleMythicPlusFrame()
     local shouldShow = not (ChallengesFrame and ChallengesFrame:IsVisible());
     PVEFrame_ToggleFrame('ChallengesFrame');
-    if shouldShow == ChallengesFrame:IsVisible() then return; end
+    if not ChallengesFrame or shouldShow == ChallengesFrame:IsVisible() then return; end
 
     PVEFrame:SetShown(shouldShow);
     if PVEFrame:GetNumPoints() == 0 then
