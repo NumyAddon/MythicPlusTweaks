@@ -1,6 +1,8 @@
 --- @class MPT_NS
 local MPT = select(2, ...);
 
+local issecretvalue = issecretvalue or function(val) return false; end;
+
 --- @type MPT_Main
 local Main = MPT.Main;
 --- @type MPT_Util
@@ -47,7 +49,7 @@ function Module:TooltipLinePostCall(tooltip, lineData)
     if not self.enabled then return; end
     if not tooltip or not tooltip.GetItem then return end
 
-    if not string.find(lineData.leftText, CHALLENGE_MODE_ITEM_POWER_LEVEL) then return; end
+    if issecretvalue(lineData.leftText) or not string.find(lineData.leftText, CHALLENGE_MODE_ITEM_POWER_LEVEL) then return; end
 
     local _, itemLink = tooltip:GetItem();
     if not itemLink then return; end
