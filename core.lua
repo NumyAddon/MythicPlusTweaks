@@ -38,7 +38,7 @@ function Main:OnInitialize()
 
     --- @type NumyConfig
     local Config = ns.Config;
-    Config:Init("Mythic Plus Tweaks", self.db, nil, nil, self, {
+    Config:Init("Mythic Plus Tweaks", "MythicPlusTweaks", self.db, nil, nil, self, {
         'ShowOwnRatingOnLFGTooltip',
         'ImproveKeystoneLink',
         'AlwaysShowAffixes',
