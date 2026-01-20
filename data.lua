@@ -4,9 +4,12 @@ local MPT = select(2, ...);
 local Data = {}
 MPT.Data = Data
 
--- there is currently no in-game way to get the ChallengeModeMapId from the ActivityID, so we have to resort to a hardcoded map
+local isMidnight = select(4, GetBuildInfo()) >= 120001
+
+--- @type table<number, number> # [activityID] = challengeModeMapID - there is currently no in-game way to get the ChallengeModeMapId from the ActivityID, so we have to resort to a hardcoded map
 Data.ActivityIdToChallengeMapIdMap = {
     [1192] = 2, -- Temple of the Jade Serpent
+    [182] = 161, -- Skyreach
     [1695] = 163, -- Bloodmaul Slag Mines
     [1193] = 165, -- Shadowmoon Burial Grounds
     [183] = 166, -- Grimrail Depot
@@ -85,6 +88,12 @@ Data.ActivityIdToChallengeMapIdMap = {
     [1550] = 525, -- Operation: Floodgate
     [1702] = 541, -- The Stonecore
     [1694] = 542, -- Eco-Dome Al'dani
+    [1770] = 556, -- Pit of Saron
+    [1542] = 557, -- Windrunner Spire
+    [1760] = 558, -- Magisters' Terrace
+    [1768] = 559, -- Nexus-Point Xenas
+    [1764] = 560, -- Maisara Caverns
+
 };
 
 Data.Portals = {};
@@ -202,7 +211,8 @@ do
     end
 
     local hearthstones = {
-        CurrentHub = hearthstone(14771), -- the current hub generally has a portal to seasonal dungeons from older expansions
+        CurrentHub = hearthstone(isMidnight and 16645 or 14771), -- the current hub generally has a portal to seasonal dungeons from older expansions
+        SilvermoonMidnight = hearthstone(16645),
         Tazavesh = hearthstone(15781),
         Dornogal = hearthstone(14771),
         Valdrakken = hearthstone(13862),
@@ -220,6 +230,7 @@ do
         EngiWormholeShadowlands = toy(172924), -- Engineering, can select which zone to go to
         EngiWormholeDragonIsles = toy(198156), -- Engineering, can select which zone to go to
         EngiWormholeKhazAlgar = toy(221966), -- Engineering, can select which zone to go to
+        EngiWormholeQuelThalas = toy(248485), -- Engineering, can't select zone (todo: verify)
         EngiToshelysStation = toy(30544), -- Gnomish Engineering, Blade's Edge Mountains, northern Outland
         EngiGadgetzan = toy(18986), -- Gnomish Engineering, Tanaris, north-east of Uldum
         EngiArea52 = toy(30542), -- Goblin Engineering, Netherstorm, northern Outland
@@ -241,7 +252,7 @@ do
         Orgrimmar = classTeleport(3567),
         Shattrath1 = classTeleport(33690),
         Shattrath2 = classTeleport(35715),
-        Silvermoon = classTeleport(32272),
+        SilvermoonTbc = classTeleport(32272),
         Stonard = classTeleport(49358),
         Stormwind = classTeleport(3561),
         Theramore = classTeleport(49359),
@@ -253,7 +264,8 @@ do
         Oribos = classTeleport(344587),
         Valdrakken = classTeleport(395277),
         Dornogal = classTeleport(446540),
-        CurrentHub = classTeleport(446540), -- the current hub generally has a portal to seasonal dungeons from older expansions
+        -- @todo: are they adding a new silvermoon teleport spell? the old one brings you to Silvermoon TBC
+        CurrentHub = classTeleport(isMidnight and 0 or 446540), -- the current hub generally has a portal to seasonal dungeons from older expansions
     };
     local others = {
         DruidDreamwalk = classTeleport(193753),
@@ -270,7 +282,7 @@ do
         Scholomance = dungeonPortal(131232),
         ScarletHalls = dungeonPortal(131231),
         ScarletMonastery = dungeonPortal(131229),
-        Skyreach = dungeonPortal(159898),
+        Skyreach = dungeonPortal(159898, 1254557),
         BloodmaulSlagMines = dungeonPortal(159895),
         Auchindoun = dungeonPortal(159897),
         ShadowmoonBurialGrounds = dungeonPortal(159899),
@@ -284,6 +296,7 @@ do
         NeltharionsLair = dungeonPortal(410078),
         CourtofStars = dungeonPortal(393766),
         ReturntoKarazhan = dungeonPortal(373262),
+        SeatoftheTriumvirate = dungeonPortal(1254551),
         AtalDazar = dungeonPortal(424187),
         Freehold = dungeonPortal(410071),
         TheMOTHERLODE = dungeonPortal(467553, 467555),
@@ -323,6 +336,11 @@ do
         OperationFloodgate = dungeonPortal(1216786),
         --TheStonecore = dungeonPortal(2), -- not implemented yet
         EcoDomeAldani = dungeonPortal(1237215),
+        PitofSaron = dungeonPortal(1254555),
+        WindrunnerSpire = dungeonPortal(1254400),
+        MagistersTerrace = dungeonPortal(1254572),
+        NexusPointXenas = dungeonPortal(1254563),
+        MaisaraCaverns = dungeonPortal(1254559),
     };
 
     Data.Portals.maps = {
@@ -402,6 +420,11 @@ do
         [525] = 'OperationFloodgate',
         [541] = 'TheStonecore',
         [542] = 'EcoDomeAldani',
+        [556] = 'PitofSaron',
+        [557] = 'WindrunnerSpire',
+        [558] = 'MagistersTerrace',
+        [559] = 'NexusPointXenas',
+        [560] = 'MaisaraCaverns',
     };
 
     local dungeon = Data.Portals.dungeonPortals;
@@ -415,7 +438,12 @@ do
         Scholomance = {},
         ScarletHalls = {},
         ScarletMonastery = {},
-        Skyreach = {},
+        Skyreach = {
+            mage.CurrentHub,
+            hearthstones.CurrentHub,
+            dungeon.Auchindoun,
+            dungeon.ShadowmoonBurialGrounds,
+        },
         BloodmaulSlagMines = {},
         Auchindoun = {},
         ShadowmoonBurialGrounds = {},
@@ -458,7 +486,12 @@ do
         CourtofStars = {},
         ReturntoKarazhan = {},
         CathedralofEternalNight = {},
-        SeatoftheTriumvirate = {},
+        SeatoftheTriumvirate = {
+            mage.CurrentHub,
+            hearthstones.CurrentHub,
+            toys.EngiWormholeArgus,
+            toys.DalaranHearthstone,
+        },
         AtalDazar = {
             mage.Dazaralor,
             dungeon.TheMOTHERLODE,
@@ -703,8 +736,34 @@ do
             hearthstones.Tazavesh,
             mage.CurrentHub,
             hearthstones.CurrentHub,
-            mage.Oribos, -- assuming you can still get to this tazavesh zone from Oribos
-            toys.EngiWormholeShadowlands,
+        },
+        PitofSaron = {
+            mage.CurrentHub,
+            hearthstones.CurrentHub,
+            mage.DalaranNorthrend,
+            toys.EngiWormholeNorthrend,
+        },
+        WindrunnerSpire = {
+            mage.CurrentHub,
+            hearthstones.CurrentHub,
+            hearthstones.SilvermoonMidnight,
+            dungeon.MaisaraCaverns,
+        },
+        MagistersTerrace = {
+            mage.CurrentHub,
+            hearthstones.CurrentHub,
+            hearthstones.SilvermoonMidnight,
+        },
+        NexusPointXenas = {
+            mage.CurrentHub,
+            hearthstones.CurrentHub,
+            hearthstones.SilvermoonMidnight,
+        },
+        MaisaraCaverns = {
+            mage.CurrentHub,
+            hearthstones.CurrentHub,
+            hearthstones.SilvermoonMidnight,
+            dungeon.WindrunnerSpire,
         },
     };
 
