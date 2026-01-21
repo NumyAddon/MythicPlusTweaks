@@ -25,7 +25,7 @@ local frameSetAttribute = GetFrameMetatable().__index.SetAttribute;
 --- @return number
 local function GetRemainingSpellCooldown(spellID)
     local cooldownInfo = C_Spell.GetSpellCooldown(spellID);
-    if not cooldownInfo then return 0; end
+    if not cooldownInfo or issecretvalue(cooldownInfo) or issecretvalue(cooldownInfo.startTime) then return 0; end
     local start, duration = cooldownInfo.startTime, cooldownInfo.duration;
 
     return start + duration - GetTime();
