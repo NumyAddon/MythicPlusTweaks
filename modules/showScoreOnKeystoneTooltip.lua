@@ -13,7 +13,7 @@ local Module = Main:NewModule('ShowScoreOnKeystoneTooltip', 'AceHook-3.0');
 
 function Module:OnEnable()
     self.enabled = true
-    TooltipDataProcessor.AddLinePostCall(Enum.TooltipDataType.Item, function(tooltip, lineData) Module:TooltipLinePostCall(tooltip, lineData) end);
+    TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tooltip) Module:TooltipPostCall(tooltip) end);
 end
 
 function Module:OnDisable()
@@ -46,18 +46,24 @@ function Module:BuildConfig(configBuilder)
 end
 
 function Module:TooltipLinePostCall(tooltip, lineData)
-    if not self.enabled then return; end
-    if not tooltip or not tooltip.GetItem then return end
+    return
+end
 
-    if issecretvalue(lineData.leftText) or not string.find(lineData.leftText, CHALLENGE_MODE_ITEM_POWER_LEVEL) then return; end
+function Module:TooltipPostCall(tooltip)
+    if not self.enabled then return end
+    if InCombatLockdown() then return end
+    if not tooltip or not tooltip.GetItem or not tooltip:IsShown() then return end
 
-    local _, itemLink = tooltip:GetItem();
-    if not itemLink then return; end
+    local _, itemLink = tooltip:GetItem()
+    if not itemLink then return end
 
-    self:HandleHyperlink(tooltip, itemLink);
+    self:HandleHyperlink(tooltip, itemLink)
 end
 
 function Module:HandleHyperlink(tooltip, itemLink)
+    if InCombatLockdown() then return end
+    if not tooltip or not tooltip:IsShown() then return end
+
     local mapId = itemLink:match('keystone:%d+:(%d+)');
     if not mapId then
         local itemId = itemLink:match('item:(%d+)');

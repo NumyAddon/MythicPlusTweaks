@@ -64,7 +64,10 @@ end
 ---@param tooltip GameTooltip
 ---@param icon ChallengesDungeonIconFrameTemplate
 function Module:OnTooltipShow(tooltip, icon)
-    if not icon.mapID then return; end
+    -- Avoid mutating tooltips in combat to prevent taint
+    if InCombatLockdown() then return end
+    if not tooltip or not tooltip:IsShown() then return end
+    if not icon or not icon.mapID then return end
 
     local mapId = icon.mapID;
     local linesLeft, linesRight = Util:ExtractTooltipLines(tooltip);

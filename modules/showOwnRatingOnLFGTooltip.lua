@@ -27,7 +27,13 @@ end
 --- @param tooltip GameTooltip
 --- @param resultId number
 function Module:OnTooltipShow(tooltip, resultId)
+    -- Do nothing in combat to avoid taint
+    if InCombatLockdown() then return end
+    if not tooltip or not tooltip:IsShown() then return end
+
     local searchResultInfo = C_LFGList.GetSearchResultInfo(resultId);
+    if not searchResultInfo or not searchResultInfo.activityIDs or not searchResultInfo.activityIDs[1] then return end
+
     local activityID = searchResultInfo.activityIDs[1];
     local mapID, fullName, isMythicPlusActivity = Util:GetMapInfoByLfgActivityID(activityID)
     if not isMythicPlusActivity then return; end
@@ -36,9 +42,9 @@ function Module:OnTooltipShow(tooltip, resultId)
             missingActivityIds[activityID] = true;
             Main:Print(('LFG Module: no mapId found for activityID %d (%s) please report this on discord or github'):format(activityID, fullName));
         end
-
         return;
     end
+
     local overallInfo = Util:GetOverallInfoByMapId(mapID);
     local affixInfo = Util.AFFIX_SPECIFIC_SCORES and Util:GetAffixInfoByMapId(mapID) or nil;
 
