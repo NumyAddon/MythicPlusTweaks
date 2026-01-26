@@ -61,7 +61,13 @@ function Main:OnInitialize()
 
     SLASH_MYTHIC_PLUS_TWEAKS1 = '/mpt';
     SLASH_MYTHIC_PLUS_TWEAKS2 = '/mythicplustweaks';
-    SlashCmdList['MYTHIC_PLUS_TWEAKS'] = function() Config:OpenSettings(); end
+    SlashCmdList['MYTHIC_PLUS_TWEAKS'] = function(msg, editBox, chatFrame)
+        if InCombatLockdown() then
+            print("Mythic Plus Tweaks: Cannot open settings while in combat!")
+            return
+        end
+        Config:OpenSettings()
+    end
 end
 
 function Main:InitDefaults()
