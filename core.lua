@@ -1,5 +1,5 @@
 local name = ...;
---- @class MPT_NS
+--- @class MPT_NS: NumyConfigNS
 local ns = select(2, ...);
 
 --@debug@
@@ -7,7 +7,7 @@ _G.MythicPlusTweaks = ns;
 if not _G.MPT then _G.MPT = ns; end
 --@end-debug@
 
---- @class MPT_Main: AceAddon,AceHook-3.0,AceEvent-3.0,AceConsole-3.0
+--- @class MPT_Main: NumyConfig_AceAddon, AceHook-3.0, AceEvent-3.0, AceConsole-3.0
 local Main = LibStub('AceAddon-3.0'):NewAddon('Mythic Plus Tweaks', 'AceConsole-3.0', 'AceHook-3.0', 'AceEvent-3.0');
 if not Main then return; end
 ns.Main = Main;
@@ -27,8 +27,6 @@ function Main:OnInitialize()
     self.version = C_AddOns.GetAddOnMetadata(name, 'Version') or '';
     self:InitDefaults();
     for moduleName, module in self:IterateModules() do
-        --- @type NumyConfig_Module
-        local module = module;
         if self.db.modules[moduleName] == false then
             module:Disable();
         end
@@ -36,7 +34,6 @@ function Main:OnInitialize()
 
     ns.Util:Init();
 
-    --- @type NumyConfig
     local Config = ns.Config;
     Config:Init("Mythic Plus Tweaks", "MythicPlusTweaks", self.db, nil, nil, self, {
         'ShowOwnRatingOnLFGTooltip',
