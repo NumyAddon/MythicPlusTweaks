@@ -263,6 +263,7 @@ function Module:OnGuildMessage(event, msg)
 end
 
 function Module:ParseChat(msg, channel)
+    if issecretvalue(msg) then return; end
     if not self.keysCooldown[channel] and strlower(msg) == QUERY then
         local link = KSUtil:GetKeystoneLink();
         if not link then return; end

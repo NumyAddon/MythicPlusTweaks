@@ -13,7 +13,10 @@ local Module = Main:NewModule('ShowScoreOnKeystoneTooltip', 'AceHook-3.0');
 
 function Module:OnEnable()
     self.enabled = true
-    TooltipDataProcessor.AddLinePostCall(Enum.TooltipDataType.Item, function(tooltip, lineData) Module:TooltipLinePostCall(tooltip, lineData) end);
+    if not self.registeredTooltipHandler then
+        self.registeredTooltipHandler = true;
+        TooltipDataProcessor.AddLinePostCall(Enum.TooltipDataType.Item, function(tooltip, lineData) Module:TooltipLinePostCall(tooltip, lineData) end);
+    end
 end
 
 function Module:OnDisable()

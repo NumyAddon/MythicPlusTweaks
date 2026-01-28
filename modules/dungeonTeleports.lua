@@ -41,7 +41,10 @@ Module.buttons = {};
 function Module:OnEnable()
     self.enabled = true;
     self.hookedTooltips = {};
-    TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tooltip) Module:ItemTooltipPostCall(tooltip); end);
+    if not self.registeredTooltipHandler then
+        self.registeredTooltipHandler = true;
+        TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tooltip) Module:ItemTooltipPostCall(tooltip); end);
+    end
     for _, frameName in pairs(CHAT_FRAMES) do
         local frame = _G[frameName];
         self:SecureHookScript(frame, 'OnHyperlinkEnter');

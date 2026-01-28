@@ -324,6 +324,10 @@ local scoreCache = {};
 function Util:GetUnitScores(unit)
     local summary = C_PlayerInfo.GetPlayerMythicPlusRatingSummary(unit);
     local guid = UnitGUID(unit);
+    if issecretvalue(guid) then
+        -- should never happen with partyX tokens, but perhaps during mindcontrol or other edge cases?
+        return nil;
+    end
     if not summary or not guid then
         -- data is only available when you're somewhat close to the player, so cache it so it stays available when moving further away
         return guid and scoreCache[guid] or nil;
