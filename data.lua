@@ -215,7 +215,6 @@ do
     };
 
     local toys = {
-        SilvermoonMidnight = toy(253629), -- Personal Key to the Arcantina, Midnight Silvermoon
         GarrisonHearthstone = toy(110560),
         DalaranHearthstone = toy(140192),
         EngiWormholeDraenor = toy(112059), -- Engineering, can select which zone to go to
@@ -261,6 +260,7 @@ do
         Oribos = classTeleport(344587),
         Valdrakken = classTeleport(395277),
         Dornogal = classTeleport(446540),
+        SilvermoonMidnight = classTeleport(1259190),
     };
     local others = {
         DruidDreamwalk = classTeleport(193753),
@@ -269,8 +269,7 @@ do
     local currentHubPlaceholder = 'currentHub';
     local currentHub = {
         hearthstones.SilvermoonMidnight,
-        -- mage.Foo, -- there isn't a teleport spell for new silvermoon yet, only the TBC version
-        toys.SilvermoonMidnight,
+        mage.SilvermoonMidnight,
     };
 
     Data.Portals.dungeonPortals = {
@@ -716,23 +715,23 @@ do
         WindrunnerSpire = {
             currentHubPlaceholder,
             hearthstones.SilvermoonMidnight,
-            toys.SilvermoonMidnight,
+            mage.SilvermoonMidnight,
             dungeon.MaisaraCaverns,
         },
         MagistersTerrace = {
             currentHubPlaceholder,
             hearthstones.SilvermoonMidnight,
-            toys.SilvermoonMidnight,
+            mage.SilvermoonMidnight,
         },
         NexusPointXenas = {
             currentHubPlaceholder,
             hearthstones.SilvermoonMidnight,
-            toys.SilvermoonMidnight,
+            mage.SilvermoonMidnight,
         },
         MaisaraCaverns = {
             currentHubPlaceholder,
             hearthstones.SilvermoonMidnight,
-            toys.SilvermoonMidnight,
+            mage.SilvermoonMidnight,
             dungeon.WindrunnerSpire,
         },
     };
