@@ -4,8 +4,8 @@ local MPT = select(2, ...);
 local Main = MPT.Main;
 local Util = MPT.Util;
 
---- @class MPT_DungeonIconText: NumyConfig_Module, AceHook-3.0, AceEvent-3.0
-local Module = Main:NewModule('DungeonIconText', 'AceHook-3.0', 'AceEvent-3.0');
+--- @class MPT_DungeonIconText: NumyConfig_Module, AceHook-3.0, NumyAceEvent-3.0
+local Module = Main:NewModule('DungeonIconText', 'AceHook-3.0', 'NumyAceEvent-3.0');
 
 local OPTION_FULL_NAME = 'full';
 local OPTION_MIDDLE_NAME = 'middle';

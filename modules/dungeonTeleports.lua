@@ -15,8 +15,8 @@ local TYPE_CLASS_TELEPORT = Data.Portals.TYPE_CLASS_TELEPORT;
 local TYPE_HEARTHSTONE = Data.Portals.TYPE_HEARTHSTONE;
 local TYPE_ITEM = Data.Portals.TYPE_ITEM;
 
---- @class MPT_DungeonTeleports : NumyConfig_Module,AceHook-3.0,AceEvent-3.0
-local Module = Main:NewModule('DungeonTeleports', 'AceHook-3.0', 'AceEvent-3.0');
+--- @class MPT_DungeonTeleports : NumyConfig_Module,AceHook-3.0,NumyAceEvent-3.0
+local Module = Main:NewModule('DungeonTeleports', 'AceHook-3.0', 'NumyAceEvent-3.0');
 
 local frameSetAttribute = GetFrameMetatable().__index.SetAttribute;
 

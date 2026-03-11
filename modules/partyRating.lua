@@ -4,8 +4,8 @@ local MPT = select(2, ...);
 local Main = MPT.Main;
 local Util = MPT.Util;
 
---- @class MPT_PartyRating: NumyConfig_Module,AceHook-3.0,AceEvent-3.0
-local Module = Main:NewModule('PartyRating', 'AceHook-3.0', 'AceEvent-3.0');
+--- @class MPT_PartyRating: NumyConfig_Module,AceHook-3.0,NumyAceEvent-3.0
+local Module = Main:NewModule('PartyRating', 'AceHook-3.0', 'NumyAceEvent-3.0');
 local updateFrame = CreateFrame('Frame');
 
 function Module:OnEnable()

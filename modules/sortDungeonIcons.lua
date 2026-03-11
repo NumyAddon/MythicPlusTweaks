@@ -16,8 +16,8 @@ local SORT_OPTION_ID = 'id';
 local SORT_DIRECTION_DESC = 'desc'; -- default UI does this
 local SORT_DIRECTION_ASC = 'asc';
 
---- @class MPT_SortDungeonIcons: NumyConfig_Module, AceHook-3.0, AceEvent-3.0
-local Module = Main:NewModule('SortDungeonIcons', 'AceHook-3.0', 'AceEvent-3.0');
+--- @class MPT_SortDungeonIcons: NumyConfig_Module, AceHook-3.0, NumyAceEvent-3.0
+local Module = Main:NewModule('SortDungeonIcons', 'AceHook-3.0', 'NumyAceEvent-3.0');
 
 function Module:OnEnable()
     Util:OnChallengesUILoad(function()

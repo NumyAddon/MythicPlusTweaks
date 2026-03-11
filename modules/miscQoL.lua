@@ -7,8 +7,8 @@ local KSUtil = MPT.KeystoneSharingUtil;
 
 local SendChatMessage = C_ChatInfo and C_ChatInfo.SendChatMessage or SendChatMessage
 
---- @class MPT_MiscQoL: NumyConfig_Module,AceEvent-3.0,AceHook-3.0
-local Module = Main:NewModule('miscQoL', 'AceEvent-3.0', 'AceHook-3.0');
+--- @class MPT_MiscQoL: NumyConfig_Module,NumyAceEvent-3.0,AceHook-3.0
+local Module = Main:NewModule('miscQoL', 'NumyAceEvent-3.0', 'AceHook-3.0');
 
 local PREFIX = '<M+ Tweaks> ';
 local QUERY = '!keys';

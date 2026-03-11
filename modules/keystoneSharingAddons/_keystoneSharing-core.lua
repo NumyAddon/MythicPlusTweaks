@@ -3,8 +3,8 @@ local MPT = select(2, ...);
 local Main = MPT.Main;
 local KSUtil = MPT.KeystoneSharingUtil;
 
---- @class MPT_KeystoneSharing: NumyConfig_Module, AceEvent-3.0
-local Module = Main:NewModule('KeystoneSharing-core', 'AceEvent-3.0');
+--- @class MPT_KeystoneSharing: NumyConfig_Module, NumyAceEvent-3.0
+local Module = Main:NewModule('KeystoneSharing-core', 'NumyAceEvent-3.0');
 
 function Module:OnEnable()
     self.playerName = UnitName('player');
