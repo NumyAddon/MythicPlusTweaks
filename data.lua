@@ -113,6 +113,18 @@ do
             type = Data.Portals.TYPE_TOY,
         };
     end
+    local function item(itemID, optionType)
+        return {
+            icon = select(5, C_Item.GetItemInfoInstant(itemID)),
+            itemID = itemID,
+            available = function()
+                return C_Item.GetItemCount(itemID) > 0 and C_Item.IsUsableItem(itemID);
+            end,
+            cooldown = function() return C_Item.GetItemCooldown(itemID); end,
+            type = Data.Portals.TYPE_ITEM,
+            optionType = optionType or Data.Portals.TYPE_TOY,
+        };
+    end
     local function spell(spellIDs, type)
         local function getSpellID()
             for _, spellID in ipairs(spellIDs) do
@@ -150,19 +162,10 @@ do
             classTeleport(556), -- Astral Recall
         },
         {
-            { -- Hearthstone
-                icon = select(5, C_Item.GetItemInfoInstant(6948)),
-                itemID = 6948,
-                available = function()
-                    return C_Item.GetItemCount(6948) > 0;
-                end,
-                cooldown = function()
-                    return C_Item.GetItemCooldown(6948);
-                end,
-                type = Data.Portals.TYPE_ITEM,
-            },
+            item(6948, Data.Portals.TYPE_HEARTHSTONE), -- Hearthstone
             toy(166747), -- Brewfest Reveler's Hearthstone
             toy(190237), -- Broker Translocation Matrix
+            toy(265100), -- Corewarden's Hearthstone
             toy(246565), -- Cosmic Hearthstone
             toy(93672), -- Dark Portal
             toy(208704), -- Deepdweller's Earthen Hearthstone
@@ -178,7 +181,9 @@ do
             toy(209035), -- Hearthstone of the Flame
             toy(168907), -- Holographic Digitalization Hearthstone
             toy(184353), -- Kyrian Hearthstone
+            toy(257736), -- Lightcalled Hearthstone
             toy(165669), -- Lunar Elder's Hearthstone
+            toy(263489), -- Naaru's Enfold
             toy(182773), -- Necrolord Hearthstone
             toy(180290), -- Night Fae Hearthstone
             toy(165802), -- Noble Gardener's Hearthstone
@@ -215,6 +220,8 @@ do
     };
 
     local toys = {
+        SilvermoonMidnightArcantina = toy(253629), -- exits out into silvermoon city
+        DalaranNorthrend = item(52251), -- Jaina's Locket
         GarrisonHearthstone = toy(110560),
         DalaranHearthstone = toy(140192),
         EngiWormholeDraenor = toy(112059), -- Engineering, can select which zone to go to
@@ -266,11 +273,23 @@ do
         DruidDreamwalk = classTeleport(193753),
         CastleNathria = dungeonPortal(373190), -- requires clearing on mythic in SL S4
     };
-    local currentHubPlaceholder = 'currentHub';
-    local currentHub = {
-        hearthstones.SilvermoonMidnight,
-        mage.SilvermoonMidnight,
+    local locations = {
+        SilvermoonMidnight = {
+            hearthstones.SilvermoonMidnight,
+            mage.SilvermoonMidnight,
+            toys.SilvermoonMidnightArcantina,
+        },
+        Dornogal = {
+            hearthstones.Dornogal,
+            mage.Dornogal,
+        },
+        Valdrakken = {
+            hearthstones.Valdrakken,
+            mage.Valdrakken,
+        },
     };
+    locations.currentHub = locations.SilvermoonMidnight;
+    for _, location in pairs(locations) do locations[location] = location; end
 
     Data.Portals.dungeonPortals = {
         TempleoftheJadeSerpent = dungeonPortal(131204),
@@ -439,9 +458,10 @@ do
         ScarletHalls = {},
         ScarletMonastery = {},
         Skyreach = {
-            currentHubPlaceholder,
+            locations.currentHub,
             dungeon.Auchindoun,
             dungeon.ShadowmoonBurialGrounds,
+            toys.EngiWormholeDraenor,
         },
         BloodmaulSlagMines = {},
         Auchindoun = {},
@@ -451,28 +471,28 @@ do
         TheEverbloom = {
             dungeon.GrimrailDepot,
             dungeon.IronDocks,
+            locations.currentHub,
             toys.EngiWormholeDraenor,
-            currentHubPlaceholder,
         },
         IronDocks = {},
         EyeofAzshara = {},
         DarkheartThicket = {
             dungeon.BlackRookHold,
             others.DruidDreamwalk,
+            locations.currentHub,
             dungeon.NeltharionsLair,
             dungeon.CourtofStars,
             toys.DalaranHearthstone,
             mage.LegionOrderHall,
-            currentHubPlaceholder,
         },
         BlackRookHold = {
             dungeon.DarkheartThicket,
             others.DruidDreamwalk,
+            locations.currentHub,
             dungeon.NeltharionsLair,
             dungeon.CourtofStars,
             mage.LegionOrderHall,
             toys.DalaranHearthstone,
-            currentHubPlaceholder,
         },
         HallsofValor = {},
         NeltharionsLair = {},
@@ -483,265 +503,248 @@ do
         ReturntoKarazhan = {},
         CathedralofEternalNight = {},
         SeatoftheTriumvirate = {
-            currentHubPlaceholder,
+            locations.currentHub,
             toys.EngiWormholeArgus,
             toys.DalaranHearthstone,
         },
         AtalDazar = {
             mage.Dazaralor,
             dungeon.TheMOTHERLODE,
+            locations.currentHub,
             toys.EngiWormholeZandalar,
             dungeon.TheUnderrot,
-            currentHubPlaceholder,
         },
         Freehold = {},
         TolDagor = {},
         TheMOTHERLODE = {
             mage.Dazaralor,
             dungeon.AtalDazar,
+            locations.currentHub,
             toys.EngiWormholeZandalar,
             dungeon.TheUnderrot,
-            currentHubPlaceholder,
         },
         WaycrestManor = {
-            dungeon.OperationMechagon,
             dungeon.Freehold,
+            locations.currentHub,
             toys.EngiWormholeKulTiras,
             mage.Boralus,
-            currentHubPlaceholder,
+            dungeon.OperationMechagon,
         },
         KingsRest = {},
         TempleofSethraliss = {},
         TheUnderrot = {},
         ShrineoftheStorm = {},
         SiegeofBoralus = {
+            mage.Boralus,
             dungeon.Freehold,
             toys.EngiWormholeKulTiras,
-            mage.Boralus,
-            currentHubPlaceholder,
+            locations.currentHub,
         },
         OperationMechagon = {
-            currentHubPlaceholder,
+            locations.currentHub,
         },
         MistsofTirnaScithe = {
             dungeon.DeOtherSide,
-            mage.Oribos,
+            locations.currentHub,
             toys.EngiWormholeShadowlands,
-            currentHubPlaceholder,
+            mage.Oribos,
         },
         TheNecroticWake = {
             dungeon.SpiresofAscension,
-            mage.Oribos,
+            locations.currentHub,
             toys.EngiWormholeShadowlands,
-            currentHubPlaceholder,
+            mage.Oribos,
         },
         DeOtherSide = {
             dungeon.MistsofTirnaScithe,
-            mage.Oribos,
+            locations.currentHub,
             toys.EngiWormholeShadowlands,
-            currentHubPlaceholder,
+            mage.Oribos,
         },
         HallsofAtonement = {
             dungeon.SanguineDepths,
             others.CastleNathria,
-            currentHubPlaceholder,
+            locations.currentHub,
             toys.EngiWormholeShadowlands,
         },
         Plaguefall = {},
         SanguineDepths = {
             others.CastleNathria,
             dungeon.HallsofAtonement,
-            currentHubPlaceholder,
+            locations.currentHub,
             toys.EngiWormholeShadowlands,
         },
         SpiresofAscension = {
             dungeon.TheNecroticWake,
-            mage.Oribos,
+            locations.currentHub,
             toys.EngiWormholeShadowlands,
-            currentHubPlaceholder,
+            mage.Oribos,
         },
         TheaterofPain = {
             dungeon.Plaguefall,
-            currentHubPlaceholder,
+            locations.currentHub,
         },
         Tazavesh = {
             dungeon.EcoDomeAldani,
             hearthstones.Tazavesh,
-            currentHubPlaceholder,
+            locations.currentHub,
             mage.Oribos,
             toys.EngiWormholeShadowlands,
         },
         RubyLifePools = {
-            mage.Valdrakken,
-            hearthstones.Valdrakken,
+            locations.Valdrakken,
             toys.EngiWormholeDragonIsles,
+            locations.currentHub,
             dungeon.Neltharus, -- not so great options frankly
             dungeon.AlgetharAcademy,
-            currentHubPlaceholder,
         },
         TheNokhudOffensive = {
             toys.EngiWormholeDragonIsles,
-            mage.Valdrakken,
-            hearthstones.Valdrakken,
+            locations.Valdrakken,
+            locations.currentHub,
             dungeon.RubyLifePools, -- not great
             dungeon.Neltharus,
-            currentHubPlaceholder,
         },
         TheAzureVault = {
             dungeon.BrackenhideHollow,
             toys.EngiWormholeDragonIsles,
-            currentHubPlaceholder,
+            locations.currentHub,
         },
         AlgetharAcademy = {
             dungeon.HallsofInfusion,
             dungeon.DawnoftheInfinite,
-            mage.Valdrakken,
-            hearthstones.Valdrakken,
+            locations.Valdrakken,
             dungeon.RubyLifePools,
-            currentHubPlaceholder,
+            locations.currentHub,
         },
         UldamanLegacyofTyr = {
-            mage.Valdrakken, -- tbh, there isn't really any 'good' alternative for this one
-            hearthstones.Valdrakken,
+            locations.Valdrakken, -- tbh, there isn't really any 'good' alternative for this one
             dungeon.GrimBatol,
-            currentHubPlaceholder,
+            locations.currentHub,
         },
         Neltharus = {
             dungeon.RubyLifePools,
             dungeon.TheNokhudOffensive,
             toys.EngiWormholeDragonIsles,
-            mage.Valdrakken,
-            hearthstones.Valdrakken,
-            currentHubPlaceholder,
+            locations.Valdrakken,
+            locations.currentHub,
         },
         BrackenhideHollow = {
             dungeon.TheAzureVault,
             toys.EngiWormholeDragonIsles,
-            currentHubPlaceholder,
+            locations.currentHub,
         },
         HallsofInfusion = {
             dungeon.DawnoftheInfinite,
             dungeon.AlgetharAcademy,
             toys.EngiWormholeDragonIsles,
-            mage.Valdrakken,
-            hearthstones.Valdrakken,
-            currentHubPlaceholder,
+            locations.Valdrakken,
+            locations.currentHub,
         },
         TheVortexPinnacle = {},
         ThroneoftheTides = {
-            currentHubPlaceholder, -- tbh, there isn't really any 'good' alternative for this one
+            locations.currentHub, -- tbh, there isn't really any 'good' alternative for this one
         },
         DawnoftheInfinite = {
             dungeon.HallsofInfusion,
             dungeon.AlgetharAcademy,
             toys.EngiWormholeDragonIsles,
-            mage.Valdrakken,
-            hearthstones.Valdrakken,
+            locations.Valdrakken,
             dungeon.RubyLifePools,
-            currentHubPlaceholder,
+            locations.currentHub,
         },
         PrioryoftheSacredFlame = {
             dungeon.TheDawnbreaker,
             toys.EngiWormholeKhazAlgar,
-            mage.Dornogal,
-            hearthstones.Dornogal,
+            locations.Dornogal,
         },
         TheRookery = {
-            mage.Dornogal,
-            hearthstones.Dornogal,
+            locations.Dornogal,
             dungeon.CinderbrewMeadery,
             toys.EngiWormholeKhazAlgar,
         },
         TheStonevault = {
             dungeon.DarkflameCleft,
             dungeon.OperationFloodgate,
-            mage.Dornogal,
-            hearthstones.Dornogal,
+            locations.Dornogal,
             toys.EngiWormholeKhazAlgar,
         },
         CityofThreads = {
             dungeon.AraKaraCityofEchoes,
-            mage.Dornogal,
-            hearthstones.Dornogal,
+            locations.Dornogal,
             toys.EngiWormholeKhazAlgar,
         },
         AraKaraCityofEchoes = {
             dungeon.CityofThreads,
-            mage.Dornogal,
-            hearthstones.Dornogal,
+            locations.Dornogal,
             toys.EngiWormholeKhazAlgar,
         },
         DarkflameCleft = {
             dungeon.TheStonevault,
             dungeon.OperationFloodgate,
-            mage.Dornogal,
-            hearthstones.Dornogal,
+            locations.Dornogal,
             toys.EngiWormholeKhazAlgar,
         },
         TheDawnbreaker = {
             dungeon.PrioryoftheSacredFlame,
             toys.EngiWormholeKhazAlgar,
-            mage.Dornogal,
-            hearthstones.Dornogal,
+            locations.Dornogal,
         },
         CinderbrewMeadery = {
-            mage.Dornogal,
-            hearthstones.Dornogal,
+            locations.Dornogal,
             dungeon.TheRookery,
             toys.EngiWormholeKhazAlgar,
         },
         GrimBatol = {
             dungeon.UldamanLegacyofTyr, -- not great still :/
-            currentHubPlaceholder,
+            locations.currentHub,
         },
         OperationFloodgate = {
             dungeon.TheStonevault,
             dungeon.DarkflameCleft,
-            mage.Dornogal,
-            hearthstones.Dornogal,
+            locations.Dornogal,
             toys.EngiWormholeKhazAlgar,
         },
         TheStonecore = {},
         EcoDomeAldani = {
             dungeon.Tazavesh,
             hearthstones.Tazavesh,
-            currentHubPlaceholder,
+            locations.currentHub,
         },
         PitofSaron = {
-            currentHubPlaceholder,
             mage.DalaranNorthrend,
+            toys.DalaranNorthrend,
+            locations.currentHub,
             toys.EngiWormholeNorthrend,
         },
         WindrunnerSpire = {
-            currentHubPlaceholder,
-            hearthstones.SilvermoonMidnight,
-            mage.SilvermoonMidnight,
+            locations.currentHub,
+            locations.SilvermoonMidnight,
             dungeon.MaisaraCaverns,
         },
         MagistersTerrace = {
-            currentHubPlaceholder,
-            hearthstones.SilvermoonMidnight,
-            mage.SilvermoonMidnight,
+            locations.currentHub,
+            locations.SilvermoonMidnight,
         },
         NexusPointXenas = {
-            currentHubPlaceholder,
-            hearthstones.SilvermoonMidnight,
-            mage.SilvermoonMidnight,
+            locations.currentHub,
+            locations.SilvermoonMidnight,
         },
         MaisaraCaverns = {
-            currentHubPlaceholder,
-            hearthstones.SilvermoonMidnight,
-            mage.SilvermoonMidnight,
+            locations.currentHub,
+            locations.SilvermoonMidnight,
             dungeon.WindrunnerSpire,
         },
     };
 
     for _, alternates in pairs(Data.Portals.alternates) do
         for i, alternate in ipairs(alternates) do
-            if alternate == currentHubPlaceholder then
+            if locations[alternate] then
                 table.remove(alternates, i);
-                for j, currentHubAlternate in ipairs(currentHub) do
-                    table.insert(alternates, i + j - 1, currentHubAlternate);
+                for j, subAlternate in ipairs(alternate) do
+                    if not tIndexOf(alternates, subAlternate) then
+                        table.insert(alternates, i + j - 1, subAlternate);
+                    end
                 end
             end
         end

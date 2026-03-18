@@ -496,7 +496,7 @@ function Module:AttachAlternates(button, mapID, mainKnown, mainSpellID)
 
     local alternatatesToShow = {};
     for _, alternate in ipairs(alternates) do
-        local option = self.db[alternate.type] or OPTION_MAIN_UNKNOWN;
+        local option = self.db[alternate.optionType] or self.db[alternate.type] or OPTION_MAIN_UNKNOWN;
         local showAlternative = false;
         if option == OPTION_ALWAYS and alternate.available() then
             showAlternative = true;
@@ -537,8 +537,8 @@ function Module:AttachAlternates(button, mapID, mainKnown, mainSpellID)
             frameSetAttribute(alternateButton, 'type', 'toy');
             frameSetAttribute(alternateButton, 'toy', alternate.itemID);
         elseif alternate.type == TYPE_ITEM then
-            frameSetAttribute(alternateButton, 'type', 'item');
-            frameSetAttribute(alternateButton, 'item', alternate.itemID);
+            frameSetAttribute(alternateButton, 'type', 'macro');
+            frameSetAttribute(alternateButton, 'macrotext', '/use item:' .. alternate.itemID);
         else
             frameSetAttribute(alternateButton, 'type', 'spell');
             frameSetAttribute(alternateButton, 'spell', alternate.spellID());
