@@ -71,7 +71,7 @@ function Module:OnTooltipShow(tooltip, icon)
 
     if Util.AFFIX_SPECIFIC_SCORES then
         local affixScores, _ = C_MythicPlus.GetSeasonBestAffixScoreInfoForMap(mapId);
-        if(affixScores and #affixScores > 0) then
+        if (affixScores and #affixScores > 0) then
             self:ProcessAffixScores(linesLeft, linesRight, affixScores);
         end
     end
@@ -80,9 +80,9 @@ function Module:OnTooltipShow(tooltip, icon)
         self:AddGroupScoreToTooltip(linesLeft, linesRight, mapId);
     end
 
-    if(self.db.showMapID and not self:MapIdIsAddedToTooltip(linesLeft, mapId)) then
-        table.insert(linesLeft, {text='|cFFEE6161ID|r ' .. mapId});
-        table.insert(linesRight, {text=''});
+    if (self.db.showMapID and not self:MapIdIsAddedToTooltip(linesLeft, mapId)) then
+        table.insert(linesLeft, { text = '|cFFEE6161ID|r ' .. mapId });
+        table.insert(linesRight, { text = '' });
     end
 
     Util:ReplaceTooltipLines(tooltip, linesLeft, linesRight);
@@ -105,8 +105,8 @@ function Module:ProcessAffixScores(linesLeft, linesRight, affixScores)
         local multiplier = affixName == higherAffix and '|cFFFFFFFF (x1.5)|r' or '|cFFFFFFFF (x0.5)|r';
         for i, line in ipairs(linesLeft) do
             if string.find(line.text, affixName) then
-                table.insert(linesLeft, i+3, {text='Affix rating: ' .. color:WrapTextInColorCode(score) .. multiplier});
-                table.insert(linesRight, i+3, {text=''});
+                table.insert(linesLeft, i + 3, { text = 'Affix rating: ' .. color:WrapTextInColorCode(score) .. multiplier });
+                table.insert(linesRight, i + 3, { text = '' });
                 break
             end
         end
@@ -121,10 +121,10 @@ function Module:AddGroupScoreToTooltip(linesLeft, linesRight, mapId)
         local dungeonScore = scoreInfo and scoreInfo.runs[mapId] and scoreInfo.runs[mapId].score or 0;
         if scoreInfo and (dungeonScore > 0) then
             if not addedHeader then
-                table.insert(linesLeft, { text = ' '} );
-                table.insert(linesRight, { text = ' '} );
-                table.insert(linesLeft, { text = 'Party Rating:'} );
-                table.insert(linesRight, { text = ''} );
+                table.insert(linesLeft, { text = ' ' });
+                table.insert(linesRight, { text = ' ' });
+                table.insert(linesLeft, { text = 'Party Rating:' });
+                table.insert(linesRight, { text = '' });
                 addedHeader = true;
             end
 
@@ -135,8 +135,8 @@ function Module:AddGroupScoreToTooltip(linesLeft, linesRight, mapId)
             local color = Util:GetRarityColorDungeonOverallScore(dungeonScore);
             local timeColor = inTime and HIGHLIGHT_FONT_COLOR or GRAY_FONT_COLOR;
 
-            table.insert(linesLeft, {text = classColor:WrapTextInColorCode(unitName)});
-            table.insert(linesRight, {text = color:WrapTextInColorCode(dungeonScore) .. ' ' .. timeColor:WrapTextInColorCode('+' .. level)});
+            table.insert(linesLeft, { text = classColor:WrapTextInColorCode(unitName) });
+            table.insert(linesRight, { text = color:WrapTextInColorCode(dungeonScore) .. ' ' .. timeColor:WrapTextInColorCode('+' .. level) });
         end
     end
 end
@@ -149,5 +149,6 @@ function Module:MapIdIsAddedToTooltip(linesLeft, mapId)
             return true;
         end
     end
+
     return false;
 end
