@@ -144,23 +144,28 @@ end
 function Util:ExtractTooltipLines(tooltip)
     local linesLeft, linesRight = {}, {};
     local i = 0;
-    while i < 100 do -- hard cap to 100 lines, just in case :)
+    while i < tooltip:NumLines() do
         i = i + 1;
-        local lineLeft = _G[tooltip:GetName() .. 'TextLeft' .. i];
-        local lineRight = _G[tooltip:GetName() .. 'TextRight' .. i];
+        local lineLeft = tooltip:GetLeftLine(i);
+        local lineRight = tooltip:GetRightLine(i);
 
         local left, leftWrap, right;
         if lineLeft then
             left = lineLeft:GetText();
-            leftWrap = abs(lineLeft:GetWrappedWidth() - lineLeft:GetUnboundedStringWidth()) > 5;
+            if lineLeft:IsAnchoringSecret() then
+                -- one day... blizzard will be competent. today is not that day
+                leftWrap = false;
+            else
+                leftWrap = abs(lineLeft:GetWrappedWidth() - lineLeft:GetUnboundedStringWidth()) > 5;
+            end
         end
         if lineRight then right = lineRight:GetText(); end
 
         if not left and not right then break; end
         local leftR, leftG, leftB, _ = lineLeft:GetTextColor();
         local rightR, rightG, rightB, _ = lineRight:GetTextColor();
-        table.insert(linesLeft, { text = left, r = leftR, g = leftG, b = leftB, wrap = leftWrap, });
-        table.insert(linesRight, { text = right, r = rightR, g = rightG, b = rightB, });
+        table.insert(linesLeft, { text = left, r = leftR, g = leftG, b = leftB, wrap = leftWrap });
+        table.insert(linesRight, { text = right, r = rightR, g = rightG, b = rightB });
     end
 
     return linesLeft, linesRight;
