@@ -11,6 +11,6 @@ https://raw.githubusercontent.com/Gethe/wow-ui-source/refs/heads/live/Interface/
 	<Include file="AceComm-3.0\AceComm-3.0.xml"/>
 	<Include file="AceSerializer-3.0\AceSerializer-3.0.xml"/>
 	<Script file="LibDeflate\LibDeflate.lua"/>
-	<Include file="LibOpenRaid\lib.xml"/>
+	<Script file="LibKeystone\LibKeystone.lua"/>
 	<Include file="LibVersionCheck-1.0\LibVersionCheck-1.0.xml"/>
 </Ui>

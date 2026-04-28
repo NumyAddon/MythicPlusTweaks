@@ -31,10 +31,12 @@ Messages:
 
 Module.prefix = 'AngryKeystones';
 Module.emulatedAddonName = 'AngryKeystones';
+local playerRealm = select(2, UnitFullName("player")) or "";
 
 function Module:OnEnable()
     if C_AddOns.IsAddOnLoaded(self.emulatedAddonName) then
         self.officialAddonLoaded = true;
+        KSUtil:RegisterLibKeystone(self, function(...) self:OnLibKeystoneUpdate(...); end);
 
         return;
     end
@@ -45,6 +47,9 @@ end
 
 function Module:OnDisable()
     KSUtil:UnregisterKeystoneUpdateCallback(self);
+    if self.officialAddonLoaded then
+        KSUtil:UnregisterLibKeystone(self);
+    end
 end
 
 function Module:GetName()
@@ -52,7 +57,7 @@ function Module:GetName()
 end
 
 function Module:GetDescription()
-    return 'Shares your keystone with partymembers who have the Angry Keystones addon.';
+    return 'Shares your keystone with party members who have the Angry Keystones addon.';
 end
 
 function Module:OnAddonMessageReceived(prefix, message, channel, sender)
@@ -72,4 +77,15 @@ function Module:SendCurrentKey()
     else
         KSUtil:SendMessage(self.prefix, 'Schedule|0', 'PARTY');
     end
+end
+
+function Module:OnLibKeystoneUpdate(keyLevel, mapID, _, playerName)
+    --- @diagnostic disable-next-line: undefined-global
+    local scheduleModule = AngryKeystones and AngryKeystones.Modules and AngryKeystones.Modules.Schedule;
+    if not scheduleModule then return; end
+    if not playerName:find("-", 1, true) then
+        playerName = playerName .. "-" .. playerRealm;
+    end
+    local message = ('%d:%d'):format(mapID, keyLevel);
+    scheduleModule:ReceiveAddOnComm(message, nil, playerName);
 end

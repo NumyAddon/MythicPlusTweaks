@@ -9,6 +9,7 @@ local BNSendGameData = C_BattleNet and C_BattleNet.SendGameData or BNSendGameDat
 local LEMIX_SEASON_ID = 2;
 
 local CTL = ChatThrottleLib;
+local LibKeystone = LibStub("LibKeystone", true);
 
 Util.BNET_WHISPER_CHANNEL = 'BNET_WHISPER';
 Util.CHARACTER_LIMIT = 255;
@@ -242,7 +243,23 @@ function Util:RegisterAddonMessagePrefix(prefix)
     C_ChatInfo.RegisterAddonMessagePrefix(prefix);
 end
 
-local keystoneUpdate = {registry = {}, registrarCount = 0};
+--- @param handle table
+--- @param callback fun(keyLevel: number, keyMapID: number, playerRating: number, playerName: string, channel: 'PARTY' | 'GUILD')
+function Util:RegisterLibKeystone(handle, callback)
+    LibKeystone.Register(handle, callback);
+end
+
+--- @param handle table
+function Util:UnregisterLibKeystone(handle)
+    LibKeystone.Unregister(handle);
+end
+
+--- @param channel 'PARTY' | 'GUILD'
+function Util:RequestLibKeystoneUpdates(channel)
+    LibKeystone.Request(channel);
+end
+
+local keystoneUpdate = { registry = {}, registrarCount = 0 };
 local startListeningForKeystoneUpdates, stopListeningForKeystoneUpdates;
 function Util:RegisterKeystoneUpdateCallback(owner, callback)
     if 0 == keystoneUpdate.registrarCount then
