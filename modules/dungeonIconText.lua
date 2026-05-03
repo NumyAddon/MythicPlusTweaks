@@ -90,6 +90,12 @@ Module.shortNames = {
     [525] = { "Flood", "Floodgate" }, -- Operation: Floodgate
     [541] = { "SC", "Stonecore" }, -- The Stonecore
     [542] = { "Eco", "Eco-Dome" }, -- Eco-Dome Al'dani
+    [556] = { "POS", "Pit of Saron" }, -- Pit of Saron
+    [557] = { "WS", "W Spire" }, -- Windrunner Spire
+    [558] = { "MT", "Mag Terrace" }, -- Magisters' Terrace
+    [559] = { "NPX", "Nexus-P Xenas" }, -- Nexus-Point Xenas
+    [560] = { "MC", "Maisara Caverns" }, -- Maisara Caverns
+    [583] = { "SEAT", "Seat" }, -- Seat of the Triumvirate
 };
 
 function Module:OnInitialize()
