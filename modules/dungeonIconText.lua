@@ -96,6 +96,11 @@ Module.shortNames = {
     [559] = { "NPX", "Nexus-P Xenas" }, -- Nexus-Point Xenas
     [560] = { "MC", "Maisara Caverns" }, -- Maisara Caverns
     [583] = { "SEAT", "Seat" }, -- Seat of the Triumvirate
+    [584] = { "BV", "Blinding Vale" }, -- The Blinding Vale
+    [585] = { "VA", "Void Arena" }, -- Voidscar Arena
+    [586] = { "DoN", "Den of Nalorakk" }, -- Den of Nalorakk
+    [587] = { "MR", "Murder Row" }, -- Murder Row
+    [588] = { "AoF", "Altar of Fangs" }, -- Altar of Fangs
 };
 
 function Module:OnInitialize()

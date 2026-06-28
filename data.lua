@@ -32,6 +32,7 @@ Data.ActivityIdToChallengeMapIdMap = {
     [466] = 210, -- Court of Stars
     [1789] = 210, -- Court of Stars
     [476] = 233, -- Cathedral of Eternal Night
+    [1945] = 233, -- Cathedral of Eternal Night
     [471] = 227, -- Return to Karazhan: Lower
     [473] = 234, -- Return to Karazhan: Upper
     [1793] = 234, -- Return to Karazhan: Upper
@@ -91,6 +92,11 @@ Data.ActivityIdToChallengeMapIdMap = {
     [1760] = 558, -- Magisters' Terrace
     [1768] = 559, -- Nexus-Point Xenas
     [1764] = 560, -- Maisara Caverns
+    [1949] = 584, -- The Blinding Vale
+    [1951] = 585, -- Voidscar Arena
+    [1952] = 586, -- Den of Nalorakk
+    [1950] = 587, -- Murder Row
+    [1933] = 588, -- Altar of Fangs
 };
 
 Data.Portals = {};
@@ -182,7 +188,9 @@ do
             toy(168907), -- Holographic Digitalization Hearthstone
             toy(184353), -- Kyrian Hearthstone
             toy(257736), -- Lightcalled Hearthstone
+            toy(276370), -- Lightveil Hearth Beacon
             toy(165669), -- Lunar Elder's Hearthstone
+            toy(264367), -- Mycomancer's Hearthspore
             toy(263489), -- Naaru's Enfold
             toy(182773), -- Necrolord Hearthstone
             toy(180290), -- Night Fae Hearthstone
@@ -192,13 +200,14 @@ do
             toy(245970), -- P.O.S.T. Master's Express Hearthstone
             toy(206195), -- Path of the Naaru
             toy(165670), -- Peddlefeet's Lovely Hearthstone
+            toy(263933), -- Preyseeker's Hearthstone
             toy(235016), -- Redeployment Module
             toy(212337), -- Stone of the Hearth
             toy(64488), -- The Innkeeper's Daughter
             toy(193588), -- Timewalker's Hearthstone
             toy(142542), -- Tome of Town Portal
             toy(183716), -- Venthyr Sinstone
-        }
+        },
     };
     local function hearthstone(areaID)
         local areaName = C_Map.GetAreaInfo(areaID);
@@ -233,7 +242,7 @@ do
         EngiWormholeShadowlands = toy(172924), -- Engineering, can select which zone to go to
         EngiWormholeDragonIsles = toy(198156), -- Engineering, can select which zone to go to
         EngiWormholeKhazAlgar = toy(221966), -- Engineering, can select which zone to go to
-        EngiWormholeQuelThalas = toy(248485), -- Engineering, can't select zone (todo: verify)
+        EngiWormholeQuelThalas = toy(248485), -- Engineering, can select which zone to go to
         EngiToshelysStation = toy(30544), -- Gnomish Engineering, Blade's Edge Mountains, northern Outland
         EngiGadgetzan = toy(18986), -- Gnomish Engineering, Tanaris, north-east of Uldum
         EngiArea52 = toy(30542), -- Goblin Engineering, Netherstorm, northern Outland
@@ -278,6 +287,7 @@ do
             hearthstones.SilvermoonMidnight,
             mage.SilvermoonMidnight,
             toys.SilvermoonMidnightArcantina,
+            toys.EngiWormholeQuelThalas,
         },
         Dornogal = {
             hearthstones.Dornogal,
@@ -287,8 +297,12 @@ do
             hearthstones.Valdrakken,
             mage.Valdrakken,
         },
+        currentHub = {
+            hearthstones.SilvermoonMidnight,
+            mage.SilvermoonMidnight,
+            toys.SilvermoonMidnightArcantina,
+        },
     };
-    locations.currentHub = locations.SilvermoonMidnight;
     for _, location in pairs(locations) do locations[location] = location; end
 
     Data.Portals.dungeonPortals = {
@@ -320,6 +334,8 @@ do
         Freehold = dungeonPortal(410071),
         TheMOTHERLODE = dungeonPortal(467553, 467555),
         WaycrestManor = dungeonPortal(424167),
+        KingsRest = dungeonPortal(1286831),
+        TempleofSethraliss = dungeonPortal(1286828),
         TheUnderrot = dungeonPortal(410074),
         SiegeofBoralus = dungeonPortal(445418, 464256),
         OperationMechagon = dungeonPortal(373274),
@@ -353,13 +369,17 @@ do
         CinderbrewMeadery = dungeonPortal(445440, 467546),
         GrimBatol = dungeonPortal(445424),
         OperationFloodgate = dungeonPortal(1216786),
-        --TheStonecore = dungeonPortal(2), -- not implemented yet
         EcoDomeAldani = dungeonPortal(1237215),
         PitofSaron = dungeonPortal(1254555),
         WindrunnerSpire = dungeonPortal(1254400),
         MagistersTerrace = dungeonPortal(1254572),
         NexusPointXenas = dungeonPortal(1254563),
         MaisaraCaverns = dungeonPortal(1254559),
+        TheBlindingVale = dungeonPortal(1286801),
+        VoidscarArena = dungeonPortal(1286804),
+        DenofNalorakk = dungeonPortal(1286807),
+        MurderRow = dungeonPortal(1286809),
+        AltarofFangs = dungeonPortal(1286812),
     };
 
     Data.Portals.maps = {
@@ -444,6 +464,12 @@ do
         [558] = 'MagistersTerrace',
         [559] = 'NexusPointXenas',
         [560] = 'MaisaraCaverns',
+        [583] = 'SeatoftheTriumvirate',
+        [584] = 'TheBlindingVale',
+        [585] = 'VoidscarArena',
+        [586] = 'DenofNalorakk',
+        [587] = 'MurderRow',
+        [588] = 'AltarofFangs',
     };
 
     local dungeon = Data.Portals.dungeonPortals;
@@ -530,8 +556,21 @@ do
             mage.Boralus,
             dungeon.OperationMechagon,
         },
-        KingsRest = {},
-        TempleofSethraliss = {},
+        KingsRest = {
+            locations.currentHub,
+            dungeon.AtalDazar,
+            mage.Dazaralor,
+            dungeon.TheMOTHERLODE,
+            toys.EngiWormholeZandalar,
+        },
+        TempleofSethraliss = {
+            locations.currentHub,
+            dungeon.TheUnderrot,
+            toys.EngiWormholeZandalar,
+            mage.Dazaralor,
+            dungeon.AtalDazar,
+            dungeon.TheMOTHERLODE,
+        },
         TheUnderrot = {},
         ShrineoftheStorm = {},
         SiegeofBoralus = {
@@ -721,6 +760,7 @@ do
             locations.currentHub,
             locations.SilvermoonMidnight,
             dungeon.MaisaraCaverns,
+            dungeon.DenofNalorakk,
         },
         MagistersTerrace = {
             locations.currentHub,
@@ -729,11 +769,38 @@ do
         NexusPointXenas = {
             locations.currentHub,
             locations.SilvermoonMidnight,
+            dungeon.VoidscarArena,
         },
         MaisaraCaverns = {
             locations.currentHub,
             locations.SilvermoonMidnight,
             dungeon.WindrunnerSpire,
+            dungeon.DenofNalorakk,
+        },
+        TheBlindingVale = {
+            locations.currentHub,
+            locations.SilvermoonMidnight,
+        },
+        VoidscarArena = {
+            locations.currentHub,
+            locations.SilvermoonMidnight,
+            dungeon.NexusPointXenas,
+        },
+        DenofNalorakk = {
+            dungeon.MaisaraCaverns,
+            dungeon.WindrunnerSpire,
+            locations.currentHub,
+            locations.SilvermoonMidnight,
+        },
+        MurderRow = {
+            locations.currentHub,
+            locations.SilvermoonMidnight,
+        },
+        AltarofFangs = {
+            locations.currentHub,
+            locations.SilvermoonMidnight,
+            dungeon.MaisaraCaverns,
+            dungeon.DenofNalorakk,
         },
     };
 
