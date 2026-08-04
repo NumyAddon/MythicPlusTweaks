@@ -213,7 +213,7 @@ function Module:RepositionFrameElements(frame, forceReset)
     if self.db.name == OPTION_NO_NAME or forceReset then
         seasonBestOffsetY = 15;
     end
-    local shown = not self.db.hideSeasonBest or forceRest;
+    local shown = not self.db.hideSeasonBest or forceReset;
     frame.WeeklyInfo.Child.SeasonBest:SetShown(shown);
     frame.WeeklyInfo.Child.SeasonBest:ClearAllPoints();
     frame.WeeklyInfo.Child.SeasonBest:SetPoint('TOPLEFT', frame.DungeonIcons[1], 'TOPLEFT', 5, seasonBestOffsetY);
