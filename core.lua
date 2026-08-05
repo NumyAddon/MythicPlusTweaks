@@ -13,13 +13,13 @@ if not Main then return; end
 ns.Main = Main;
 
 function Main:OnInitialize()
-    if NumyProfiler then
-        --- @type NumyProfiler
-        local NumyProfiler = NumyProfiler;
-        NumyProfiler:WrapModules(name, 'Main', self);
-        NumyProfiler:WrapModules(name, 'Util', ns.Util);
+    if NumyFunctionProfiler then
+        --- @type NumyFunctionProfiler
+        local NumyFunctionProfiler = NumyFunctionProfiler;
+        NumyFunctionProfiler:WrapModules(name, 'Main', self);
+        NumyFunctionProfiler:WrapModules(name, 'Util', ns.Util);
         for moduleName, module in self:IterateModules() do
-            NumyProfiler:WrapModules(name, moduleName, module);
+            NumyFunctionProfiler:WrapModules(name, moduleName, module);
         end
     end
     MythicPlusTweaksDB = MythicPlusTweaksDB or {};
