@@ -208,20 +208,16 @@ function Module:InitializeButtonPools()
             error('unexpected SetAttribute call on alternateButton');
         end
     end
+
+    local capacity = 20; -- prepare a few buttons, to avoid issues if they're created while in combat
+
     --- @type FramePool<MPT_DTP_AlternatesContainer_button>
-    container.buttonPool = CreateFramePool('Button', container, 'InsecureActionButtonTemplate', nil, nil, alternateInitFunc);
+    container.buttonPool = CreateFramePool('Button', container, 'InsecureActionButtonTemplate', nil, nil, alternateInitFunc, capacity);
 
     --- @type FramePool<MPT_DTP_Button>
     self.buttonPool = CreateFramePool('Button', UIParent, 'InsecureActionButtonTemplate', nil, nil, function(button)
         self:InitButton(button);
-    end);
-
-    for _ = 1, 20 do -- prepare a few buttons, to avoid issues if they're created while in combat
-        container.buttonPool:Acquire();
-        self.buttonPool:Acquire();
-    end
-    container.buttonPool:ReleaseAll();
-    self.buttonPool:ReleaseAll();
+    end, capacity);
 end
 
 function Module:InitTeleportOverlayButton()
@@ -371,6 +367,8 @@ end
 function Module:GetButton(parent)
     local button = self.buttonPool:Acquire();
     button:SetParent(parent);
+    parent.MPT_DTP_Button = button;
+    button:SetFrameLevel(999); -- ensure the button is above anyone else's
     button:SetAllPoints();
     button:Show();
 
@@ -383,47 +381,48 @@ function Module:InitButton(button)
     local button = button;
     button:Hide();
     frameSetAttribute(button, 'type', 'spell');
-    button:SetFrameLevel(999);
     button:RegisterForClicks('AnyUp', 'AnyDown');
 
     local highlight = button:CreateTexture(nil, 'OVERLAY');
-    highlight:SetTexture('Interface\\EncounterJournal\\UI-EncounterJournalTextures');
-    highlight:SetTexCoord(0.34570313, 0.68554688, 0.33300781, 0.42675781);
-    highlight:SetAllPoints();
-    highlight:Hide();
-    highlight.elapsed = 0;
-    highlight.OnUpdate = nop;
-    local function OnUpdate(_, elapsed)
-        highlight.elapsed = highlight.elapsed + elapsed;
-        if highlight.elapsed < 1 then return; end
+    button.Highlight = highlight;
+    do
+        highlight:SetTexture('Interface\\EncounterJournal\\UI-EncounterJournalTextures');
+        highlight:SetTexCoord(0.34570313, 0.68554688, 0.33300781, 0.42675781);
+        highlight:SetAllPoints();
+        highlight:Hide();
         highlight.elapsed = 0;
-
-        local spellID = button:GetRegisteredSpell();
-        if not spellID then return; end
-        local duration = GetRemainingSpellCooldown(spellID);
-        if duration > 3 then -- global cooldown is counted here as well, so lets just ignore anything below 3 seconds
-            highlight:SetVertexColor(1, 0, 0);
-        else
-            highlight:SetVertexColor(1, 1, 1);
-        end
-    end
-    highlight:SetScript('OnShow', function()
-        highlight.elapsed = 10;
-        highlight.OnUpdate = OnUpdate;
-    end);
-    highlight:SetScript('OnHide', function()
         highlight.OnUpdate = nop;
-    end);
-    button.highlight = highlight;
+        local function OnUpdate(_, elapsed)
+            highlight.elapsed = highlight.elapsed + elapsed;
+            if highlight.elapsed < 1 then return; end
+            highlight.elapsed = 0;
 
-    button:SetScript('OnUpdate', function(_, elapsed)
-        highlight:OnUpdate(elapsed);
-    end);
+            local spellID = button:GetRegisteredSpell();
+            if not spellID then return; end
+            local duration = GetRemainingSpellCooldown(spellID);
+            if duration > 3 then -- global cooldown is counted here as well, so lets just ignore anything below 3 seconds
+                highlight:SetVertexColor(1, 0, 0);
+            else
+                highlight:SetVertexColor(1, 1, 1);
+            end
+        end
+        highlight:SetScript('OnShow', function()
+            highlight.elapsed = 10;
+            highlight.OnUpdate = OnUpdate;
+        end);
+        highlight:SetScript('OnHide', function()
+            highlight.OnUpdate = nop;
+        end);
+
+        button:SetScript('OnUpdate', function(_, elapsed)
+            highlight:OnUpdate(elapsed);
+        end);
+    end
 
     function button:RegisterSpell(spellID)
         self.spellID = spellID;
         frameSetAttribute(self, 'spell', spellID);
-        self.highlight:SetShown(spellID and C_SpellBook.IsSpellInSpellBook(spellID, Enum.SpellBookSpellBank.Player, false));
+        self.Highlight:SetShown(spellID and C_SpellBook.IsSpellInSpellBook(spellID, Enum.SpellBookSpellBank.Player, false));
     end
 
     function button:GetRegisteredSpell()
