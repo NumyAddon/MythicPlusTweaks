@@ -806,7 +806,7 @@ do
 
     for _, alternates in pairs(Data.Portals.alternates) do
         for i, alternate in ipairs(alternates) do
-            if locations[alternate] then
+            if locations[alternate] or not alternate.available then
                 table.remove(alternates, i);
                 for j, subAlternate in ipairs(alternate) do
                     if not tIndexOf(alternates, subAlternate) then
