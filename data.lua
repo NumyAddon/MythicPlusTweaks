@@ -534,6 +534,7 @@ do
             toys.DalaranHearthstone,
         },
         AtalDazar = {
+            dungeon.KingsRest,
             mage.Dazaralor,
             dungeon.TheMOTHERLODE,
             locations.currentHub,
@@ -557,11 +558,12 @@ do
             dungeon.OperationMechagon,
         },
         KingsRest = {
-            locations.currentHub,
             dungeon.AtalDazar,
             mage.Dazaralor,
             dungeon.TheMOTHERLODE,
+            locations.currentHub,
             toys.EngiWormholeZandalar,
+            dungeon.TheUnderrot,
         },
         TempleofSethraliss = {
             locations.currentHub,
@@ -782,9 +784,9 @@ do
             locations.SilvermoonMidnight,
         },
         VoidscarArena = {
+            dungeon.NexusPointXenas,
             locations.currentHub,
             locations.SilvermoonMidnight,
-            dungeon.NexusPointXenas,
         },
         DenofNalorakk = {
             dungeon.MaisaraCaverns,
@@ -797,9 +799,9 @@ do
             locations.SilvermoonMidnight,
         },
         AltarofFangs = {
+            dungeon.MaisaraCaverns,
             locations.currentHub,
             locations.SilvermoonMidnight,
-            dungeon.MaisaraCaverns,
             dungeon.DenofNalorakk,
         },
     };
