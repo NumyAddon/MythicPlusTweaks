@@ -1,4 +1,4 @@
----@meta _
+--- @meta _
 
 --- @class MPT_KeystoneSharingModule: NumyConfig_Module
 --- @field emulatedAddonName string
@@ -49,3 +49,24 @@ function MPT_MistHelperSyncImplementation:Disable() end
 --- @field score number
 --- @field level number
 --- @field inTime boolean
+
+--- @class MPT_TeleportImpl
+--- @field icon number
+--- @field type MPT_TeleportImplType
+--- @field optionType MPT_TeleportImplType?
+--- @field available fun(): boolean
+--- @field cooldown fun(): (number, number, boolean)
+--- @field spellID nil|fun(): number
+--- @field itemID number?
+
+--- @class MPT_SpellTeleportImpl: MPT_TeleportImpl
+--- @field spellID fun(): number
+
+--- @class MPT_ItemTeleportImpl: MPT_TeleportImpl
+--- @field itemID number
+--- @field type "item"
+
+--- @class MPT_HearthstoneTeleportImpl
+--- @field available fun(): boolean
+--- @field type "hearthstone"
+--- @field implementations MPT_TeleportImpl[][] # shared cooldowns go into the same lists

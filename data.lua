@@ -101,13 +101,19 @@ Data.ActivityIdToChallengeMapIdMap = {
 
 Data.Portals = {};
 do
-    Data.Portals.TYPE_DUNGEON_PORTAL = 'dungeon_portal';
-    Data.Portals.TYPE_TOY = 'toy';
-    Data.Portals.TYPE_CLASS_TELEPORT = 'mage_teleport';
-    Data.Portals.TYPE_HEARTHSTONE = 'hearthstone';
-    -- not used directly, but as a subtype for TYPE_HEARTHSTONE
-    Data.Portals.TYPE_ITEM = 'item';
+    --- @enum MPT_TeleportImplType
+    Data.Portals.Types = {
+        DUNGEON_PORTAL = 'dungeon_portal',
+        TOY = 'toy',
+        CLASS_TELEPORT = 'mage_teleport',
+        HEARTHSTONE = 'hearthstone',
+        --- not used directly, but as a subtype for TYPE_HEARTHSTONE
+        ITEM = 'item',
+    }
+    local types = Data.Portals.Types
 
+    --- @param itemID number
+    --- @return MPT_ItemTeleportImpl
     local function toy(itemID)
         return {
             icon = select(5, C_Item.GetItemInfoInstant(itemID)),
@@ -116,9 +122,12 @@ do
                 return PlayerHasToy(itemID) and C_ToyBox.IsToyUsable(itemID);
             end,
             cooldown = function() return C_Item.GetItemCooldown(itemID); end,
-            type = Data.Portals.TYPE_TOY,
+            type = types.TOY,
         };
     end
+    --- @param itemID number
+    --- @param optionType MPT_TeleportImplType?
+    --- @return MPT_ItemTeleportImpl
     local function item(itemID, optionType)
         return {
             icon = select(5, C_Item.GetItemInfoInstant(itemID)),
@@ -127,10 +136,13 @@ do
                 return C_Item.GetItemCount(itemID) > 0 and C_Item.IsUsableItem(itemID);
             end,
             cooldown = function() return C_Item.GetItemCooldown(itemID); end,
-            type = Data.Portals.TYPE_ITEM,
-            optionType = optionType or Data.Portals.TYPE_TOY,
+            type = types.ITEM,
+            optionType = optionType or types.TOY,
         };
     end
+    --- @param spellIDs number[]
+    --- @param type MPT_TeleportImplType
+    --- @return MPT_SpellTeleportImpl
     local function spell(spellIDs, type)
         local function getSpellID()
             for _, spellID in ipairs(spellIDs) do
@@ -157,18 +169,24 @@ do
             type = type,
         };
     end
+    --- @param spellID number
+    --- @param ... number
+    --- @return MPT_SpellTeleportImpl
     local function dungeonPortal(spellID, ...)
-        return spell({ spellID, ... }, Data.Portals.TYPE_DUNGEON_PORTAL);
+        return spell({ spellID, ... }, types.DUNGEON_PORTAL);
     end
+    --- @param spellID number
+    --- @return MPT_SpellTeleportImpl
     local function classTeleport(spellID)
-        return spell({ spellID }, Data.Portals.TYPE_CLASS_TELEPORT);
+        return spell({ spellID }, types.CLASS_TELEPORT);
     end
-    local hearthstoneImplementations = { -- implementations that share a cooldown, go into the same subtable
+    --- @type MPT_TeleportImpl[][] # implementations that share a cooldown, go into the same subtable
+    local hearthstoneImplementations = {
         {
             classTeleport(556), -- Astral Recall
         },
         {
-            item(6948, Data.Portals.TYPE_HEARTHSTONE), -- Hearthstone
+            item(6948, types.HEARTHSTONE), -- Hearthstone
             toy(166747), -- Brewfest Reveler's Hearthstone
             toy(190237), -- Broker Translocation Matrix
             toy(265100), -- Corewarden's Hearthstone
@@ -209,6 +227,8 @@ do
             toy(183716), -- Venthyr Sinstone
         },
     };
+    --- @param areaID number
+    --- @return MPT_HearthstoneTeleportImpl
     local function hearthstone(areaID)
         local areaName = C_Map.GetAreaInfo(areaID);
 
@@ -216,7 +236,7 @@ do
             available = function()
                 return GetBindLocation() == areaName;
             end,
-            type = Data.Portals.TYPE_HEARTHSTONE,
+            type = types.HEARTHSTONE,
             implementations = hearthstoneImplementations,
         };
     end
@@ -305,6 +325,7 @@ do
     };
     for _, location in pairs(locations) do locations[location] = location; end
 
+    --- @type table<string, MPT_SpellTeleportImpl>
     Data.Portals.dungeonPortals = {
         TempleoftheJadeSerpent = dungeonPortal(131204),
         StormstoutBrewery = dungeonPortal(131205),
@@ -382,6 +403,7 @@ do
         AltarofFangs = dungeonPortal(1286812),
     };
 
+    --- @type table<number, string> # [mapID] = map key
     Data.Portals.maps = {
         [2] = 'TempleoftheJadeSerpent',
         [56] = 'StormstoutBrewery',
@@ -473,6 +495,7 @@ do
     };
 
     local dungeon = Data.Portals.dungeonPortals;
+    --- @type table<string, table<MPT_TeleportImpl|MPT_HearthstoneTeleportImpl>>
     Data.Portals.alternates = {
         TempleoftheJadeSerpent = {},
         StormstoutBrewery = {},

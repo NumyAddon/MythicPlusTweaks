@@ -9,11 +9,11 @@ local OPTION_MAIN_ON_COOLDOWN = 'main_on_cooldown';
 local OPTION_MAIN_UNKNOWN = 'main_unknown';
 local OPTION_NEVER = 'never';
 
-local TYPE_DUNGEON_PORTAL = Data.Portals.TYPE_DUNGEON_PORTAL;
-local TYPE_TOY = Data.Portals.TYPE_TOY;
-local TYPE_CLASS_TELEPORT = Data.Portals.TYPE_CLASS_TELEPORT;
-local TYPE_HEARTHSTONE = Data.Portals.TYPE_HEARTHSTONE;
-local TYPE_ITEM = Data.Portals.TYPE_ITEM;
+local TYPE_DUNGEON_PORTAL = Data.Portals.Types.DUNGEON_PORTAL;
+local TYPE_TOY = Data.Portals.Types.TOY;
+local TYPE_CLASS_TELEPORT = Data.Portals.Types.CLASS_TELEPORT;
+local TYPE_HEARTHSTONE = Data.Portals.Types.HEARTHSTONE;
+local TYPE_ITEM = Data.Portals.Types.ITEM;
 
 --- @class MPT_DungeonTeleports : NumyConfig_Module,AceHook-3.0,NumyAceEvent-3.0
 local Module = Main:NewModule('DungeonTeleports', 'AceHook-3.0', 'NumyAceEvent-3.0');
@@ -161,58 +161,16 @@ end
 
 function Module:InitializeButtonPools()
     --- @class MPT_DTP_AlternatesContainer : Frame
-    container = CreateFrame('Frame');
+    local container = CreateFrame('Frame');
     self.alternatesContainer = container;
     container:SetFrameLevel(10);
-
-    local function alternateInitFunc(alternateButton)
-        --- @class MPT_DTP_AlternatesContainer_button : Button, InsecureActionButtonTemplate
-        local alternateButton = alternateButton;
-        alternateButton:RegisterForClicks('AnyUp', 'AnyDown');
-
-        local cooldownFrame = CreateFrame('Cooldown', nil, alternateButton, 'CooldownFrameTemplate');
-        cooldownFrame:SetAllPoints();
-        cooldownFrame:SetDrawEdge(false);
-        cooldownFrame:Show();
-        alternateButton.cooldownFrame = cooldownFrame;
-
-        alternateButton:SetHighlightTexture("Interface\\Buttons\\CheckButtonHighlight", "ADD");
-
-        function alternateButton:SetData(data)
-            self.data = data;
-        end
-        alternateButton:SetScript('OnEnter', function()
-            GameTooltip:SetOwner(alternateButton, 'ANCHOR_TOPRIGHT');
-            if alternateButton.data.type == TYPE_TOY then
-                GameTooltip:SetToyByItemID(alternateButton.data.itemID);
-            elseif alternateButton.data.type == TYPE_ITEM then
-                GameTooltip:SetItemByID(alternateButton.data.itemID);
-            else
-                GameTooltip:SetSpellByID(alternateButton.data.spellID());
-            end
-            GameTooltip:Show();
-        end);
-        alternateButton:SetScript('OnLeave', function()
-            GameTooltip:Hide();
-            if not container:IsMouseOver() and not container:GetParent():IsMouseOver() then
-                container:Hide();
-            end
-        end);
-        alternateButton:SetScript('OnHide', function()
-            container:Hide();
-        end);
-        function alternateButton:SetScript(script, func)
-            error('unexpected SetScript call on alternateButton');
-        end
-        function alternateButton:SetAttribute(attribute, value)
-            error('unexpected SetAttribute call on alternateButton');
-        end
-    end
 
     local capacity = 20; -- prepare a few buttons, to avoid issues if they're created while in combat
 
     --- @type FramePool<MPT_DTP_AlternatesContainer_button>
-    container.buttonPool = CreateFramePool('Button', container, 'InsecureActionButtonTemplate', nil, nil, alternateInitFunc, capacity);
+    container.buttonPool = CreateFramePool('Button', container, 'InsecureActionButtonTemplate', nil, nil, function(button)
+        self:InitAlternateButton(button);
+    end, capacity);
 
     --- @type FramePool<MPT_DTP_Button>
     self.buttonPool = CreateFramePool('Button', UIParent, 'InsecureActionButtonTemplate', nil, nil, function(button)
@@ -292,8 +250,8 @@ function Module:ItemTooltipPostCall(tooltip)
     self:OnKeystoneTooltip(tooltip, tonumber(mapID));
 end
 
----@param tooltip GameTooltip
----@param mapID number
+--- @param tooltip GameTooltip
+--- @param mapID number
 function Module:OnKeystoneTooltip(tooltip, mapID)
     local spellID = self:GetSpellIDForMapID(mapID);
     if not spellID then return; end
@@ -351,7 +309,8 @@ function Module:AddInfoToTooltip(tooltip, spellID)
     tooltip:Show();
 end
 
-function Module:ProcessIcon(icon, index)
+--- @param icon ChallengesDungeonIconFrameTemplate
+function Module:ProcessIcon(icon)
     self.buttons[icon] = self.buttons[icon] or self:GetButton(icon);
 
     local mapId = icon.mapID;
@@ -373,6 +332,55 @@ function Module:GetButton(parent)
     button:Show();
 
     return button;
+end
+
+function Module:InitAlternateButton(alternateButton)
+    local container = self.alternatesContainer;
+
+    --- @class MPT_DTP_AlternatesContainer_button : Button, InsecureActionButtonTemplate
+    --- @field data MPT_TeleportImpl?
+    local alternateButton = alternateButton;
+    alternateButton:RegisterForClicks('AnyUp', 'AnyDown');
+
+    local cooldownFrame = CreateFrame('Cooldown', nil, alternateButton, 'CooldownFrameTemplate');
+    cooldownFrame:SetAllPoints();
+    cooldownFrame:SetDrawEdge(false);
+    cooldownFrame:Show();
+    alternateButton.cooldownFrame = cooldownFrame;
+
+    alternateButton:SetHighlightTexture("Interface\\Buttons\\CheckButtonHighlight", "ADD");
+
+    --- @param data MPT_TeleportImpl
+    function alternateButton:SetData(data)
+        self.data = data;
+    end
+    function alternateButton:OnEnter()
+        GameTooltip:SetOwner(self, 'ANCHOR_TOPRIGHT');
+        if self.data.type == TYPE_TOY then
+            GameTooltip:SetToyByItemID(self.data.itemID);
+        elseif self.data.type == TYPE_ITEM then
+            GameTooltip:SetItemByID(self.data.itemID);
+        else
+            GameTooltip:SetSpellByID(self.data.spellID());
+        end
+        GameTooltip:Show();
+    end
+    alternateButton:SetScript('OnEnter', alternateButton.OnEnter);
+    alternateButton:SetScript('OnLeave', function()
+        GameTooltip:Hide();
+        if not container:IsMouseOver() and not container:GetParent():IsMouseOver() then
+            container:Hide();
+        end
+    end);
+    alternateButton:SetScript('OnHide', function()
+        container:Hide();
+    end);
+    function alternateButton:SetScript(script, func)
+        error('unexpected SetScript call on alternateButton');
+    end
+    function alternateButton:SetAttribute(attribute, value)
+        error('unexpected SetAttribute call on alternateButton');
+    end
 end
 
 --- @param button MPT_DTP_Button
@@ -419,6 +427,7 @@ function Module:InitButton(button)
         end);
     end
 
+    --- @param spellID number?
     function button:RegisterSpell(spellID)
         self.spellID = spellID;
         frameSetAttribute(self, 'spell', spellID);
@@ -469,6 +478,9 @@ function Module:InitButton(button)
     end
 end
 
+--- @generic T
+--- @param tbl table<number, T>
+--- @return table<number, T>
 local function getShuffledList(tbl)
     local shuffled = {}
     for i = 1, #tbl do shuffled[i] = tbl[i] end
@@ -482,6 +494,7 @@ end
 
 function Module:AttachAlternates(button, mapID, mainKnown, mainSpellID)
     local mapName = Data.Portals.maps[mapID];
+    --- @type table<MPT_TeleportImpl|MPT_HearthstoneTeleportImpl>
     local alternates = Data.Portals.alternates[mapName];
     if not alternates or next(alternates) == nil then return; end
 
@@ -493,8 +506,10 @@ function Module:AttachAlternates(button, mapID, mainKnown, mainSpellID)
         end
     end
 
-    local alternatatesToShow = {};
+    --- @type MPT_TeleportImpl[]
+    local alternatesToShow = {};
     for _, alternate in ipairs(alternates) do
+        --- @cast alternate MPT_TeleportImpl|MPT_HearthstoneTeleportImpl
         local option = self.db[alternate.optionType] or self.db[alternate.type] or OPTION_MAIN_UNKNOWN;
         local showAlternative = false;
         if option == OPTION_ALWAYS and alternate.available() then
@@ -512,23 +527,24 @@ function Module:AttachAlternates(button, mapID, mainKnown, mainSpellID)
                     end
                     for _, implementation in ipairs(implementationList) do
                         if implementation.available() then
-                            table.insert(alternatatesToShow, implementation);
+                            table.insert(alternatesToShow, implementation);
                             break;
                         end
                     end
                 end
             else
-                table.insert(alternatatesToShow, alternate);
+                --- @cast alternate MPT_TeleportImpl
+                table.insert(alternatesToShow, alternate);
             end
         end
     end
 
-    if #alternatatesToShow == 0 then return; end
+    if #alternatesToShow == 0 then return; end
 
-    local container = self:GetAlternatesContainer(button, #alternatatesToShow);
+    local container = self:GetAlternatesContainer(button, #alternatesToShow);
     local buttonPool = container.buttonPool;
     local alternateButtonSize = button:GetWidth() / 2;
-    for i, alternate in ipairs(alternatatesToShow) do
+    for i, alternate in ipairs(alternatesToShow) do
         local alternateButton = buttonPool:Acquire();
         alternateButton:SetSize(alternateButtonSize, alternateButtonSize);
         alternateButton:SetData(alternate);
