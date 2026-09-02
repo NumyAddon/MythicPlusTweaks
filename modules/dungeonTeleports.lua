@@ -303,9 +303,7 @@ function Module:InitJoinPopup()
     frame.Header = header;
     do
         header:SetPoint('TOPLEFT');
-        header:SetPoint('TOPRIGHT');
-        header:SetHeight(POPUP_TITLE_BAR_HEIGHT);
-        header:SetFrameLevel(frame:GetFrameLevel());
+        header:SetPoint('BOTTOMRIGHT', frame, 'TOPRIGHT', 0, 0 - POPUP_TITLE_BAR_HEIGHT);
         header:HookScript('OnDragStop', function() self:SaveJoinPopupPosition(); end);
 
         local headerText = header:CreateFontString(nil, 'ARTWORK', 'GameFontNormal');
