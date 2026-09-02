@@ -1,3 +1,4 @@
+local addonName = ...;
 --- @class MPT_NS
 local MPT = select(2, ...);
 local Main = MPT.Main;
@@ -14,6 +15,15 @@ local TYPE_TOY = Data.Portals.Types.TOY;
 local TYPE_CLASS_TELEPORT = Data.Portals.Types.CLASS_TELEPORT;
 local TYPE_HEARTHSTONE = Data.Portals.Types.HEARTHSTONE;
 local TYPE_ITEM = Data.Portals.Types.ITEM;
+
+local POPUP_SETTING = 'groupFormedPopup';
+local POPUP_TITLE_BAR_HEIGHT = 20;
+local POPUP_ICON_SIZE = 50;
+local POPUP_ALTERNATE_SIZE = 24;
+local POPUP_ALTERNATE_COLUMNS = 8;
+local POPUP_HEADER_HEIGHT = POPUP_TITLE_BAR_HEIGHT + POPUP_ICON_SIZE + 6;
+
+local KINGS_REST_MAP_ID = 249;
 
 --- @class MPT_DungeonTeleports : NumyConfig_Module,AceHook-3.0,NumyAceEvent-3.0
 local Module = Main:NewModule('DungeonTeleports', 'AceHook-3.0', 'NumyAceEvent-3.0');
@@ -34,6 +44,7 @@ end
 function Module:OnInitialize()
     self:InitializeButtonPools();
     self:InitTeleportOverlayButton();
+    self:InitJoinPopup();
 end
 
 --- @type table<Frame, MPT_DTP_Button>
@@ -41,6 +52,10 @@ Module.buttons = {};
 function Module:OnEnable()
     self.enabled = true;
     self.hookedTooltips = {};
+    self.lfgMessageCooldown = false;
+    self:RegisterEvent('LFG_LIST_ACTIVE_ENTRY_UPDATE');
+    self:RegisterEvent('LFG_LIST_ENTRY_EXPIRED_TOO_MANY_PLAYERS');
+    self:RegisterEvent('LFG_LIST_JOINED_GROUP');
     if not self.registeredTooltipHandler then
         self.registeredTooltipHandler = true;
         TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tooltip) Module:ItemTooltipPostCall(tooltip); end);
@@ -74,10 +89,11 @@ function Module:OnDisable()
     self.enabled = false;
     self.hookedTooltips = {};
     self:UnhookAll();
-    self:UnregisterEvent('ACHIEVEMENT_EARNED');
+    self:UnregisterAllEvents();
     for _, button in pairs(self.buttons) do
         button:Hide();
     end
+    self.joinPopup:Hide();
 end
 
 function Module:GetName() return 'Dungeon Teleports'; end
@@ -90,16 +106,30 @@ end
 --- @param db MPT_DungeonTeleportsDB
 function Module:BuildConfig(configBuilder, db)
     self.db = db;
+    self.configBuilder = configBuilder;
     --- @class MPT_DungeonTeleportsDB
+    --- @field popupPosition {point: string, relativePoint: string, x: number, y: number}?
     local defaults = {
         showAlternates = true,
         shuffleSharedCooldown = true,
         teleportOnKeystoneCtrlClick = true,
+        groupFormedMessage = true,
+        groupFormedMessageKeystoneOnly = true,
+        [POPUP_SETTING] = true,
         [TYPE_DUNGEON_PORTAL] = OPTION_MAIN_UNKNOWN,
         [TYPE_TOY] = OPTION_MAIN_ON_COOLDOWN,
         [TYPE_HEARTHSTONE] = OPTION_MAIN_ON_COOLDOWN,
         [TYPE_CLASS_TELEPORT] = OPTION_MAIN_ON_COOLDOWN,
     };
+    -- Preserve settings from builds where this feature lived in the Miscellaneous module.
+    local oldDb = Main.db.moduleDb.miscQoL;
+    if oldDb then
+        for _, key in ipairs({ 'groupFormedMessage', 'groupFormedMessageKeystoneOnly' }) do
+            if db[key] == nil and oldDb[key] ~= nil then
+                db[key] = oldDb[key];
+            end
+        end
+    end
     configBuilder:SetDefaults(defaults, true);
     configBuilder:MakeButton(
         'Open Mythic+ UI',
@@ -111,7 +141,30 @@ function Module:BuildConfig(configBuilder, db)
         'teleportOnKeystoneCtrlClick',
         'Allows you to teleport to the dungeon entrance by CTRL+Clicking a keystone chat link or in your bags.'
     );
+    local groupFormed = configBuilder:MakeCheckbox(
+        'LFG group formed/joined message',
+        'groupFormedMessage',
+        'Show a reminder message in chat when you join a group or when the group is full, showing the activity you joined, with a clickable teleport link if available.'
+    );
     configBuilder:MakeCheckbox(
+        'Only for Mythic+',
+        'groupFormedMessageKeystoneOnly',
+        'Only show the reminder for m+ groups.'
+    ):SetParentInitializer(groupFormed, function() return db.groupFormedMessage; end);
+    local popup = configBuilder:MakeCheckbox(
+        'LFG teleport popup',
+        POPUP_SETTING,
+        'Show the dungeon teleport and configured alternatives on screen. Drag the bar at the top of the popup to move it.',
+        function(_, value)
+            if not value then self.joinPopup:Hide(); end
+        end
+    );
+    configBuilder:MakeButton(
+        'Open Example',
+        function() self:ShowJoinPopup(KINGS_REST_MAP_ID, "King's Rest (Mythic Keystone)", '+10'); end,
+        'Open example popup'
+    ):SetParentInitializer(popup, function() return self.db[POPUP_SETTING] end);
+    local alternate = configBuilder:MakeCheckbox(
         'Show alternative teleports',
         'showAlternates',
         'Show alternative teleports, such as mage portals, nearby dungeons, engineering toys, etc.'
@@ -128,7 +181,7 @@ function Module:BuildConfig(configBuilder, db)
                 { text = 'Never', value = OPTION_NEVER, },
             }
         );
-        initializer:AddModifyPredicate(function() return self.db.showAlternates; end);
+        initializer:SetParentInitializer(alternate, function() return self.db.showAlternates; end);
 
         return initializer;
     end
@@ -160,9 +213,23 @@ function Module:BuildConfig(configBuilder, db)
 end
 
 function Module:InitializeButtonPools()
+    self.alternatesContainer = self:CreateAlternatesContainer();
+    self.alternatesContainer.autoHide = true;
+
+    local capacity = 20; -- prepare a few buttons, to avoid issues if they're created while in combat
+
+    --- @type FramePool<MPT_DTP_Button>
+    self.buttonPool = CreateFramePool('Button', UIParent, 'InsecureActionButtonTemplate', nil, nil, function(button)
+        self:InitButton(button);
+    end, capacity);
+end
+
+--- @param parent Frame? # defaults to no parent, the container is expected to be re-parented on use
+--- @return MPT_DTP_AlternatesContainer
+function Module:CreateAlternatesContainer(parent)
     --- @class MPT_DTP_AlternatesContainer : Frame
-    local container = CreateFrame('Frame');
-    self.alternatesContainer = container;
+    --- @field autoHide boolean? # if set, the container hides itself when the mouse leaves it and its parent
+    local container = CreateFrame('Frame', nil, parent);
     container:SetFrameLevel(10);
 
     local capacity = 20; -- prepare a few buttons, to avoid issues if they're created while in combat
@@ -172,14 +239,13 @@ function Module:InitializeButtonPools()
         self:InitAlternateButton(button);
     end, capacity);
 
-    --- @type FramePool<MPT_DTP_Button>
-    self.buttonPool = CreateFramePool('Button', UIParent, 'InsecureActionButtonTemplate', nil, nil, function(button)
-        self:InitButton(button);
-    end, capacity);
+    return container;
 end
 
 function Module:InitTeleportOverlayButton()
     self.overlayTrackerFrame = CreateFrame('Frame');
+    self.overlayTrackerFrame:SetAllPoints(UIParent);
+    self.overlayTrackerFrame:Hide();
     self.overlayTrackerFrame:SetScript('OnUpdate', function()
         local spellID = self.overlayTrackerFrame.spellID;
         if not spellID then
@@ -187,7 +253,7 @@ function Module:InitTeleportOverlayButton()
             return;
         end
 
-        self:SetShownTeleportOverlayButton(IsControlKeyDown(), spellID);
+        self:SetShownTeleportOverlayButton(self.overlayTrackerFrame.alwaysShown or IsControlKeyDown(), spellID);
     end);
 
     self.teleportOverlayButton = CreateFrame('Button', nil, self.overlayTrackerFrame, 'InsecureActionButtonTemplate');
@@ -206,7 +272,336 @@ function Module:SetShownTeleportOverlayButton(shown, spellID)
     button:SetShown(shown);
 end
 
+function Module:InitJoinPopup()
+    --- @class MPT_DTP_JoinPopup : Frame
+    local frame = CreateFrame('Frame', nil, UIParent);
+    self.joinPopup = frame;
+    do
+        frame:Hide();
+        frame:SetSize(280, POPUP_HEADER_HEIGHT);
+        frame:SetFrameStrata('HIGH');
+        frame:EnableMouse(true);
+        frame:SetMovable(true);
+        frame:SetClampedToScreen(true);
+        frame:SetScript('OnHide', function() self:SaveJoinPopupPosition(); end);
+        self:RestoreJoinPopupPosition();
+    end
+
+    local background = frame:CreateTexture(nil, 'BACKGROUND');
+    frame.Background = background;
+    do
+        background:SetAllPoints();
+        background:SetTexCoord(0.014, 2/3, 0.027, 0.72); -- just.. don't ask -.-
+
+        local backgroundTint = frame:CreateTexture(nil, 'BACKGROUND', nil, 1);
+        background.Tint = backgroundTint;
+        backgroundTint:SetAllPoints();
+        backgroundTint:SetColorTexture(0, 0, 0, 0.7);
+    end
+
+    local header = CreateFrame('Frame', nil, frame, 'PanelDragBarTemplate');
+    frame.Header = header;
+    do
+        header:SetPoint('TOPLEFT');
+        header:SetPoint('TOPRIGHT');
+        header:SetHeight(POPUP_TITLE_BAR_HEIGHT);
+        header:SetFrameLevel(frame:GetFrameLevel());
+        header:HookScript('OnDragStop', function() self:SaveJoinPopupPosition(); end);
+
+        local headerText = header:CreateFontString(nil, 'ARTWORK', 'GameFontNormal');
+        header.Text = headerText;
+        headerText:SetPoint('LEFT', 5, 0);
+        headerText:SetText('Mythic+ Tweaks - Group Joined');
+
+        local headerBackground = frame:CreateTexture(nil, 'BACKGROUND', nil, 2);
+        header.BG = headerBackground;
+        headerBackground:SetPoint('TOPLEFT', header);
+        headerBackground:SetPoint('BOTTOMRIGHT', header);
+        headerBackground:SetColorTexture(1, 1, 1, 0.06);
+    end
+
+    --- @class MPT_DTP_JoinPopup_Icon : Button, InsecureActionButtonTemplate
+    --- @field mapID number?
+    --- @field spellID number?
+    --- @field spellKnown boolean?
+    local icon = CreateFrame('Button', nil, frame, 'InsecureActionButtonTemplate');
+    frame.Icon = icon;
+    do
+        icon:SetPoint('TOPLEFT', header, 'BOTTOMLEFT', 5, 0);
+        icon:SetSize(POPUP_ICON_SIZE, POPUP_ICON_SIZE);
+        icon:SetAttribute('type', 'spell');
+        icon:RegisterForClicks('AnyUp', 'AnyDown');
+        icon:SetHighlightTexture('Interface\\Buttons\\CheckButtonHighlight', 'ADD');
+        icon:SetScript('OnEnter', function()
+            if not icon.spellID then return; end
+
+            GameTooltip:SetOwner(icon, 'ANCHOR_RIGHT');
+            if icon.spellKnown then
+                GameTooltip:SetSpellByID(icon.spellID);
+            else
+                GameTooltip:SetText('Teleport not yet earned.');
+            end
+            GameTooltip:Show();
+        end);
+        icon:SetScript('OnLeave', function() GameTooltip:Hide(); end);
+
+        local cooldown = CreateFrame('Cooldown', nil, icon, 'CooldownFrameTemplate');
+        icon.Cooldown = cooldown;
+        cooldown:SetAllPoints();
+        cooldown:SetDrawEdge(false);
+    end
+
+    local title = frame:CreateFontString(nil, 'ARTWORK', 'GameFontNormal');
+    frame.Title = title;
+    do
+        title:SetPoint('TOPLEFT', icon, 'TOPRIGHT', 8, -2);
+        title:SetPoint('RIGHT', frame, 'RIGHT', -6, 0);
+        title:SetJustifyH('LEFT');
+        title:SetWordWrap(false);
+        title:SetScript('OnEnter', function()
+            GameTooltip:SetOwner(title, 'ANCHOR_TOPLEFT');
+            GameTooltip:SetText(title:GetText());
+            GameTooltip:AddLine(frame.Subtitle:GetText(), 1, 1, 1, true);
+            GameTooltip:Show();
+        end);
+        title:SetScript('OnLeave', function() GameTooltip:Hide(); end);
+
+        local subtitle = frame:CreateFontString(nil, 'ARTWORK', 'GameFontDisableSmall');
+        frame.Subtitle = subtitle;
+        subtitle:SetPoint('TOPLEFT', title, 'BOTTOMLEFT', 0, -4);
+        subtitle:SetPoint('RIGHT', title, 'RIGHT');
+        subtitle:SetJustifyH('LEFT');
+        subtitle:SetWordWrap(false);
+        subtitle:SetScript('OnEnter', function() title:GetScript('OnEnter')(title); end);
+        subtitle:SetScript('OnLeave', function() GameTooltip:Hide(); end);
+    end
+
+    local close = CreateFrame('Button', nil, frame, 'UIPanelCloseButton');
+    frame.CloseButton = close;
+    close:SetPoint('TOPRIGHT', 0, 0);
+    close:SetScale(0.7);
+
+    local settingsButton = CreateFrame('Button', nil, frame);
+    frame.SettingsButton = settingsButton;
+    do
+        settingsButton:SetPoint('RIGHT', close, 'LEFT', 0, 0);
+        settingsButton:SetSize(16, 16);
+        settingsButton:SetNormalAtlas('GM-icon-settings');
+        settingsButton:GetNormalTexture():SetPoint('TOPLEFT', -3, 3);
+        settingsButton:GetNormalTexture():SetPoint('BOTTOMRIGHT', 3, -3);
+        local leftClick = CreateAtlasMarkup('NPE_LeftClick', 18, 18);
+        settingsButton:SetScript('OnEnter', function()
+            settingsButton:SetNormalAtlas('GM-icon-settings-hover');
+            GameTooltip:SetOwner(settingsButton, 'ANCHOR_TOPRIGHT');
+            GameTooltip:SetText('Mythic+ Tweaks');
+            GameTooltip_AddInstructionLine(GameTooltip, leftClick .. ' to open the settings, where you can permanently disable this popup.');
+            GameTooltip:Show();
+        end);
+        settingsButton:SetScript('OnLeave', function()
+            settingsButton:SetNormalAtlas('GM-icon-settings');
+            GameTooltip:Hide();
+        end);
+        settingsButton:SetScript('OnClick', function()
+            MPT.Config:OpenSettings(self.configBuilder);
+        end);
+    end
+
+    local container = self:CreateAlternatesContainer(frame);
+    frame.Alternates = container;
+    do
+        container:SetPoint('TOPLEFT', icon, 'BOTTOMLEFT', 0, -4);
+    end
+
+    self:RegisterJoinPopupWithBlizzMove();
+end
+
+function Module:RestoreJoinPopupPosition()
+    local position = self.db and self.db.popupPosition;
+    local frame = self.joinPopup;
+    frame:ClearAllPoints();
+    if position then
+        frame:SetPoint(position.point, UIParent, position.relativePoint, position.x, position.y);
+    else
+        frame:SetPoint('TOP', UIParent, 'TOP', 0, -230);
+    end
+end
+
+function Module:SaveJoinPopupPosition()
+    local point, relativeTo, relativePoint, x, y = self.joinPopup:GetPoint(1);
+    if not point or (relativeTo and relativeTo ~= UIParent) then return; end
+    self.db.popupPosition = { point = point, relativePoint = relativePoint, x = x, y = y };
+end
+
+function Module:RegisterJoinPopupWithBlizzMove()
+    Util:ContinueOnAddonLoaded('BlizzMove', function()
+        --- @type BlizzMoveAPI?
+        local BlizzMoveAPI = _G.BlizzMoveAPI;
+        if not BlizzMoveAPI then return; end
+        BlizzMoveAPI:RegisterAddOnFrames({
+            [addonName] = {
+                ['LFG_Popup'] = {
+                    FrameReference = self.joinPopup,
+                    SubFrames = {
+                        ['header'] = {
+                            FrameReference = self.joinPopup.Header,
+                        },
+                    },
+                },
+            },
+        });
+    end);
+end
+
+--- @param mapID number?
+--- @param title string
+--- @param subtitle string
+function Module:ShowJoinPopup(mapID, title, subtitle)
+    if not self.db[POPUP_SETTING] or not mapID then return; end
+
+    local frame = self.joinPopup;
+    local icon = frame.Icon;
+    local mapKey = Data.Portals.maps[mapID];
+    local spell = mapKey and Data.Portals.dungeonPortals[mapKey];
+    icon.mapID = mapID;
+    icon.spellID = spell and spell:spellID() or nil;
+    icon.spellKnown = spell and spell:available() or false;
+    icon:SetAttribute('spell', icon.spellKnown and icon.spellID or nil);
+    icon:SetNormalTexture(icon.spellID and C_Spell.GetSpellTexture(icon.spellID));
+    icon:DesaturateHierarchy(icon.spellKnown and 0 or 1);
+    if icon.spellKnown then
+        local startTime, duration = spell:cooldown();
+        icon.Cooldown:SetCooldown(startTime or 0, duration or 0);
+    else
+        icon.Cooldown:Clear();
+    end
+
+    local dungeonTexture = Data.IconMap[mapID];
+    frame.Background:SetShown(not not dungeonTexture);
+    if dungeonTexture then
+        frame.Background:SetTexture(dungeonTexture);
+    end
+
+    frame.Title:SetText(title);
+    frame.Subtitle:SetText(subtitle);
+    self:UpdateJoinPopupAlternates(icon);
+    frame:Show();
+
+    if self.alternatesTicker then self.alternatesTicker:Cancel(); end
+    self.alternatesTicker = C_Timer.NewTicker(0.2, function(ticker)
+        if not frame:IsShown() then
+            ticker:Cancel();
+
+            return;
+        end
+        self:UpdateJoinPopupAlternates(icon);
+    end, 10);
+end
+
+--- @param icon MPT_DTP_JoinPopup_Icon
+function Module:UpdateJoinPopupAlternates(icon)
+    --- @type MPT_TeleportImpl[]
+    local alternates = {};
+    if self.db.showAlternates then
+        alternates = self:GetAlternatesToShow(icon.mapID, icon.spellKnown, icon.spellID);
+    end
+    local rows = math.ceil(#alternates / POPUP_ALTERNATE_COLUMNS);
+
+    local container = self.joinPopup.Alternates;
+    if container then
+        container:SetShown(rows > 0);
+    end
+    if container and rows > 0 then
+        container:SetSize(
+            POPUP_ALTERNATE_SIZE * math.min(#alternates, POPUP_ALTERNATE_COLUMNS),
+            POPUP_ALTERNATE_SIZE * rows
+        );
+        self:FillAlternatesContainer(container, alternates, POPUP_ALTERNATE_SIZE, POPUP_ALTERNATE_COLUMNS);
+    end
+
+    self.joinPopup:SetHeight(POPUP_HEADER_HEIGHT + (rows > 0 and (4 + (rows * POPUP_ALTERNATE_SIZE)) or 0));
+end
+
+local joinedMessage = 'You have joined a group for %s |cnNORMAL_FONT_COLOR:%s|r.';
+local formedMessage = 'Your group for %s has been formed.';
+local teleportMessage = '|cff71d5ff|Haddon:MythicPlusTweaks:teleport-spell:%d|h[Click here to teleport to the instance.]|h|r';
+
+function Module:LFG_LIST_ACTIVE_ENTRY_UPDATE()
+    local activeEntryInfo = C_LFGList.GetActiveEntryInfo();
+    if activeEntryInfo then
+        self.activeActivityID = activeEntryInfo.activityIDs[1];
+    end
+end
+
+function Module:LFG_LIST_JOINED_GROUP(_, searchResultID, groupName)
+    local searchResultInfo = C_LFGList.GetSearchResultInfo(searchResultID);
+    if not searchResultInfo then return; end
+    local activityID = searchResultInfo.activityIDs[1];
+    local mapID, fullName, isMythicPlusActivity = Util:GetMapInfoByLfgActivityID(activityID);
+
+    local spellID = mapID and self:GetSpellIDForMapID(mapID);
+    self:ShowJoinPopup(mapID, fullName, groupName);
+
+    if not self.db.groupFormedMessage then return; end
+    if self.db.groupFormedMessageKeystoneOnly and not isMythicPlusActivity then return; end
+    Main:Print(joinedMessage:format(fullName, groupName), spellID and teleportMessage:format(spellID) or '');
+
+    self.lfgMessageCooldown = true;
+    C_Timer.After(10, function() self.lfgMessageCooldown = false; end);
+end
+
+function Module:LFG_LIST_ENTRY_EXPIRED_TOO_MANY_PLAYERS()
+    if not self.activeActivityID then return; end
+    local mapID, fullName, isMythicPlusActivity = Util:GetMapInfoByLfgActivityID(self.activeActivityID);
+    self:ShowJoinPopup(mapID, fullName, 'Your group has been formed.');
+
+    if not self.db.groupFormedMessage or self.lfgMessageCooldown or (self.db.groupFormedMessageKeystoneOnly and not isMythicPlusActivity) then return; end
+    local spellID = mapID and self:GetSpellIDForMapID(mapID);
+    Main:Print(formedMessage:format(fullName), spellID and teleportMessage:format(spellID) or '');
+end
+
+function Module:PLAYER_LEAVING_WORLD()
+    self:UnregisterEvent('PLAYER_LEAVING_WORLD');
+    self:UnregisterEvent('UNIT_SPELLCAST_INTERRUPTED');
+    if
+        not self.joinPopup:IsShown() or not self.buttonClickedAt
+        or (GetTime() - self.buttonClickedAt) > 30
+    then
+        return;
+    end
+
+    self.joinPopup:Hide();
+end
+function Module:UNIT_SPELLCAST_INTERRUPTED(_, unit)
+    if unit ~= 'player' then return; end
+    if
+        not self.joinPopup:IsShown() or not self.buttonClickedAt
+        or (GetTime() - self.buttonClickedAt) > 30
+    then
+        return;
+    end
+
+    self:UnregisterEvent('PLAYER_LEAVING_WORLD');
+    self:UnregisterEvent('UNIT_SPELLCAST_INTERRUPTED');
+    self.buttonClickedAt = nil;
+end
+
 function Module:OnHyperlinkEnter(frame, link)
+    local linkType, part1, part2, part3 = string.split(':', link);
+    if linkType == 'addon' and part1 == 'MythicPlusTweaks' and part2 == 'teleport-spell' then
+        local spellID = tonumber(part3);
+        GameTooltip:SetOwner(frame, 'ANCHOR_CURSOR');
+        GameTooltip:SetSpellByID(spellID);
+        GameTooltip_AddInstructionLine(GameTooltip, 'Click to teleport to the instance.');
+        GameTooltip:Show();
+        self.overlayTrackerFrame.spellID = spellID;
+        self.overlayTrackerFrame.alwaysShown = true;
+        self.overlayTrackerFrame:Show();
+        self.addonLinkTooltipShown = true;
+        self.tooltipShown = true;
+
+        return;
+    end
+
     if not self.db.teleportOnKeystoneCtrlClick then return; end
     local mapID = link:match('keystone:%d+:(%d+)');
     if not mapID then
@@ -226,6 +621,12 @@ function Module:OnHyperlinkLeave()
         GameTooltip:Hide();
         self:SetShownTeleportOverlayButton(false);
     end
+    if self.addonLinkTooltipShown then
+        self.overlayTrackerFrame.spellID = nil;
+        self.overlayTrackerFrame:Hide();
+    end
+    self.overlayTrackerFrame.alwaysShown = nil;
+    self.addonLinkTooltipShown = nil;
     self.tooltipShown = false;
 end
 
@@ -335,7 +736,7 @@ function Module:GetButton(parent)
 end
 
 function Module:InitAlternateButton(alternateButton)
-    local container = self.alternatesContainer;
+    local container = alternateButton:GetParent();
 
     --- @class MPT_DTP_AlternatesContainer_button : Button, InsecureActionButtonTemplate
     --- @field data MPT_TeleportImpl?
@@ -368,12 +769,20 @@ function Module:InitAlternateButton(alternateButton)
     alternateButton:SetScript('OnEnter', alternateButton.OnEnter);
     alternateButton:SetScript('OnLeave', function()
         GameTooltip:Hide();
-        if not container:IsMouseOver() and not container:GetParent():IsMouseOver() then
+        if container.autoHide and not container:IsMouseOver() and not container:GetParent():IsMouseOver() then
             container:Hide();
         end
     end);
     alternateButton:SetScript('OnHide', function()
-        container:Hide();
+        if container.autoHide then
+            container:Hide();
+        end
+    end);
+    alternateButton:HookScript('OnClick', function()
+        if not self.joinPopup:IsShown() then return; end
+        self.buttonClickedAt = GetTime();
+        self:RegisterEvent('UNIT_SPELLCAST_INTERRUPTED');
+        self:RegisterEvent('PLAYER_LEAVING_WORLD');
     end);
     function alternateButton:SetScript(script, func)
         error('unexpected SetScript call on alternateButton');
@@ -460,7 +869,7 @@ function Module:InitButton(button)
                 end
             end, 10); -- 2 seconds
         end
-    end)
+    end);
 
     button:SetScript("OnLeave", function(button, ...)
         local parent = button:GetParent();
@@ -468,7 +877,14 @@ function Module:InitButton(button)
         if not self.alternatesContainer:IsMouseOver() then
             self.alternatesContainer:Hide();
         end
-    end)
+    end);
+
+    button:HookScript('OnClick', function()
+        if not self.joinPopup:IsShown() then return; end
+        self.buttonClickedAt = GetTime();
+        self:RegisterEvent('UNIT_SPELLCAST_INTERRUPTED');
+        self:RegisterEvent('PLAYER_LEAVING_WORLD');
+    end);
 
     function button:SetScript(script, func)
         error('unexpected SetScript call on button');
@@ -492,11 +908,15 @@ local function getShuffledList(tbl)
     return shuffled
 end
 
-function Module:AttachAlternates(button, mapID, mainKnown, mainSpellID)
+--- @param mapID number
+--- @param mainKnown boolean?
+--- @param mainSpellID number?
+--- @return MPT_TeleportImpl[] # empty if there's nothing to show
+function Module:GetAlternatesToShow(mapID, mainKnown, mainSpellID)
     local mapName = Data.Portals.maps[mapID];
     --- @type table<MPT_TeleportImpl|MPT_HearthstoneTeleportImpl>
     local alternates = Data.Portals.alternates[mapName];
-    if not alternates or next(alternates) == nil then return; end
+    if not alternates or next(alternates) == nil then return {}; end
 
     local onCooldown = false;
     if mainKnown then
@@ -539,11 +959,28 @@ function Module:AttachAlternates(button, mapID, mainKnown, mainSpellID)
         end
     end
 
+    return alternatesToShow;
+end
+
+function Module:AttachAlternates(button, mapID, mainKnown, mainSpellID)
+    local alternatesToShow = self:GetAlternatesToShow(mapID, mainKnown, mainSpellID);
     if #alternatesToShow == 0 then return; end
 
     local container = self:GetAlternatesContainer(button, #alternatesToShow);
+    self:FillAlternatesContainer(container, alternatesToShow, button:GetWidth() / 2);
+end
+
+--- @param container MPT_DTP_AlternatesContainer
+--- @param alternatesToShow MPT_TeleportImpl[]
+--- @param alternateButtonSize number
+--- @param columns number? # default 3
+function Module:FillAlternatesContainer(container, alternatesToShow, alternateButtonSize, columns)
+    columns = columns or 3;
     local buttonPool = container.buttonPool;
-    local alternateButtonSize = button:GetWidth() / 2;
+    local autoHide = container.autoHide;
+    container.autoHide = nil;
+    buttonPool:ReleaseAll();
+    container.autoHide = autoHide;
     for i, alternate in ipairs(alternatesToShow) do
         local alternateButton = buttonPool:Acquire();
         alternateButton:SetSize(alternateButtonSize, alternateButtonSize);
@@ -561,7 +998,7 @@ function Module:AttachAlternates(button, mapID, mainKnown, mainSpellID)
 
         alternateButton:SetNormalTexture(alternate.icon);
         alternateButton:Show();
-        alternateButton:SetPoint('BOTTOMLEFT', container, 'BOTTOMLEFT', ((i - 1) % 3) * alternateButton:GetWidth(), math.floor((i - 1) / 3) * alternateButton:GetHeight());
+        alternateButton:SetPoint('BOTTOMLEFT', container, 'BOTTOMLEFT', ((i - 1) % columns) * alternateButton:GetWidth(), math.floor((i - 1) / columns) * alternateButton:GetHeight());
         local startTime, duration, _ = alternate.cooldown();
         alternateButton.cooldownFrame:SetCooldown(startTime, duration);
     end
@@ -580,7 +1017,6 @@ function Module:GetAlternatesContainer(button, numberOfAlternates)
         container:SetWidth(alternateButtonSize * numberOfAlternates);
     end
     container:SetHeight(alternateButtonSize * (math.ceil(numberOfAlternates / 3)));
-    container.buttonPool:ReleaseAll();
     container:Show();
 
     return container;
