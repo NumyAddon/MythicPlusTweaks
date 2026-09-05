@@ -56,6 +56,7 @@ function Module:OnEnable()
     self:RegisterEvent('LFG_LIST_ACTIVE_ENTRY_UPDATE');
     self:RegisterEvent('LFG_LIST_ENTRY_EXPIRED_TOO_MANY_PLAYERS');
     self:RegisterEvent('LFG_LIST_JOINED_GROUP');
+    self:RegisterEvent('PLAYER_ENTERING_WORLD');
     if not self.registeredTooltipHandler then
         self.registeredTooltipHandler = true;
         TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, function(tooltip) Module:ItemTooltipPostCall(tooltip); end);
@@ -379,7 +380,7 @@ function Module:InitJoinPopup()
     close:SetPoint('TOPRIGHT', 0, 0);
     close:SetScale(0.7);
 
-    local settingsButton = CreateFrame('Button', nil, frame);
+    local settingsButton = CreateFrame('Button', nil, header);
     frame.SettingsButton = settingsButton;
     do
         settingsButton:SetPoint('RIGHT', close, 'LEFT', 0, 0);
@@ -557,30 +558,8 @@ function Module:LFG_LIST_ENTRY_EXPIRED_TOO_MANY_PLAYERS()
     Main:Print(formedMessage:format(fullName), spellID and teleportMessage:format(spellID) or '');
 end
 
-function Module:PLAYER_LEAVING_WORLD()
-    self:UnregisterEvent('PLAYER_LEAVING_WORLD');
-    self:UnregisterEvent('UNIT_SPELLCAST_INTERRUPTED');
-    if
-        not self.joinPopup:IsShown() or not self.buttonClickedAt
-        or (GetTime() - self.buttonClickedAt) > 30
-    then
-        return;
-    end
-
+function Module:PLAYER_ENTERING_WORLD()
     self.joinPopup:Hide();
-end
-function Module:UNIT_SPELLCAST_INTERRUPTED(_, unit)
-    if unit ~= 'player' then return; end
-    if
-        not self.joinPopup:IsShown() or not self.buttonClickedAt
-        or (GetTime() - self.buttonClickedAt) > 30
-    then
-        return;
-    end
-
-    self:UnregisterEvent('PLAYER_LEAVING_WORLD');
-    self:UnregisterEvent('UNIT_SPELLCAST_INTERRUPTED');
-    self.buttonClickedAt = nil;
 end
 
 function Module:OnHyperlinkEnter(frame, link)
@@ -776,12 +755,6 @@ function Module:InitAlternateButton(alternateButton)
             container:Hide();
         end
     end);
-    alternateButton:HookScript('OnClick', function()
-        if not self.joinPopup:IsShown() then return; end
-        self.buttonClickedAt = GetTime();
-        self:RegisterEvent('UNIT_SPELLCAST_INTERRUPTED');
-        self:RegisterEvent('PLAYER_LEAVING_WORLD');
-    end);
     function alternateButton:SetScript(script, func)
         error('unexpected SetScript call on alternateButton');
     end
@@ -875,13 +848,6 @@ function Module:InitButton(button)
         if not self.alternatesContainer:IsMouseOver() then
             self.alternatesContainer:Hide();
         end
-    end);
-
-    button:HookScript('OnClick', function()
-        if not self.joinPopup:IsShown() then return; end
-        self.buttonClickedAt = GetTime();
-        self:RegisterEvent('UNIT_SPELLCAST_INTERRUPTED');
-        self:RegisterEvent('PLAYER_LEAVING_WORLD');
     end);
 
     function button:SetScript(script, func)
