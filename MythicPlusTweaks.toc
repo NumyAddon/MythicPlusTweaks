@@ -4,6 +4,8 @@
 #@end-debug@
 ## Title: Mythic+ Tweaks
 ## Author: Numy
+## X-GameType: [Game]
+## X-GameFamily: [Family]
 ## IconTexture: Interface\Addons\MythicPlusTweaks\media\icon
 ## Notes: Various improvements for m+
 ## Version: @project-version@
