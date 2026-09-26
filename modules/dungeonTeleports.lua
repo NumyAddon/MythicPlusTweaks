@@ -28,6 +28,8 @@ local KINGS_REST_MAP_ID = 249;
 --- @class MPT_DungeonTeleports : NumyConfig_Module,AceHook-3.0,NumyAceEvent-3.0
 local Module = Main:NewModule('DungeonTeleports', 'AceHook-3.0', 'NumyAceEvent-3.0');
 
+local LibKeystonePortal = LibStub("LibKeystonePortal");
+
 local frameSetAttribute = GetFrameMetatable().__index.SetAttribute;
 
 --- returns the remaining cooldown of a spell
@@ -45,6 +47,7 @@ function Module:OnInitialize()
     self:InitializeButtonPools();
     self:InitTeleportOverlayButton();
     self:InitJoinPopup();
+    self.popupThrottle = {};
 end
 
 --- @type table<Frame, MPT_DTP_Button>
@@ -84,6 +87,8 @@ function Module:OnEnable()
         end);
         self:OnChallengesFrameUpdate();
     end);
+
+    LibKeystonePortal.RegisterPortalCallback(self.OnPortalUsed, self);
 end
 
 function Module:OnDisable()
@@ -95,6 +100,7 @@ function Module:OnDisable()
         button:Hide();
     end
     self.joinPopup:Hide();
+    LibKeystonePortal.UnregisterPortalCallback(self);
 end
 
 function Module:GetName() return 'Dungeon Teleports'; end
@@ -116,6 +122,9 @@ function Module:BuildConfig(configBuilder, db)
         teleportOnKeystoneCtrlClick = true,
         groupFormedMessage = true,
         groupFormedMessageKeystoneOnly = true,
+        chatOnGroupCast = true,
+        chatOnGroupCastDisabledDuringPopup = true,
+        popupOnGroupCast = true,
         [POPUP_SETTING] = true,
         [TYPE_DUNGEON_PORTAL] = OPTION_MAIN_UNKNOWN,
         [TYPE_TOY] = OPTION_MAIN_ON_COOLDOWN,
@@ -162,9 +171,26 @@ function Module:BuildConfig(configBuilder, db)
     );
     configBuilder:MakeButton(
         'Open Example',
-        function() self:ShowJoinPopup(KINGS_REST_MAP_ID, "King's Rest (Mythic Keystone)", '+10'); end,
+        function() self:ShowJoinPopup(KINGS_REST_MAP_ID, "King's Rest (Mythic Keystone)", '+10', 'Group Joined', false); end,
         'Open example popup'
     ):SetParentInitializer(popup, function() return self.db[POPUP_SETTING] end);
+
+    local chatOnCast = configBuilder:MakeCheckbox(
+        'Message when group member teleports',
+        'chatOnGroupCast',
+        'Shows a message in chat when someone in your group teleports to a dungeon, with a clickable teleport link if available.'
+    );
+    configBuilder:MakeCheckbox(
+        'Don\'t message while a popup is showing',
+        'chatOnGroupCastDisabledDuringPopup',
+        'Only show the message if there isn\'t already a popup showing.'
+    ):SetParentInitializer(chatOnCast, function() return self.db.chatOnGroupCast end);
+    configBuilder:MakeCheckbox(
+        'Popup when group member teleports',
+        'popupOnGroupCast',
+        'Shows a popup, similar to the LFG popup, when someone in your group teleports to a dungeon, with a clickable teleport link if available.'
+    );
+
     local alternate = configBuilder:MakeCheckbox(
         'Show alternative teleports',
         'showAlternates',
@@ -369,8 +395,10 @@ function Module:InitJoinPopup()
         frame.Subtitle = subtitle;
         subtitle:SetPoint('TOPLEFT', title, 'BOTTOMLEFT', 0, -4);
         subtitle:SetPoint('RIGHT', title, 'RIGHT');
+        subtitle:SetHeight(20);
         subtitle:SetJustifyH('LEFT');
-        subtitle:SetWordWrap(false);
+        subtitle:SetJustifyV('TOP');
+        subtitle:SetWordWrap(true);
         subtitle:SetScript('OnEnter', function() title:GetScript('OnEnter')(title); end);
         subtitle:SetScript('OnLeave', function() GameTooltip:Hide(); end);
     end
@@ -454,10 +482,19 @@ end
 --- @param mapID number?
 --- @param title string
 --- @param subtitle string
-function Module:ShowJoinPopup(mapID, title, subtitle)
-    if not self.db[POPUP_SETTING] or not mapID then return; end
+--- @param headerSuffix string
+function Module:ShowJoinPopup(mapID, title, subtitle, headerSuffix, isLfg)
+    if self.popupThrottle[mapID] or (self.lfgPopupShown and not isLfg) then return; end
+    self.popupThrottle[mapID] = true;
+    if isLfg then
+        self.lfgPopupShown = true;
+        C_Timer.After(180, function() self.lfgPopupShown = nil; end);
+    end
+    C_Timer.After(60, function() self.popupThrottle[mapID] = nil; end);
 
     local frame = self.joinPopup;
+    frame.Header.Text:SetText('Mythic+ Tweaks - ' .. headerSuffix)
+
     local icon = frame.Icon;
     local mapKey = Data.Portals.maps[mapID];
     local spell = mapKey and Data.Portals.dungeonPortals[mapKey];
@@ -538,7 +575,9 @@ function Module:LFG_LIST_JOINED_GROUP(_, searchResultID, groupName)
     local mapID, fullName, isMythicPlusActivity = Util:GetMapInfoByLfgActivityID(activityID);
 
     local spellID = mapID and self:GetSpellIDForMapID(mapID);
-    self:ShowJoinPopup(mapID, fullName, groupName);
+    if self.db[POPUP_SETTING] and mapID then
+        self:ShowJoinPopup(mapID, fullName, groupName, 'Group Joined', true);
+    end
 
     if not self.db.groupFormedMessage then return; end
     if self.db.groupFormedMessageKeystoneOnly and not isMythicPlusActivity then return; end
@@ -551,7 +590,9 @@ end
 function Module:LFG_LIST_ENTRY_EXPIRED_TOO_MANY_PLAYERS()
     if not self.activeActivityID then return; end
     local mapID, fullName, isMythicPlusActivity = Util:GetMapInfoByLfgActivityID(self.activeActivityID);
-    self:ShowJoinPopup(mapID, fullName, 'Your group has been formed.');
+    if self.db[POPUP_SETTING] and mapID then
+        self:ShowJoinPopup(mapID, fullName, 'Your group has been formed.', 'Group Formed', true);
+    end
 
     if not self.db.groupFormedMessage or self.lfgMessageCooldown or (self.db.groupFormedMessageKeystoneOnly and not isMythicPlusActivity) then return; end
     local spellID = mapID and self:GetSpellIDForMapID(mapID);
@@ -560,6 +601,22 @@ end
 
 function Module:PLAYER_ENTERING_WORLD()
     self.joinPopup:Hide();
+end
+
+function Module:OnPortalUsed(fullName, mapID, spellID, source)
+    local _, class = UnitClass(fullName);
+    if class then
+        local classColor = C_ClassColor.GetClassColor(class);
+        fullName = classColor:WrapTextInColorCode(fullName);
+    end
+    local name = C_ChallengeMode.GetMapUIInfo(mapID);
+    local spellID = mapID and self:GetSpellIDForMapID(mapID);
+    if self.db.chatOnGroupCast and (not self.db.chatOnGroupCastDisabledDuringPopup or not self.joinPopup:IsShown()) then
+        Main:Print(fullName, 'used a portal to', name, spellID and teleportMessage:format(spellID) or '');
+    end
+    if self.db.popupOnGroupCast and not self.joinPopup:IsShown() then
+        self:ShowJoinPopup(mapID, name, fullName .. ' used a portal, join them?', 'Teleport Detected', false);
+    end
 end
 
 function Module:OnHyperlinkEnter(frame, link)
