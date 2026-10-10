@@ -1,6 +1,6 @@
 ## Interface: @toc-version-midnight@, @toc-version-retail@
 #@debug@
-## Interface: 120000
+## Interface: 120000, 16001
 #@end-debug@
 ## Title: Mythic+ Tweaks
 ## Author: Numy
