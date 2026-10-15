@@ -204,7 +204,8 @@ end
 --- @param unit UnitToken.group
 function Module:OnEnter(frame, unit)
     local unitName = UnitNameUnmodified(unit);
-    local classColor = C_ClassColor.GetClassColor(select(2, UnitClass(unit)));
+    local _, class = UnitClass(unit);
+    local classColor = C_ClassColor.GetClassColor(class);
 
     local tooltip = GameTooltip;
     tooltip:SetOwner(frame, 'ANCHOR_RIGHT');

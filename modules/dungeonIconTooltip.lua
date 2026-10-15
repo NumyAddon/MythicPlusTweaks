@@ -129,7 +129,8 @@ function Module:AddGroupScoreToTooltip(linesLeft, linesRight, mapId)
             end
 
             local unitName = UnitNameUnmodified(unit);
-            local classColor = C_ClassColor.GetClassColor(select(2, UnitClass(unit)));
+            local _, class = UnitClass(unit);
+            local classColor = C_ClassColor.GetClassColor(class);
             local level = scoreInfo.runs[mapId] and scoreInfo.runs[mapId].level or 0;
             local inTime = scoreInfo.runs[mapId] and scoreInfo.runs[mapId].inTime or false;
             local color = Util:GetRarityColorDungeonOverallScore(dungeonScore);
